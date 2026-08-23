@@ -1,0 +1,6 @@
+import { Breadcrumbs } from "@/components/breadcrumbs";
+import { createMetadata } from "@/lib/metadata";
+
+export const metadata = createMetadata("Termos de Uso", "Termos de uso do site oficial de Vargen & Fé.", "/termos");
+
+export default function TermsPage() { return <section className="page-content"><div className="container prose-layout"><div className="prose-layout__aside"><Breadcrumbs items={[{ label: "Termos" }]} /><span>Uso consciente.<br />Escuta livre.</span></div><div className="prose"><p className="eyebrow">Termos de uso</p><h2>Sobre este site</h2><p>Este é o site institucional de Vargen & Fé. O conteúdo é apresentado para informação, escuta e divulgação do projeto musical.</p><h2>Conteúdo e direitos</h2><p>Marcas, músicas, artes, textos e vídeos vinculados ao projeto pertencem aos seus respectivos titulares. Não copie, redistribua ou utilize materiais do projeto comercialmente sem autorização.</p><h2>Links externos</h2><p>O site pode apontar para plataformas como YouTube e serviços de streaming. Esses serviços têm seus próprios termos e políticas de privacidade.</p><h2>Contato</h2><p>Para permissões, correções ou dúvidas, escreva para <a href="mailto:contato@vargenefe.com.br" style={{ color: "var(--gold-soft)" }}>contato@vargenefe.com.br</a>.</p></div></div></section>; }
