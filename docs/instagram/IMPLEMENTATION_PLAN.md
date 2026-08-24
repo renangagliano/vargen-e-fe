@@ -8,14 +8,17 @@
 - documentar riscos, pré-requisitos e arquitetura;
 - criar branch `feature/instagram-reels-growth-engine`.
 
-## Fase 2 — fundação de mídia, somente após aprovação
+## Fase 2 — fundação de mídia (implementada; scan real bloqueado)
 
-- escolher e validar diretório de origem externo ao Git;
-- instalar/fornecer FFmpeg e FFprobe;
-- criar `MediaCatalogAdapter` com path validation e checksum;
-- extrair metadata com FFprobe;
-- persistir `source_assets` e lineage;
-- criar testes de nomes, checksum e arquivos ausentes.
+- configuração e separação de diretórios implementadas;
+- descoberta recursiva, path validation e checksum implementados;
+- SQLite e migrations implementados;
+- metadata FFprobe implementada quando a ferramenta estiver disponível;
+- matching com o catálogo existente implementado;
+- CLI e testes implementados;
+- scan real pendente de `VARGEN_MEDIA_ROOT` e mídia OneDrive local.
+
+A Fase 2 também prepara `VARGEN_REELS_OUTPUT_ROOT` como diretório OneDrive irmão dos masters, cria a estrutura inicial `Reels/` quando ambos os roots estão configurados e registra os modos futuros `dry-run`, `approval` e `full-auto`. Nenhum modo publica nesta fase.
 
 ## Fase 3 — análise e Reel Factory
 
@@ -52,6 +55,8 @@ Registrar evidência completa, parar e aguardar revisão humana. Não processar 
 - implementar `InstagramPublisherAdapter` isolado;
 - publicar container e depois publicação, com status e idempotência;
 - manter publicação real desabilitada até aprovação explícita.
+
+O alvo final exigirá scheduler persistente com `scheduled_at`, timezone, tentativas, estado, publication ID e idempotency key. Ele não poderá depender de browser aberto, GitHub Pages ou portal Maestri.
 
 ## Fase 7 — analytics e aprendizado
 

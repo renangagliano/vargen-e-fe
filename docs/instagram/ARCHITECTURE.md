@@ -13,6 +13,29 @@ Next.js App Router
 
 Não existe um processo server-side capaz de receber jobs, manter estados, processar vídeo, guardar tokens ou consultar a Meta.
 
+## Fundação de mídia implementada na Fase 2
+
+Foi criada uma camada local em `tools/instagram-reels` com:
+
+- configuração por `VARGEN_MEDIA_ROOT`, `VARGEN_REELS_OUTPUT_ROOT` e `VARGEN_PIPELINE_STATE_ROOT`;
+- descoberta recursiva sem seguir symlinks/junctions;
+- validação canônica de paths;
+- checksum SHA-256 por stream;
+- detecção de disponibilidade local;
+- detecção segura de FFmpeg/FFprobe;
+- metadata FFprobe quando disponível;
+- SQLite local com migrations versionadas;
+- matching contra `src/data/songs.ts` sem duplicar o catálogo;
+- CLI `doctor`, `scan`, `list`, `inspect` e `verify`.
+
+O scan real ainda não foi executado porque o root OneDrive local não está configurado. A camada não gera Reels.
+
+## Reels e publicação automática futura
+
+Quando configurado, `VARGEN_REELS_OUTPUT_ROOT` deve apontar para `Reels`, irmão de `VARGEN_MEDIA_ROOT`, nunca para dentro dos masters. O doctor prepara `Ano-Liturgico-C`, `7-Dias-com-Deus`, `12-Meses-com-Deus`, `Devocionais`, `Outros` e `Published`.
+
+Os modos futuros são lidos por `src/config/automation.ts`: `dry-run` nunca publica, `approval` agenda apenas itens aprovados e `full-auto` seleciona, gera, agenda, publica por API oficial, verifica e coleta métricas. O default é `dry-run`; scheduler persistente, Meta OAuth, publisher e analytics continuam sendo fases posteriores.
+
 ## Arquitetura alvo incremental
 
 ```text

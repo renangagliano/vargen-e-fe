@@ -9,6 +9,42 @@ INSTAGRAM_REQUIRE_APPROVAL=true
 
 Dry-run pode ingerir, analisar, renderizar, validar, preparar editorial e simular agenda, mas nunca chama publicação real.
 
+## CLI da fundação de mídia
+
+Depois de configurar `.env.local` com paths locais:
+
+```text
+npm run media:doctor
+npm run media:scan
+npm run media:list
+npm run media:inspect -- asset-<sha256-prefix>
+npm run media:verify
+```
+
+O `media:scan` não usa a biblioteca `public/audio` como substituto e falha explicitamente quando `VARGEN_MEDIA_ROOT` não está configurado.
+
+## Modos de publicação futuros
+
+- `dry-run`: gera/valida e simula, sem publicar;
+- `approval`: espera aprovação humana e permite publicação automática agendada;
+- `full-auto`: publica somente itens `READY_FOR_PUBLISHING`, com gates, spacing e idempotência.
+
+O default é `dry-run`. A Fase 2 não agenda, não chama Meta e não publica.
+
+## Lifecycle futuro de publicação
+
+```text
+DISCOVERED -> ANALYZED -> CANDIDATE -> GENERATED -> VALIDATED
+  -> READY_FOR_PUBLISHING -> SCHEDULED -> PUBLISHING -> PUBLISHED
+  -> ANALYTICS_ACTIVE -> ARCHIVED
+```
+
+Falhas futuras: `GENERATION_FAILED`, `VALIDATION_FAILED`, `PUBLISH_FAILED`, `ANALYTICS_FAILED`. O publisher deverá guardar `publication_key`, `scheduled_at`, timezone, tentativas, último erro e Meta publication ID.
+
+## Controles anti-spam futuros
+
+Os limites são configuráveis por `MAX_REELS_PER_DAY`, `MIN_HOURS_BETWEEN_REELS`, `MAX_REELS_PER_SONG_PER_30_DAYS` e `MAX_REELS_PER_COLLECTION_CONSECUTIVELY`. O scheduler deverá alternar coleções/pilares e só liberar `READY_FOR_PUBLISHING` após direitos, duplicidade, safe zones, brand validation e spacing.
+
 ## Estados operacionais
 
 - `DISCOVERED`

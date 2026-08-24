@@ -6,11 +6,23 @@ Sintoma: busca por `.mp4`, `.mov`, `.m4v` e `.webm` não encontrou arquivos no w
 
 Ação: montar ou disponibilizar o diretório de vídeos reais, informar sua raiz e confirmar direitos/proveniência. Não usar MP3 como substituto do piloto pedido.
 
+## Configurar o OneDrive local
+
+Não usar o sharing URL como root. No Windows, abrir a pasta sincronizada no Explorer, escolher **Sempre manter neste dispositivo** para os masters que serão processados, e configurar somente localmente:
+
+```text
+VARGEN_MEDIA_ROOT=<caminho local da pasta Vargen & Fé - MP4>
+VARGEN_REELS_OUTPUT_ROOT=<diretório separado para derivados>
+VARGEN_PIPELINE_STATE_ROOT=<diretório local fora do OneDrive>
+```
+
+Nesta máquina a pasta não foi localizada automaticamente e nenhuma dessas variáveis estava definida.
+
 ## FFmpeg não encontrado
 
 Sintoma: `Get-Command ffmpeg` e `Get-Command ffprobe` retornam `NOT_FOUND`.
 
-Ação: instalar versão aprovada no ambiente ou conectar componente existente comprovado. Registrar versão e executar teste de decode antes da Fase 2.
+Ação: instalar versão aprovada no ambiente ou conectar componente existente comprovado. O `winget` e o Chocolatey estão disponíveis; a opção recomendada é `winget install --id Gyan.FFmpeg --exact`, executada pelo operador. Registrar versão com `ffmpeg -version` e `ffprobe -version`. Nenhuma instalação foi executada pelo agente.
 
 ## Instagram conectado, mas sem API
 

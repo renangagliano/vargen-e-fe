@@ -28,6 +28,10 @@ Antes de qualquer publicação real:
 
 Nenhuma dessas ações foi executada nesta fase.
 
+## Compatibilidade com full-auto futuro
+
+O publisher futuro deve ser um processo persistente separado do site estático, com os modos `dry-run`, `approval` e `full-auto`. Publicação automática exige scheduler persistente, `publication_key`, retries seguros, Meta publication ID, verificação pós-publicação e collector oficial. A existência dessa configuração na Fase 2 não significa que a conta, o app ou os tokens estejam habilitados.
+
 ## Proibições
 
 - senha do Instagram em script;

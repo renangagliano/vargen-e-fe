@@ -35,6 +35,8 @@ Os valores acima não existem hoje e não devem ser preenchidos nesta fase. Nunc
 - manter fonte intacta;
 - apagar somente temporários criados pelo próprio job após confirmação.
 
+Na Fase 2, `tools/instagram-reels/src/security/paths.ts` rejeita paths fora do root canônico, traversal e symlinks para arquivos de mídia. `ffmpeg/detection.ts` e `ffmpeg/ffprobe.ts` usam `execFile` com arrays de argumentos e não usam `shell: true`.
+
 ## Meta
 
 A publicação deve usar somente API oficial. Browser automation, sessão do portal, scraping, endpoint privado e bypass de rate limit são proibidos. O portal Instagram conectado ao Maestri serve para inspeção humana autorizada; ele não demonstra OAuth nem permissões de Graph API.

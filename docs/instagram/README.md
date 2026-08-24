@@ -2,7 +2,7 @@
 
 ## Status
 
-**Fase 1 — descoberta concluída.** Esta documentação registra somente o estado encontrado e o desenho proposto. Nenhum Reel foi gerado, nenhum conteúdo foi publicado e nenhum token Meta foi solicitado.
+**Fase 2 — fundação de mídia implementada, scan real bloqueado por configuração local.** A documentação de descoberta foi complementada com CLI, SQLite, segurança de paths, checksum e matching. Nenhum Reel foi gerado, nenhum conteúdo foi publicado e nenhum token Meta foi solicitado.
 
 Branch de trabalho: `feature/instagram-reels-growth-engine`
 
@@ -30,9 +30,10 @@ INSTAGRAM_REQUIRE_APPROVAL=true
 - [OPERATIONS.md](./OPERATIONS.md) — operação, estados e dry-run.
 - [ANALYTICS.md](./ANALYTICS.md) — modelo de métricas e aprendizado.
 - [TROUBLESHOOTING.md](./TROUBLESHOOTING.md) — bloqueios e diagnóstico.
+- [MEDIA_FOUNDATION.md](./MEDIA_FOUNDATION.md) — operação da fundação local de mídia.
 
-## Gate da Fase 1
+## Gate da Fase 2
 
-O piloto está **bloqueado por falta de MP4 acessível e FFmpeg/FFprobe instalados**. A próxima fase só deve começar depois que um diretório de mídia for disponibilizado e as ferramentas forem instaladas ou fornecidas por um componente existente autorizado.
+O scan real está **bloqueado porque `VARGEN_MEDIA_ROOT` não está configurado e não foi encontrada a pasta local sincronizada do OneDrive nesta máquina**. FFmpeg/FFprobe também continuam ausentes. A próxima fase só deve começar depois que um diretório de mídia for disponibilizado e as ferramentas forem instaladas ou fornecidas por um componente existente autorizado.
 
 Mesmo após o desbloqueio, o piloto deve processar apenas uma música, gerar três candidatos reais, validar os arquivos e parar para revisão humana.

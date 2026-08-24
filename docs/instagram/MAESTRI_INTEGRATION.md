@@ -49,3 +49,7 @@ O portal YouTube foi encontrado, mas não há integração de código nem OAuth 
 ## Decisão de arquitetura
 
 Começar com `MaestriOrchestrationAdapter` opcional e um worker local/CI explícito. Se Maestri oferecer depois uma fila/storage oficial, substituir o adapter sem mover a lógica de catálogo, Reel Factory ou Meta.
+
+## Alvo de automação
+
+No estado final, Maestri poderá coordenar descoberta, elegibilidade, jobs, aprovação, scheduler, retries seguros, publicação oficial e coleta de analytics por adapters. O portal Instagram continuará restrito a operação humana/inspeção; produção não usará browser automation.
