@@ -2,7 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import type { MediaConfig } from "../config/index.js";
-import type { MediaMetadata, AvailabilityStatus, RightsStatus, SongMatch, ReelCandidate, CandidateStatus, EditorialPackage, EditorialReviewStatus, PublicationJob, PublicationMode, PublicationStatus, FailureClass } from "../shared/types.js";
+import type { MediaMetadata, AvailabilityStatus, RightsStatus, SongMatch, ReelCandidate, CandidateStatus, EditorialPackage, EditorialReviewStatus, PublicationJob, PublicationMode, PublicationStatus, FailureClass, MediaAnalysisReport } from "../shared/types.js";
 import { databasePath } from "../config/index.js";
 
 type SqlRow = Record<string, unknown>;
@@ -32,6 +32,11 @@ export function openDatabase(config: MediaConfig): DatabaseSync {
   ensureColumn(db, "reel_editorial_packages", "reviewed_by", "TEXT");
   ensureColumn(db, "reel_editorial_packages", "reviewed_at", "TEXT");
   ensureColumn(db, "reel_editorial_packages", "review_note", "TEXT");
+  ensureColumn(db, "reel_candidates", "candidate_confidence", "REAL");
+  ensureColumn(db, "reel_candidates", "score_breakdown_json", "TEXT");
+  ensureColumn(db, "reel_candidates", "analysis_version", "TEXT");
+  ensureColumn(db, "reel_candidates", "configuration_version", "TEXT");
+  ensureColumn(db, "reel_candidates", "decision", "TEXT");
   db.prepare("UPDATE media_assets SET rights_status = 'RIGHTS_PENDING_CONFIRMATION' WHERE rights_status = 'UNKNOWN'").run();
   return db;
 }
@@ -188,8 +193,9 @@ export function upsertReelCandidate(db: DatabaseSync, candidate: ReelCandidate):
   db.prepare(`
     INSERT INTO reel_candidates (
       candidate_id, source_asset_id, start_time_ms, end_time_ms, duration_ms,
-      category, score, selection_reason, status, fingerprint, created_at, updated_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      category, score, selection_reason, status, fingerprint, candidate_confidence,
+      score_breakdown_json, analysis_version, configuration_version, decision, created_at, updated_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ON CONFLICT(candidate_id) DO UPDATE SET
       start_time_ms = excluded.start_time_ms,
       end_time_ms = excluded.end_time_ms,
@@ -199,11 +205,19 @@ export function upsertReelCandidate(db: DatabaseSync, candidate: ReelCandidate):
       selection_reason = excluded.selection_reason,
       status = excluded.status,
       fingerprint = excluded.fingerprint,
+      candidate_confidence = excluded.candidate_confidence,
+      score_breakdown_json = excluded.score_breakdown_json,
+      analysis_version = excluded.analysis_version,
+      configuration_version = excluded.configuration_version,
+      decision = excluded.decision,
       updated_at = excluded.updated_at
   `).run(
     candidate.candidateId, candidate.sourceAssetId, candidate.startTimeMs, candidate.endTimeMs,
     candidate.durationMs, candidate.category, candidate.score, candidate.selectionReason,
-    candidate.status, candidate.fingerprint, timestamp, timestamp,
+    candidate.status, candidate.fingerprint, candidate.confidence ?? null,
+    candidate.scoreBreakdown ? JSON.stringify(candidate.scoreBreakdown) : null,
+    candidate.analysisVersion ?? null, candidate.configurationVersion ?? null,
+    candidate.decision ?? (candidate.status === "SELECTED" || candidate.status === "VALIDATED" ? "SELECTED" : null), timestamp, timestamp,
   );
 }
 
@@ -213,6 +227,64 @@ export function candidateById(db: DatabaseSync, candidateId: string): SqlRow | u
 
 export function candidatesForAsset(db: DatabaseSync, assetId: string): SqlRow[] {
   return db.prepare("SELECT * FROM reel_candidates WHERE source_asset_id = ? ORDER BY start_time_ms").all(assetId) as SqlRow[];
+}
+
+export function mediaAnalysisByKey(db: DatabaseSync, assetId: string, checksum: string, analysisVersion: string): MediaAnalysisReport | undefined {
+  const row = db.prepare("SELECT report_json FROM media_analysis_cache WHERE asset_id = ? AND source_checksum = ? AND analysis_version = ?").get(assetId, checksum, analysisVersion) as { report_json?: string } | undefined;
+  return row?.report_json ? JSON.parse(row.report_json) as MediaAnalysisReport : undefined;
+}
+
+export function saveMediaAnalysis(db: DatabaseSync, assetId: string, checksum: string, analysisVersion: string, report: MediaAnalysisReport): void {
+  const timestamp = now();
+  db.prepare(`
+    INSERT INTO media_analysis_cache (analysis_id, asset_id, source_checksum, analysis_version, report_json, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
+    ON CONFLICT(asset_id, source_checksum, analysis_version) DO UPDATE SET report_json = excluded.report_json, updated_at = excluded.updated_at
+  `).run(id("analysis"), assetId, checksum, analysisVersion, JSON.stringify(report), timestamp, timestamp);
+}
+
+export function beginCatalogRun(db: DatabaseSync, input: { operation: string; totalAssets: number; configurationVersion: string }): string {
+  const runId = id("catalog");
+  db.prepare("INSERT INTO catalog_runs (run_id, operation, started_at, status, total_assets, configuration_version) VALUES (?, ?, ?, 'RUNNING', ?, ?)").run(runId, input.operation, now(), input.totalAssets, input.configurationVersion);
+  return runId;
+}
+
+export function updateCatalogRun(db: DatabaseSync, runId: string, input: { status?: string; processedAssets?: number; selectedCandidates?: number; generatedReels?: number; failedAssets?: number; noQualifiedAssets?: number; errorSummary?: Record<string, number>; completed?: boolean }): void {
+  const sets: string[] = [];
+  const values: unknown[] = [];
+  const assign = (column: string, value: unknown) => { sets.push(`${column} = ?`); values.push(value); };
+  if (input.status !== undefined) assign("status", input.status);
+  if (input.processedAssets !== undefined) assign("processed_assets", input.processedAssets);
+  if (input.selectedCandidates !== undefined) assign("selected_candidates", input.selectedCandidates);
+  if (input.generatedReels !== undefined) assign("generated_reels", input.generatedReels);
+  if (input.failedAssets !== undefined) assign("failed_assets", input.failedAssets);
+  if (input.noQualifiedAssets !== undefined) assign("no_qualified_assets", input.noQualifiedAssets);
+  if (input.errorSummary !== undefined) assign("error_summary_json", JSON.stringify(input.errorSummary));
+  if (input.completed) assign("completed_at", now());
+  if (sets.length === 0) return;
+  values.push(runId);
+  db.prepare(`UPDATE catalog_runs SET ${sets.join(", ")} WHERE run_id = ?`).run(...values as Array<string | number | null>);
+}
+
+export function catalogRunById(db: DatabaseSync, runId: string): SqlRow | undefined {
+  return db.prepare("SELECT * FROM catalog_runs WHERE run_id = ?").get(runId) as SqlRow | undefined;
+}
+
+export function upsertCatalogAssetRun(db: DatabaseSync, input: { runId: string; assetId: string; sourceChecksum: string | null; analysisVersion: string; renderVersion: string; status: string; candidatesFound: number; candidatesSelected: number; generatedReels: number; failureCode?: string | null; failureMessageSafe?: string | null; completed?: boolean }): void {
+  const timestamp = now();
+  db.prepare(`
+    INSERT INTO catalog_asset_runs (run_id, asset_id, source_checksum, analysis_version, render_version, status, candidates_found, candidates_selected, generated_reels, failure_code, failure_message_safe, started_at, completed_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ON CONFLICT(run_id, asset_id) DO UPDATE SET status = excluded.status, candidates_found = excluded.candidates_found, candidates_selected = excluded.candidates_selected, generated_reels = excluded.generated_reels, failure_code = excluded.failure_code, failure_message_safe = excluded.failure_message_safe, completed_at = excluded.completed_at
+  `).run(input.runId, input.assetId, input.sourceChecksum, input.analysisVersion, input.renderVersion, input.status, input.candidatesFound, input.candidatesSelected, input.generatedReels, input.failureCode ?? null, input.failureMessageSafe ?? null, timestamp, input.completed ? timestamp : null);
+}
+
+export function latestCompletedCatalogAssetRun(db: DatabaseSync, assetId: string, sourceChecksum: string, analysisVersion: string, renderVersion: string): SqlRow | undefined {
+  return db.prepare("SELECT * FROM catalog_asset_runs WHERE asset_id = ? AND source_checksum = ? AND analysis_version = ? AND render_version = ? AND status = 'COMPLETED' ORDER BY completed_at DESC LIMIT 1").get(assetId, sourceChecksum, analysisVersion, renderVersion) as SqlRow | undefined;
+}
+
+export function catalogAssetRunRows(db: DatabaseSync, runId: string): SqlRow[] {
+  return db.prepare("SELECT * FROM catalog_asset_runs WHERE run_id = ? ORDER BY asset_id").all(runId) as SqlRow[];
 }
 
 export function setCandidateStatus(db: DatabaseSync, candidateId: string, status: CandidateStatus): void {

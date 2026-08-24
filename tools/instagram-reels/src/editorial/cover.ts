@@ -31,7 +31,7 @@ export async function generateCover(input: { ffmpegPath: string; ffprobePath: st
     await execFileAsync(input.ffmpegPath, [
       "-y", "-hide_banner", "-loglevel", "error", "-ss", seekSeconds.toFixed(3), "-i", input.sourceReelPath,
       "-frames:v", "1", "-vf", buildCoverFilter(input), "-q:v", "2", temporaryPath,
-    ], { windowsHide: true, maxBuffer: 2 * 1024 * 1024 });
+    ], { windowsHide: true, maxBuffer: 2 * 1024 * 1024, timeout: 60000, killSignal: "SIGTERM" });
     const metadata = await probeMedia(input.ffprobePath, temporaryPath);
     if (metadata.width !== 1080 || metadata.height !== 1920) throw new Error("COVER_INVALID_RESOLUTION");
     const stats = await fs.stat(temporaryPath);

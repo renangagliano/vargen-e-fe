@@ -25,26 +25,27 @@ export async function renderReel(input: {
   candidate: ReelCandidate;
   outputPath: string;
   safeZoneTopPx?: number;
+  fastSeek?: boolean;
 }): Promise<void> {
   await fs.mkdir(path.dirname(input.outputPath), { recursive: true });
   const temporaryPath = `${input.outputPath}.part-${process.pid}-${Date.now()}.mp4`;
-  const args = [
-    "-y", "-hide_banner", "-loglevel", "error",
-    "-i", input.sourcePath,
-  ];
+  const args = ["-y", "-hide_banner", "-loglevel", "error"];
+  const start = (input.candidate.startTimeMs / 1000).toFixed(3);
+  if (input.fastSeek) args.push("-ss", start, "-accurate_seek");
+  args.push("-i", input.sourcePath);
   if (input.logoPath) args.push("-loop", "1", "-i", input.logoPath);
   // Keep video/audio trimming and composition in one deterministic graph.
-  const start = (input.candidate.startTimeMs / 1000).toFixed(3);
   const duration = (input.candidate.durationMs / 1000).toFixed(3);
+  const trimStart = input.fastSeek ? "0" : start;
   const composition = buildVerticalFilter(Boolean(input.logoPath), input.safeZoneTopPx ?? 120, "[trimmed]");
-  args.push("-filter_complex", `[0:v]trim=start=${start}:duration=${duration},setpts=PTS-STARTPTS[trimmed];${composition};[0:a]atrim=start=${start}:duration=${duration},asetpts=PTS-STARTPTS[a]`);
+  args.push("-filter_complex", `[0:v]trim=start=${trimStart}:duration=${duration},setpts=PTS-STARTPTS[trimmed];${composition};[0:a]atrim=start=${trimStart}:duration=${duration},asetpts=PTS-STARTPTS[a]`);
   args.push(
     "-map", "[v]", "-map", "[a]", "-r", "30", "-c:v", "libx264", "-preset", "medium", "-crf", "18",
     "-pix_fmt", "yuv420p", "-c:a", "aac", "-b:a", "192k", "-movflags", "+faststart",
     "-t", (input.candidate.durationMs / 1000).toFixed(3), temporaryPath,
   );
   try {
-    await execFileAsync(input.ffmpegPath, args, { windowsHide: true, maxBuffer: 4 * 1024 * 1024 });
+    await execFileAsync(input.ffmpegPath, args, { windowsHide: true, maxBuffer: 4 * 1024 * 1024, timeout: 180000, killSignal: "SIGTERM" });
     await fs.rename(temporaryPath, input.outputPath);
   } catch (error) {
     await fs.rm(temporaryPath, { force: true }).catch(() => undefined);
@@ -58,7 +59,7 @@ export async function makeThumbnail(ffmpegPath: string, sourceReelPath: string, 
   await execFileAsync(ffmpegPath, [
     "-y", "-hide_banner", "-loglevel", "error", "-ss", Math.min(2, Math.max(0.1, durationMs / 2000)).toFixed(3),
     "-i", sourceReelPath, "-frames:v", "1", "-q:v", "2", temporaryPath,
-  ], { windowsHide: true, maxBuffer: 2 * 1024 * 1024 }).then(async () => {
+  ], { windowsHide: true, maxBuffer: 2 * 1024 * 1024, timeout: 60000, killSignal: "SIGTERM" }).then(async () => {
     await fs.rename(temporaryPath, outputPath);
   }).catch(async (error) => {
     await fs.rm(temporaryPath, { force: true }).catch(() => undefined);

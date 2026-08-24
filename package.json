@@ -29,7 +29,14 @@
     "reel:schedule": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js reel:schedule",
     "publish:dry-run": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js publish:dry-run",
     "publish:status": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js publish:status",
-    "scheduler:run-once": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js scheduler:run-once"
+    "scheduler:run-once": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js scheduler:run-once",
+    "catalog:analyze": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js catalog:analyze",
+    "catalog:generate": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js catalog:generate",
+    "catalog:validate": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js catalog:validate",
+    "catalog:editorial": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js catalog:editorial",
+    "catalog:status": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js catalog:status",
+    "catalog:manifest": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js catalog:manifest",
+    "catalog:storage": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js catalog:storage"
   },
   "dependencies": {
     "next": "latest",

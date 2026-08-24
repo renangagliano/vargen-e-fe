@@ -74,6 +74,11 @@ CREATE TABLE IF NOT EXISTS reel_candidates (
   selection_reason TEXT NOT NULL,
   status TEXT NOT NULL,
   fingerprint TEXT NOT NULL UNIQUE,
+  candidate_confidence REAL,
+  score_breakdown_json TEXT,
+  analysis_version TEXT,
+  configuration_version TEXT,
+  decision TEXT,
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL
 );
@@ -109,6 +114,54 @@ CREATE TABLE IF NOT EXISTS derived_reels (
 CREATE INDEX IF NOT EXISTS idx_reel_candidates_asset ON reel_candidates(source_asset_id);
 CREATE INDEX IF NOT EXISTS idx_reel_candidates_status ON reel_candidates(status);
 CREATE INDEX IF NOT EXISTS idx_derived_reels_asset ON derived_reels(source_asset_id);
+
+CREATE TABLE IF NOT EXISTS media_analysis_cache (
+  analysis_id TEXT PRIMARY KEY,
+  asset_id TEXT NOT NULL REFERENCES media_assets(asset_id) ON DELETE CASCADE,
+  source_checksum TEXT NOT NULL,
+  analysis_version TEXT NOT NULL,
+  report_json TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  UNIQUE(asset_id, source_checksum, analysis_version)
+);
+
+CREATE INDEX IF NOT EXISTS idx_media_analysis_asset ON media_analysis_cache(asset_id, analysis_version);
+
+CREATE TABLE IF NOT EXISTS catalog_runs (
+  run_id TEXT PRIMARY KEY,
+  operation TEXT NOT NULL,
+  started_at TEXT NOT NULL,
+  completed_at TEXT,
+  status TEXT NOT NULL,
+  total_assets INTEGER NOT NULL DEFAULT 0,
+  processed_assets INTEGER NOT NULL DEFAULT 0,
+  selected_candidates INTEGER NOT NULL DEFAULT 0,
+  generated_reels INTEGER NOT NULL DEFAULT 0,
+  failed_assets INTEGER NOT NULL DEFAULT 0,
+  no_qualified_assets INTEGER NOT NULL DEFAULT 0,
+  configuration_version TEXT NOT NULL,
+  error_summary_json TEXT
+);
+
+CREATE TABLE IF NOT EXISTS catalog_asset_runs (
+  run_id TEXT NOT NULL REFERENCES catalog_runs(run_id) ON DELETE CASCADE,
+  asset_id TEXT NOT NULL REFERENCES media_assets(asset_id) ON DELETE CASCADE,
+  source_checksum TEXT,
+  analysis_version TEXT,
+  render_version TEXT,
+  status TEXT NOT NULL,
+  candidates_found INTEGER NOT NULL DEFAULT 0,
+  candidates_selected INTEGER NOT NULL DEFAULT 0,
+  generated_reels INTEGER NOT NULL DEFAULT 0,
+  failure_code TEXT,
+  failure_message_safe TEXT,
+  started_at TEXT NOT NULL,
+  completed_at TEXT,
+  PRIMARY KEY (run_id, asset_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_catalog_asset_runs_asset ON catalog_asset_runs(asset_id, status);
 
 CREATE TABLE IF NOT EXISTS reel_editorial_packages (
   reel_id TEXT NOT NULL REFERENCES derived_reels(reel_id) ON DELETE CASCADE,

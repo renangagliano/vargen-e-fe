@@ -16,6 +16,13 @@ export type MediaConfig = {
   reelSafeZoneTopPx: number;
   reelSafeZoneBottomPx: number;
   reelSafeZoneSidePx: number;
+  minReelCandidateScore: number;
+  minReelConfidence: number;
+  maxReelsPerSource: number;
+  maxCandidateOverlapPercent: number;
+  analysisVersion: string;
+  catalogRenderVersion: string;
+  editorialVersion: string;
 };
 
 function configuredPath(value: string | undefined, fallback: string): { value: string; configured: boolean } {
@@ -56,6 +63,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env, repoRoot = proc
     return Number.isFinite(value) && value >= 0 ? Math.round(value) : fallback;
   };
 
+  const confidence = Number(effectiveEnv.MIN_REEL_CONFIDENCE ?? "0.65");
   return {
     repoRoot: normalizedRepoRoot,
     toolRoot,
@@ -70,6 +78,13 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env, repoRoot = proc
     reelSafeZoneTopPx: numeric("REEL_SAFE_ZONE_TOP_PX", 120),
     reelSafeZoneBottomPx: numeric("REEL_SAFE_ZONE_BOTTOM_PX", 300),
     reelSafeZoneSidePx: numeric("REEL_SAFE_ZONE_SIDE_PX", 80),
+    minReelCandidateScore: numeric("MIN_REEL_CANDIDATE_SCORE", 65),
+    minReelConfidence: Number.isFinite(confidence) ? Math.min(1, Math.max(0, confidence)) : 0.65,
+    maxReelsPerSource: Number.isFinite(Number(effectiveEnv.MAX_REELS_PER_SOURCE)) ? Math.max(0, Math.round(Number(effectiveEnv.MAX_REELS_PER_SOURCE))) : 3,
+    maxCandidateOverlapPercent: Math.min(100, Math.max(0, numeric("MAX_CANDIDATE_OVERLAP_PERCENT", 50))),
+    analysisVersion: effectiveEnv.VARGEN_ANALYSIS_VERSION?.trim() || "phase6-audio-heuristic-v1",
+    catalogRenderVersion: effectiveEnv.VARGEN_CATALOG_RENDER_VERSION?.trim() || "phase6-catalog-render-v1",
+    editorialVersion: effectiveEnv.VARGEN_CATALOG_EDITORIAL_VERSION?.trim() || "phase6-editorial-v1",
   };
 }
 

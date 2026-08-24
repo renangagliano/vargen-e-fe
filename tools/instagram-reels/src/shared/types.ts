@@ -116,6 +116,11 @@ export type ReelCandidate = {
   selectionReason: string;
   status: CandidateStatus;
   fingerprint: string;
+  confidence?: number;
+  scoreBreakdown?: Record<string, number>;
+  analysisVersion?: string;
+  configurationVersion?: string;
+  decision?: "SELECTED" | "REJECTED" | "NO_QUALIFIED_REEL";
 };
 
 export type DerivedReelMetadata = {
@@ -131,6 +136,8 @@ export type DerivedReelMetadata = {
   candidate_category: CandidateCategory;
   selection_reason: string;
   clip_score: number;
+  candidate_confidence?: number | null;
+  score_breakdown?: Record<string, number> | null;
   output_filename: string;
   output_path: string;
   resolution: string | null;
@@ -166,6 +173,7 @@ export type EditorialPackage = {
   selected_hook: string;
   caption: string;
   bible_reference: string;
+  bible_reference_review_required?: boolean;
   cta: string;
   hashtags: string[];
   content_pillar: string;
