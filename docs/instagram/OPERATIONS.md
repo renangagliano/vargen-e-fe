@@ -23,13 +23,19 @@ npm run media:verify
 
 O `media:scan` não usa a biblioteca `public/audio` como substituto e falha explicitamente quando `VARGEN_MEDIA_ROOT` não está configurado.
 
-## Modos de publicação futuros
+## Modos de publicação
 
 - `dry-run`: gera/valida e simula, sem publicar;
 - `approval`: espera aprovação humana e permite publicação automática agendada;
 - `full-auto`: publica somente itens `READY_FOR_PUBLISHING`, com gates, spacing e idempotência.
 
-O default é `dry-run`. A Fase 2 não agenda, não chama Meta e não publica.
+O default é `dry-run`. A Phase 5 persiste controle, aprovação e simulações, mas não publica nem chama Meta.
+
+### Controle de publicação Phase 5
+
+`reel:eligibility` é o ponto único para verificar se um Reel pode ser `READY_FOR_PUBLISHING`. `reel:schedule` cria um job idempotente; em `dry-run` ele apenas simula a agenda. `scheduler:run-once` processa jobs vencidos com lock SQLite. Veja `PUBLISHING.md` e `SCHEDULER.md`.
+
+Os três pilotos continuam `RIGHTS_PENDING_CONFIRMATION`, `READY_FOR_HUMAN_REVIEW` e `NOT_PUBLISHED`; não foram promovidos por automação.
 
 ## Lifecycle futuro de publicação
 

@@ -49,6 +49,10 @@ Cada asset precisa de `rights_notes`, `provenance` e evidência interna. O siste
 
 Quando existir UI/backend, separar papéis de operador, editor e publicador. O publicador não deve ignorar a aprovação. A configuração inicial deve impedir qualquer publicação automática.
 
+Na Phase 5, ações locais exigem `--by` e nota. A confirmação de direitos e aprovação editorial são auditadas. Alterações materiais geram nova versão editorial e invalidam a aprovação anterior. Jobs usam `publication_key`, lock durável e mensagens de erro seguras.
+
+`META_PRODUCTION_ELIGIBLE=false` é fail-closed até a verificação empresarial e o acesso oficial serem comprovados. O adaptador Meta não usa browser automation e não expõe o OneDrive.
+
 ## Logs e incidentes
 
 Logs estruturados devem registrar stage, status, duração, error code e retry count, sem conteúdo sensível. Erros de token, permissão ou direitos devem interromper a fronteira Meta e pedir ação humana.

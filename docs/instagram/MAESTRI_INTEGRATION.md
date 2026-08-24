@@ -52,4 +52,6 @@ Começar com `MaestriOrchestrationAdapter` opcional e um worker local/CI explíc
 
 ## Alvo de automação
 
+Na Phase 5, Maestri tem uma fronteira de comandos estáveis para consultar elegibilidade, aprovação, direitos, agenda, status, dry-run e auditoria. Não há integração profunda nem dependência do portal.
+
 No estado final, Maestri poderá coordenar descoberta, elegibilidade, jobs, aprovação, scheduler, retries seguros, publicação oficial e coleta de analytics por adapters. O portal Instagram continuará restrito a operação humana/inspeção; produção não usará browser automation.

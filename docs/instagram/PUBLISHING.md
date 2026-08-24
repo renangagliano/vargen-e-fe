@@ -1,0 +1,46 @@
+# Phase 5 — Publishing Control Plane
+
+Phase 5 adds a local, durable control plane for future Instagram publishing. It does not publish the pilot or call Meta.
+
+## Operating modes
+
+`INSTAGRAM_PUBLISH_MODE=dry-run` is the default. It creates a safe payload, checks gates and records `DRY_RUN_VALIDATED` or `DRY_RUN_BLOCKED`; it never calls a network publisher.
+
+`approval` requires explicit rights confirmation and editorial approval before a job can be scheduled. `full-auto` is a future mode and remains disabled until official Meta eligibility, a verified temporary media provider and operational approval are present.
+
+## Gates
+
+The centralized eligibility service checks technical validation, source checksum, editorial version approval, rights confirmation, output and cover existence, editorial fields, Bible reference, duplicate publication, spacing and frequency. Pending rights or an unapproved editorial version produce `BLOCKED` and cannot become `READY_FOR_PUBLISHING`.
+
+## Rights and review
+
+```text
+RIGHTS_PENDING_CONFIRMATION -> RIGHTS_CONFIRMED | RIGHTS_REJECTED
+READY_FOR_HUMAN_REVIEW      -> APPROVED | REJECTED | NEEDS_CHANGES
+```
+
+Actions require an operator identity and note. A material editorial edit creates a new version and resets review to `READY_FOR_HUMAN_REVIEW`.
+
+Useful commands:
+
+```text
+node tools/instagram-reels/dist/src/cli/index.js reel:eligibility <reel-id>
+node tools/instagram-reels/dist/src/cli/index.js reel:rights <reel-id> confirm --by=<operator> --note=<evidence>
+node tools/instagram-reels/dist/src/cli/index.js reel:approve <reel-id> --version=1 --by=<editor> --note=<review>
+node tools/instagram-reels/dist/src/cli/index.js publish:dry-run <reel-id>
+node tools/instagram-reels/dist/src/cli/index.js reel:schedule <reel-id> <ISO-date> --by=<operator>
+```
+
+The pilot remains rights-pending and must not be confirmed automatically.
+
+## Durable publication state
+
+SQLite persists publication jobs, idempotency keys, retry metadata, safe payloads and audit events. Runtime state is outside Git and outside the OneDrive master directory.
+
+```text
+NOT_PUBLISHED -> READY_FOR_PUBLISHING -> SCHEDULED -> QUEUED -> PUBLISHING
+  -> PROCESSING_REMOTE -> PUBLISHED
+  -> PUBLISH_FAILED | BLOCKED_EXTERNAL | CANCELLED
+```
+
+Dry-run outcomes are separate from real `PUBLISHED` state.
