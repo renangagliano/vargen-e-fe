@@ -9,3 +9,4 @@ import "./reels-structure.test.js";
 import "./reels.test.js";
 import "./editorial.test.js";
 import "./publishing.test.js";
+import "./catalog.test.js";
