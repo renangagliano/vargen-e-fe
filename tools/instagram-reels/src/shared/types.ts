@@ -3,7 +3,7 @@ export type AvailabilityStatus =
   | "NOT_LOCALLY_AVAILABLE"
   | "ACCESS_ERROR";
 
-export type RightsStatus = "UNKNOWN" | "USER_OWNED" | "LICENSED" | "REVIEW_REQUIRED";
+export type RightsStatus = "RIGHTS_PENDING_CONFIRMATION" | "UNKNOWN" | "USER_OWNED" | "LICENSED" | "REVIEW_REQUIRED";
 
 export type MatchStatus = "MATCHED" | "UNMATCHED" | "AMBIGUOUS" | "REVIEW_REQUIRED";
 

@@ -11,6 +11,8 @@ export type MediaConfig = {
   mediaRootConfigured: boolean;
   reelsOutputRootConfigured: boolean;
   pipelineStateRootConfigured: boolean;
+  ffmpegBin: string | null;
+  ffprobeBin: string | null;
 };
 
 function configuredPath(value: string | undefined, fallback: string): { value: string; configured: boolean } {
@@ -56,6 +58,8 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env, repoRoot = proc
     mediaRootConfigured: Boolean(media),
     reelsOutputRootConfigured: output.configured,
     pipelineStateRootConfigured: state.configured,
+    ffmpegBin: effectiveEnv.FFMPEG_BIN?.trim() || null,
+    ffprobeBin: effectiveEnv.FFPROBE_BIN?.trim() || null,
   };
 }
 

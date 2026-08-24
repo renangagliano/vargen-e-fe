@@ -122,7 +122,7 @@ Cada vínculo registra método, confiança e score. Matches de baixa confiança 
 
 ## Direitos e proveniência
 
-Todo asset indexado retém checksum, path relativo, filename, timestamps de scan, metadata, disponibilidade e status de direitos. O default é `UNKNOWN`; a existência em OneDrive não prova propriedade.
+Todo asset indexado retém checksum, path relativo, filename, timestamps de scan, metadata, disponibilidade e status de direitos. O default é `RIGHTS_PENDING_CONFIRMATION`; a existência em OneDrive não prova propriedade.
 
 ## Backup
 

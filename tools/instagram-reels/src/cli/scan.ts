@@ -48,7 +48,7 @@ export async function runScan(config: MediaConfig = loadConfig()): Promise<ScanS
   const scanId = createScanRun(db);
   markLocationsAbsent(db);
   const summary = emptySummary();
-  const tools = await detectMediaTools();
+  const tools = await detectMediaTools({ ...process.env, FFMPEG_BIN: config.ffmpegBin ?? process.env.FFMPEG_BIN, FFPROBE_BIN: config.ffprobeBin ?? process.env.FFPROBE_BIN });
   const catalog = await loadSongCatalog(config.repoRoot);
   const discovery = await discoverMedia(config.mediaRoot);
   summary.directoriesVisited = discovery.directoriesVisited;

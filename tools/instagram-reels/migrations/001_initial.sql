@@ -17,7 +17,7 @@ CREATE TABLE IF NOT EXISTS media_assets (
   bitrate INTEGER,
   container TEXT,
   availability_status TEXT NOT NULL,
-  rights_status TEXT NOT NULL DEFAULT 'UNKNOWN',
+  rights_status TEXT NOT NULL DEFAULT 'RIGHTS_PENDING_CONFIRMATION',
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL,
   last_seen_at TEXT NOT NULL

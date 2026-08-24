@@ -102,7 +102,7 @@ export async function runDoctor(config = loadConfig()): Promise<DoctorCheck[]> {
     checks.push({ name: "Reels folder structure", status: "WARN", detail: "Waiting for configured sibling output root and media root." });
   }
 
-  const tools = await detectMediaTools();
+  const tools = await detectMediaTools({ ...process.env, FFMPEG_BIN: config.ffmpegBin ?? process.env.FFMPEG_BIN, FFPROBE_BIN: config.ffprobeBin ?? process.env.FFPROBE_BIN });
   checks.push({ name: "FFmpeg", status: tools.ffmpeg.installed ? "PASS" : "FAIL", detail: tools.ffmpeg.version ?? tools.ffmpeg.error ?? "not found" });
   checks.push({ name: "FFprobe", status: tools.ffprobe.installed ? "PASS" : "FAIL", detail: tools.ffprobe.version ?? tools.ffprobe.error ?? "not found" });
 

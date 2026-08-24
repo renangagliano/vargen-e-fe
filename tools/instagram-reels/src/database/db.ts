@@ -25,6 +25,7 @@ export function openDatabase(config: MediaConfig): DatabaseSync {
   db.exec("PRAGMA foreign_keys = ON;");
   const migrationPath = path.join(config.toolRoot, "migrations", "001_initial.sql");
   db.exec(fs.readFileSync(migrationPath, "utf8"));
+  db.prepare("UPDATE media_assets SET rights_status = 'RIGHTS_PENDING_CONFIRMATION' WHERE rights_status = 'UNKNOWN'").run();
   return db;
 }
 
@@ -65,7 +66,7 @@ export function upsertAsset(
       display_aspect_ratio, sample_aspect_ratio, frame_rate, video_codec, pixel_format,
       audio_codec, audio_channels, audio_sample_rate, bitrate, container,
       availability_status, rights_status, created_at, updated_at, last_seen_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'UNKNOWN', ?, ?, ?)
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'RIGHTS_PENDING_CONFIRMATION', ?, ?, ?)
     ON CONFLICT(asset_id) DO UPDATE SET
       extension = excluded.extension,
       file_size = excluded.file_size,
@@ -85,7 +86,7 @@ export function upsertAsset(
       availability_status = excluded.availability_status,
       updated_at = excluded.updated_at,
       last_seen_at = excluded.last_seen_at
-  `).run(
+    `).run(
     input.assetId, input.checksum, input.extension, input.fileSize,
     input.metadata.durationMs, input.metadata.width, input.metadata.height,
     input.metadata.displayAspectRatio, input.metadata.sampleAspectRatio, input.metadata.frameRate,
