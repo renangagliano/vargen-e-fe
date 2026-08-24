@@ -148,6 +148,40 @@ export type DerivedReelMetadata = {
   source_checksum_after: string | null;
 };
 
+export type HookCategory = "QUESTION" | "SCRIPTURE" | "IDENTIFICATION" | "EMOTIONAL" | "OVERCOMING" | "REFLECTION" | "CURIOSITY";
+
+export type HookCandidate = {
+  category: HookCategory;
+  text: string;
+};
+
+export type PublicationPriority = "HIGH" | "MEDIUM" | "LOW";
+
+export type EditorialPackage = {
+  reel_id: string;
+  editorial_title: string;
+  hook_candidates: HookCandidate[];
+  selected_hook: string;
+  caption: string;
+  bible_reference: string;
+  cta: string;
+  hashtags: string[];
+  content_pillar: string;
+  secondary_pillar: string | null;
+  editorial_intent: string;
+  cover_filename: string;
+  cover_path: string;
+  cover_text: string;
+  editorial_version: number;
+  review_status: "READY_FOR_HUMAN_REVIEW";
+  publication_status: "NOT_PUBLISHED";
+  publication_priority: PublicationPriority;
+  suggested_context: string;
+  suggested_spacing: string;
+  rights_status: RightsStatus;
+  generated_at: string;
+};
+
 export const EMPTY_METADATA: MediaMetadata = {
   durationMs: null,
   width: null,

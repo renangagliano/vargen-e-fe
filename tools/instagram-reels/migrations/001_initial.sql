@@ -105,3 +105,31 @@ CREATE TABLE IF NOT EXISTS derived_reels (
 CREATE INDEX IF NOT EXISTS idx_reel_candidates_asset ON reel_candidates(source_asset_id);
 CREATE INDEX IF NOT EXISTS idx_reel_candidates_status ON reel_candidates(status);
 CREATE INDEX IF NOT EXISTS idx_derived_reels_asset ON derived_reels(source_asset_id);
+
+CREATE TABLE IF NOT EXISTS reel_editorial_packages (
+  reel_id TEXT NOT NULL REFERENCES derived_reels(reel_id) ON DELETE CASCADE,
+  editorial_version INTEGER NOT NULL,
+  editorial_title TEXT NOT NULL,
+  selected_hook TEXT NOT NULL,
+  caption TEXT NOT NULL,
+  bible_reference TEXT NOT NULL,
+  cta TEXT NOT NULL,
+  hashtags_json TEXT NOT NULL,
+  content_pillar TEXT NOT NULL,
+  secondary_pillar TEXT,
+  editorial_intent TEXT NOT NULL,
+  cover_relative_path TEXT NOT NULL,
+  cover_text TEXT NOT NULL,
+  review_status TEXT NOT NULL,
+  publication_status TEXT NOT NULL,
+  publication_priority TEXT NOT NULL,
+  suggested_context TEXT NOT NULL,
+  suggested_spacing TEXT NOT NULL,
+  rights_status TEXT NOT NULL,
+  package_json TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  PRIMARY KEY (reel_id, editorial_version)
+);
+
+CREATE INDEX IF NOT EXISTS idx_editorial_packages_reel ON reel_editorial_packages(reel_id);

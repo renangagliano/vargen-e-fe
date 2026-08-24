@@ -2,7 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import type { MediaConfig } from "../config/index.js";
-import type { MediaMetadata, AvailabilityStatus, RightsStatus, SongMatch, ReelCandidate, CandidateStatus } from "../shared/types.js";
+import type { MediaMetadata, AvailabilityStatus, RightsStatus, SongMatch, ReelCandidate, CandidateStatus, EditorialPackage } from "../shared/types.js";
 import { databasePath } from "../config/index.js";
 
 type SqlRow = Record<string, unknown>;
@@ -267,4 +267,49 @@ export function upsertDerivedReel(db: DatabaseSync, input: {
 
 export function derivedReelById(db: DatabaseSync, reelId: string): SqlRow | undefined {
   return db.prepare("SELECT * FROM derived_reels WHERE reel_id = ?").get(reelId) as SqlRow | undefined;
+}
+
+export function derivedReelsForAsset(db: DatabaseSync, assetId: string): SqlRow[] {
+  return db.prepare("SELECT * FROM derived_reels WHERE source_asset_id = ? ORDER BY output_relative_path").all(assetId) as SqlRow[];
+}
+
+export function saveEditorialPackage(db: DatabaseSync, editorial: EditorialPackage): EditorialPackage {
+  const timestamp = now();
+  const current = db.prepare("SELECT editorial_version, package_json FROM reel_editorial_packages WHERE reel_id = ? ORDER BY editorial_version DESC LIMIT 1").get(editorial.reel_id) as { editorial_version?: number | null; package_json?: string } | undefined;
+  if (current?.package_json) {
+    const previous = JSON.parse(current.package_json) as EditorialPackage;
+    const comparable = (value: EditorialPackage) => JSON.stringify({ ...value, editorial_version: 0, generated_at: "" });
+    if (comparable(previous) === comparable(editorial)) return previous;
+  }
+  const nextVersion = current?.editorial_version ? Number(current.editorial_version) + 1 : editorial.editorial_version;
+  const packageToStore = { ...editorial, editorial_version: nextVersion };
+  db.prepare(`
+    INSERT INTO reel_editorial_packages (
+      reel_id, editorial_version, editorial_title, selected_hook, caption,
+      bible_reference, cta, hashtags_json, content_pillar, secondary_pillar,
+      editorial_intent, cover_relative_path, cover_text, review_status,
+      publication_status, publication_priority, suggested_context,
+      suggested_spacing, rights_status, package_json, created_at, updated_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(
+    packageToStore.reel_id, packageToStore.editorial_version, packageToStore.editorial_title,
+    packageToStore.selected_hook, packageToStore.caption, packageToStore.bible_reference,
+    packageToStore.cta, JSON.stringify(packageToStore.hashtags), packageToStore.content_pillar,
+    packageToStore.secondary_pillar, packageToStore.editorial_intent,
+    packageToStore.cover_filename, packageToStore.cover_text, packageToStore.review_status,
+    packageToStore.publication_status, packageToStore.publication_priority,
+    packageToStore.suggested_context, packageToStore.suggested_spacing,
+    packageToStore.rights_status, JSON.stringify(packageToStore), timestamp, timestamp,
+  );
+  return packageToStore;
+}
+
+export function latestEditorialPackage(db: DatabaseSync, reelId: string): EditorialPackage | undefined {
+  const row = db.prepare("SELECT package_json FROM reel_editorial_packages WHERE reel_id = ? ORDER BY editorial_version DESC LIMIT 1").get(reelId) as { package_json?: string } | undefined;
+  if (!row?.package_json) return undefined;
+  return JSON.parse(row.package_json) as EditorialPackage;
+}
+
+export function latestEditorialPackagesForAsset(db: DatabaseSync, assetId: string): EditorialPackage[] {
+  return derivedReelsForAsset(db, assetId).map((row) => latestEditorialPackage(db, String(row.reel_id))).filter((value): value is EditorialPackage => Boolean(value));
 }

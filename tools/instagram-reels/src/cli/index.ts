@@ -3,6 +3,7 @@ import { runDoctor, printDoctor } from "./doctor.js";
 import { runScan, printScanSummary } from "./scan.js";
 import { inspectCatalog, listCatalog, verifyCatalog } from "./catalog.js";
 import { analyzeReelAsset, assetArgument, generateReelPilot, inspectReel, listReelCandidates, validateStoredReel } from "./reels.js";
+import { generateEditorialBatchCommand, generateEditorialCommand, requiredArgument, reviewEditorialCommand } from "./editorial.js";
 
 function filterArgument(args: string[]): string | undefined {
   const value = args.find((arg) => arg.startsWith("--"));
@@ -46,8 +47,17 @@ async function main(): Promise<void> {
     case "reel:validate":
       await validateStoredReel(assetArgument(args));
       return;
+    case "reel:editorial":
+      await generateEditorialCommand(requiredArgument(args));
+      return;
+    case "reel:editorial-batch":
+      await generateEditorialBatchCommand(requiredArgument(args));
+      return;
+    case "reel:review":
+      await reviewEditorialCommand(requiredArgument(args));
+      return;
     default:
-      console.log("Usage: doctor | scan | list [--matched|--unmatched|--ambiguous|--review_required|--available|--unavailable] | inspect <asset-id> | verify | reel:analyze <asset-id> | reel:candidates <asset-id> | reel:generate <asset-id> | reel:inspect <reel-id> | reel:validate <reel-id>");
+      console.log("Usage: doctor | scan | list [--matched|--unmatched|--ambiguous|--review_required|--available|--unavailable] | inspect <asset-id> | verify | reel:analyze <asset-id> | reel:candidates <asset-id> | reel:generate <asset-id> | reel:inspect <reel-id> | reel:validate <reel-id> | reel:editorial <reel-id> | reel:editorial-batch <asset-id> | reel:review <asset-id>");
       process.exitCode = command ? 1 : 0;
   }
 }
