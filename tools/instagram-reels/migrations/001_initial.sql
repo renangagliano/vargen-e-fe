@@ -94,6 +94,10 @@ CREATE TABLE IF NOT EXISTS derived_reels (
   file_size INTEGER,
   validation_status TEXT NOT NULL,
   rights_status TEXT NOT NULL,
+  rights_confirmed_by TEXT,
+  rights_confirmed_at TEXT,
+  rights_confirmation_note TEXT,
+  publication_status TEXT NOT NULL DEFAULT 'NOT_PUBLISHED',
   source_checksum_before TEXT,
   source_checksum_after TEXT,
   template_version TEXT NOT NULL,
@@ -126,6 +130,9 @@ CREATE TABLE IF NOT EXISTS reel_editorial_packages (
   suggested_context TEXT NOT NULL,
   suggested_spacing TEXT NOT NULL,
   rights_status TEXT NOT NULL,
+  reviewed_by TEXT,
+  reviewed_at TEXT,
+  review_note TEXT,
   package_json TEXT NOT NULL,
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL,
@@ -133,3 +140,45 @@ CREATE TABLE IF NOT EXISTS reel_editorial_packages (
 );
 
 CREATE INDEX IF NOT EXISTS idx_editorial_packages_reel ON reel_editorial_packages(reel_id);
+
+CREATE TABLE IF NOT EXISTS publication_jobs (
+  publication_job_id TEXT PRIMARY KEY,
+  publication_key TEXT NOT NULL UNIQUE,
+  reel_id TEXT NOT NULL REFERENCES derived_reels(reel_id) ON DELETE CASCADE,
+  editorial_version INTEGER NOT NULL,
+  publisher TEXT NOT NULL,
+  mode TEXT NOT NULL,
+  scheduled_at TEXT NOT NULL,
+  timezone TEXT NOT NULL,
+  status TEXT NOT NULL,
+  attempt_count INTEGER NOT NULL DEFAULT 0,
+  max_attempts INTEGER NOT NULL DEFAULT 3,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  last_attempt_at TEXT,
+  next_attempt_at TEXT,
+  published_at TEXT,
+  remote_container_id TEXT,
+  remote_media_id TEXT,
+  error_code TEXT,
+  error_message_safe TEXT,
+  failure_class TEXT,
+  locked_by TEXT,
+  locked_until TEXT,
+  payload_json_safe TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_publication_jobs_due ON publication_jobs(status, scheduled_at);
+CREATE INDEX IF NOT EXISTS idx_publication_jobs_reel ON publication_jobs(reel_id);
+
+CREATE TABLE IF NOT EXISTS publication_audit_events (
+  event_id TEXT PRIMARY KEY,
+  entity_type TEXT NOT NULL,
+  entity_id TEXT NOT NULL,
+  event_type TEXT NOT NULL,
+  actor TEXT NOT NULL,
+  timestamp TEXT NOT NULL,
+  metadata_json_safe TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_publication_audit_entity ON publication_audit_events(entity_type, entity_id, timestamp);

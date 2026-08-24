@@ -97,7 +97,7 @@ export function validateEditorialPackage(editorial: EditorialPackage): string[] 
   if (editorial.bible_reference !== PILOT_BIBLE_REFERENCE) errors.push("BIBLE_REFERENCE_NOT_VERIFIED");
   if (editorial.hashtags.length < 5 || editorial.hashtags.length > 10) errors.push("HASHTAG_COUNT_INVALID");
   if (!editorial.hashtags.includes("#VargenEFé")) errors.push("BRAND_HASHTAG_MISSING");
-  if (editorial.rights_status !== "RIGHTS_PENDING_CONFIRMATION") errors.push("RIGHTS_STATUS_CHANGED_UNEXPECTEDLY");
+  if (editorial.rights_status !== "RIGHTS_PENDING_CONFIRMATION" && editorial.rights_status !== "RIGHTS_CONFIRMED") errors.push("RIGHTS_STATUS_CHANGED_UNEXPECTEDLY");
   if (editorial.publication_status !== "NOT_PUBLISHED") errors.push("PUBLICATION_STATUS_NOT_DRY");
   return errors;
 }

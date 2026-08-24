@@ -4,6 +4,7 @@ import { runScan, printScanSummary } from "./scan.js";
 import { inspectCatalog, listCatalog, verifyCatalog } from "./catalog.js";
 import { analyzeReelAsset, assetArgument, generateReelPilot, inspectReel, listReelCandidates, validateStoredReel } from "./reels.js";
 import { generateEditorialBatchCommand, generateEditorialCommand, requiredArgument, reviewEditorialCommand } from "./editorial.js";
+import { runPublishingCommand } from "./publishing.js";
 
 function filterArgument(args: string[]): string | undefined {
   const value = args.find((arg) => arg.startsWith("--"));
@@ -13,6 +14,7 @@ function filterArgument(args: string[]): string | undefined {
 async function main(): Promise<void> {
   const [, , command, ...args] = process.argv;
   const config = loadConfig();
+  if (await runPublishingCommand(command, args)) return;
   switch (command) {
     case "doctor": {
       const checks = await runDoctor(config);
@@ -57,7 +59,7 @@ async function main(): Promise<void> {
       await reviewEditorialCommand(requiredArgument(args));
       return;
     default:
-      console.log("Usage: doctor | scan | list [--matched|--unmatched|--ambiguous|--review_required|--available|--unavailable] | inspect <asset-id> | verify | reel:analyze <asset-id> | reel:candidates <asset-id> | reel:generate <asset-id> | reel:inspect <reel-id> | reel:validate <reel-id> | reel:editorial <reel-id> | reel:editorial-batch <asset-id> | reel:review <asset-id>");
+      console.log("Usage: doctor | scan | list ... | reel:analyze <asset-id> | reel:candidates <asset-id> | reel:generate <asset-id> | reel:inspect <reel-id> | reel:validate <reel-id> | reel:editorial <reel-id> | reel:editorial-batch <asset-id> | reel:review <asset-id> | reel:rights <reel-id> confirm|reject --by=<operator> | reel:approve <reel-id> --version=1 --by=<operator> | reel:eligibility <reel-id> | reel:schedule <reel-id> <datetime> --by=<operator> | publish:dry-run <reel-id> | publish:status <job-id> | scheduler:run-once");
       process.exitCode = command ? 1 : 0;
   }
 }

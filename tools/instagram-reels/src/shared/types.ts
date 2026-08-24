@@ -3,7 +3,7 @@ export type AvailabilityStatus =
   | "NOT_LOCALLY_AVAILABLE"
   | "ACCESS_ERROR";
 
-export type RightsStatus = "RIGHTS_PENDING_CONFIRMATION" | "UNKNOWN" | "USER_OWNED" | "LICENSED" | "REVIEW_REQUIRED";
+export type RightsStatus = "RIGHTS_PENDING_CONFIRMATION" | "RIGHTS_CONFIRMED" | "RIGHTS_REJECTED" | "UNKNOWN" | "USER_OWNED" | "LICENSED" | "REVIEW_REQUIRED";
 
 export type MatchStatus = "MATCHED" | "UNMATCHED" | "AMBIGUOUS" | "REVIEW_REQUIRED";
 
@@ -157,6 +157,8 @@ export type HookCandidate = {
 
 export type PublicationPriority = "HIGH" | "MEDIUM" | "LOW";
 
+export type EditorialReviewStatus = "READY_FOR_HUMAN_REVIEW" | "APPROVED" | "REJECTED" | "NEEDS_CHANGES";
+
 export type EditorialPackage = {
   reel_id: string;
   editorial_title: string;
@@ -173,13 +175,59 @@ export type EditorialPackage = {
   cover_path: string;
   cover_text: string;
   editorial_version: number;
-  review_status: "READY_FOR_HUMAN_REVIEW";
+  review_status: EditorialReviewStatus;
   publication_status: "NOT_PUBLISHED";
   publication_priority: PublicationPriority;
   suggested_context: string;
   suggested_spacing: string;
   rights_status: RightsStatus;
   generated_at: string;
+  reviewed_by?: string | null;
+  reviewed_at?: string | null;
+  review_note?: string | null;
+};
+
+export type PublicationMode = "dry-run" | "approval" | "full-auto";
+export type PublicationStatus = "NOT_PUBLISHED" | "NOT_ELIGIBLE" | "READY_FOR_PUBLISHING" | "SCHEDULED" | "QUEUED" | "PUBLISHING" | "PROCESSING_REMOTE" | "PUBLISHED" | "PUBLISH_FAILED" | "BLOCKED_EXTERNAL" | "CANCELLED" | "DRY_RUN_VALIDATED" | "DRY_RUN_BLOCKED";
+export type FailureClass = "TRANSIENT" | "PERMANENT" | "AUTHENTICATION" | "RATE_LIMIT" | "VALIDATION" | "EXTERNAL_BLOCKER";
+
+export type EligibilityResult = {
+  status: "READY_FOR_PUBLISHING" | "BLOCKED";
+  gates: Record<string, "PASS" | "FAIL" | "BLOCKED">;
+  reasons: string[];
+};
+
+export type PublicationPayload = {
+  publication_key: string;
+  reel_id: string;
+  editorial_version: number;
+  caption: string;
+  video_url: string;
+  cover_path: string;
+  target_account: string;
+};
+
+export type PublicationJob = {
+  publication_job_id: string;
+  publication_key: string;
+  reel_id: string;
+  editorial_version: number;
+  publisher: string;
+  mode: PublicationMode;
+  scheduled_at: string;
+  timezone: string;
+  status: PublicationStatus;
+  attempt_count: number;
+  max_attempts: number;
+  created_at: string;
+  updated_at: string;
+  last_attempt_at: string | null;
+  published_at: string | null;
+  remote_container_id: string | null;
+  remote_media_id: string | null;
+  error_code: string | null;
+  error_message_safe: string | null;
+  failure_class: FailureClass | null;
 };
 
 export const EMPTY_METADATA: MediaMetadata = {

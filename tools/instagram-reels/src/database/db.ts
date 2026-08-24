@@ -2,7 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import type { MediaConfig } from "../config/index.js";
-import type { MediaMetadata, AvailabilityStatus, RightsStatus, SongMatch, ReelCandidate, CandidateStatus, EditorialPackage } from "../shared/types.js";
+import type { MediaMetadata, AvailabilityStatus, RightsStatus, SongMatch, ReelCandidate, CandidateStatus, EditorialPackage, EditorialReviewStatus, PublicationJob, PublicationMode, PublicationStatus, FailureClass } from "../shared/types.js";
 import { databasePath } from "../config/index.js";
 
 type SqlRow = Record<string, unknown>;
@@ -25,8 +25,20 @@ export function openDatabase(config: MediaConfig): DatabaseSync {
   db.exec("PRAGMA foreign_keys = ON;");
   const migrationPath = path.join(config.toolRoot, "migrations", "001_initial.sql");
   db.exec(fs.readFileSync(migrationPath, "utf8"));
+  ensureColumn(db, "derived_reels", "rights_confirmed_by", "TEXT");
+  ensureColumn(db, "derived_reels", "rights_confirmed_at", "TEXT");
+  ensureColumn(db, "derived_reels", "rights_confirmation_note", "TEXT");
+  ensureColumn(db, "derived_reels", "publication_status", "TEXT NOT NULL DEFAULT 'NOT_PUBLISHED'");
+  ensureColumn(db, "reel_editorial_packages", "reviewed_by", "TEXT");
+  ensureColumn(db, "reel_editorial_packages", "reviewed_at", "TEXT");
+  ensureColumn(db, "reel_editorial_packages", "review_note", "TEXT");
   db.prepare("UPDATE media_assets SET rights_status = 'RIGHTS_PENDING_CONFIRMATION' WHERE rights_status = 'UNKNOWN'").run();
   return db;
+}
+
+function ensureColumn(db: DatabaseSync, table: string, column: string, definition: string): void {
+  const columns = db.prepare(`PRAGMA table_info(${table})`).all() as Array<{ name?: string }>;
+  if (!columns.some((item) => item.name === column)) db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`);
 }
 
 export function createScanRun(db: DatabaseSync): string {
@@ -312,4 +324,68 @@ export function latestEditorialPackage(db: DatabaseSync, reelId: string): Editor
 
 export function latestEditorialPackagesForAsset(db: DatabaseSync, assetId: string): EditorialPackage[] {
   return derivedReelsForAsset(db, assetId).map((row) => latestEditorialPackage(db, String(row.reel_id))).filter((value): value is EditorialPackage => Boolean(value));
+}
+
+export function updateRightsStatus(db: DatabaseSync, reelId: string, status: RightsStatus, actor: string, note: string): void {
+  const timestamp = now();
+  db.prepare("UPDATE derived_reels SET rights_status = ?, rights_confirmed_by = ?, rights_confirmed_at = ?, rights_confirmation_note = ?, updated_at = ? WHERE reel_id = ?").run(status, status === "RIGHTS_CONFIRMED" ? actor : null, status === "RIGHTS_CONFIRMED" ? timestamp : null, note, timestamp, reelId);
+  db.prepare("UPDATE reel_editorial_packages SET rights_status = ?, package_json = json_set(package_json, '$.rights_status', ?), updated_at = ? WHERE reel_id = ?").run(status, status, timestamp, reelId);
+}
+
+export function updateEditorialReview(db: DatabaseSync, reelId: string, version: number, status: EditorialReviewStatus, actor: string, note: string): EditorialPackage {
+  const row = db.prepare("SELECT package_json FROM reel_editorial_packages WHERE reel_id = ? AND editorial_version = ?").get(reelId, version) as { package_json?: string } | undefined;
+  if (!row?.package_json) throw new Error("EDITORIAL_VERSION_NOT_FOUND");
+  const packageValue = { ...(JSON.parse(row.package_json) as EditorialPackage), review_status: status, reviewed_by: actor, reviewed_at: now(), review_note: note };
+  db.prepare("UPDATE reel_editorial_packages SET review_status = ?, reviewed_by = ?, reviewed_at = ?, review_note = ?, package_json = ?, updated_at = ? WHERE reel_id = ? AND editorial_version = ?").run(status, actor, packageValue.reviewed_at, note, JSON.stringify(packageValue), packageValue.reviewed_at, reelId, version);
+  return packageValue;
+}
+
+export function setPublicationStatus(db: DatabaseSync, reelId: string, status: PublicationStatus): void {
+  db.prepare("UPDATE derived_reels SET publication_status = ?, updated_at = ? WHERE reel_id = ?").run(status, now(), reelId);
+}
+
+export function createPublicationJob(db: DatabaseSync, input: {
+  jobId: string; publicationKey: string; reelId: string; editorialVersion: number; publisher: string; mode: PublicationMode; scheduledAt: string; timezone: string; status: PublicationStatus; maxAttempts: number; payloadJsonSafe: string;
+}): void {
+  const timestamp = now();
+  db.prepare(`
+    INSERT INTO publication_jobs (
+      publication_job_id, publication_key, reel_id, editorial_version, publisher,
+      mode, scheduled_at, timezone, status, attempt_count, max_attempts,
+      created_at, updated_at, payload_json_safe
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?)
+  `).run(input.jobId, input.publicationKey, input.reelId, input.editorialVersion, input.publisher, input.mode, input.scheduledAt, input.timezone, input.status, input.maxAttempts, timestamp, timestamp, input.payloadJsonSafe);
+}
+
+export function publicationJobById(db: DatabaseSync, jobId: string): SqlRow | undefined {
+  return db.prepare("SELECT * FROM publication_jobs WHERE publication_job_id = ?").get(jobId) as SqlRow | undefined;
+}
+
+export function publicationJobByKey(db: DatabaseSync, key: string): SqlRow | undefined {
+  return db.prepare("SELECT * FROM publication_jobs WHERE publication_key = ?").get(key) as SqlRow | undefined;
+}
+
+export function successfulPublicationExists(db: DatabaseSync, key: string): boolean {
+  const row = db.prepare("SELECT 1 AS found FROM publication_jobs WHERE publication_key = ? AND status = 'PUBLISHED' LIMIT 1").get(key) as { found?: number } | undefined;
+  return Boolean(row?.found);
+}
+
+export function duePublicationJob(db: DatabaseSync, nowIso: string): SqlRow | undefined {
+  return db.prepare("SELECT * FROM publication_jobs WHERE status IN ('SCHEDULED', 'QUEUED') AND scheduled_at <= ? AND (next_attempt_at IS NULL OR next_attempt_at <= ?) AND (locked_until IS NULL OR locked_until < ?) ORDER BY scheduled_at LIMIT 1").get(nowIso, nowIso, nowIso) as SqlRow | undefined;
+}
+
+export function lockPublicationJob(db: DatabaseSync, jobId: string, workerId: string, lockUntil: string): void {
+  db.prepare("UPDATE publication_jobs SET status = 'PUBLISHING', attempt_count = attempt_count + 1, last_attempt_at = ?, locked_by = ?, locked_until = ?, updated_at = ? WHERE publication_job_id = ?").run(now(), workerId, lockUntil, now(), jobId);
+}
+
+export function updatePublicationJob(db: DatabaseSync, jobId: string, input: { status: PublicationStatus; errorCode?: string | null; errorMessageSafe?: string | null; failureClass?: FailureClass | null; nextAttemptAt?: string | null; remoteContainerId?: string | null; remoteMediaId?: string | null; publishedAt?: string | null }): void {
+  db.prepare("UPDATE publication_jobs SET status = ?, error_code = ?, error_message_safe = ?, failure_class = ?, next_attempt_at = ?, remote_container_id = COALESCE(?, remote_container_id), remote_media_id = COALESCE(?, remote_media_id), published_at = COALESCE(?, published_at), locked_by = NULL, locked_until = NULL, updated_at = ? WHERE publication_job_id = ?").run(input.status, input.errorCode ?? null, input.errorMessageSafe ?? null, input.failureClass ?? null, input.nextAttemptAt ?? null, input.remoteContainerId ?? null, input.remoteMediaId ?? null, input.publishedAt ?? null, now(), jobId);
+}
+
+export function appendAuditEvent(db: DatabaseSync, input: { eventId: string; entityType: string; entityId: string; eventType: string; actor: string; metadataJsonSafe: string }): void {
+  db.prepare("INSERT INTO publication_audit_events (event_id, entity_type, entity_id, event_type, actor, timestamp, metadata_json_safe) VALUES (?, ?, ?, ?, ?, ?, ?)").run(input.eventId, input.entityType, input.entityId, input.eventType, input.actor, now(), input.metadataJsonSafe);
+}
+
+export function auditEvents(db: DatabaseSync, entityId?: string): SqlRow[] {
+  return entityId ? db.prepare("SELECT * FROM publication_audit_events WHERE entity_id = ? ORDER BY timestamp").all(entityId) as SqlRow[] : db.prepare("SELECT * FROM publication_audit_events ORDER BY timestamp").all() as SqlRow[];
 }

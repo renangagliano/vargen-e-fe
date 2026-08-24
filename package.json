@@ -22,7 +22,14 @@
     "reel:validate": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js reel:validate",
     "reel:editorial": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js reel:editorial",
     "reel:editorial-batch": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js reel:editorial-batch",
-    "reel:review": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js reel:review"
+    "reel:review": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js reel:review",
+    "reel:rights": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js reel:rights",
+    "reel:approve": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js reel:approve",
+    "reel:eligibility": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js reel:eligibility",
+    "reel:schedule": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js reel:schedule",
+    "publish:dry-run": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js publish:dry-run",
+    "publish:status": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js publish:status",
+    "scheduler:run-once": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js scheduler:run-once"
   },
   "dependencies": {
     "next": "latest",
