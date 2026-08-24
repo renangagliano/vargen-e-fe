@@ -113,9 +113,9 @@ as categorias encontradas foram mapeadas para `Ano-Liturgico-C`,
 
 - 78 assets locais/exatos processados;
 - 234 candidatos selecionados pela análise catalogal;
-- 233 Reels realmente derivados e validados;
-- 77 músicas com 3 Reels e 1 música com 2 Reels;
-- 233 covers, 233 metadados técnicos e 233 pacotes editoriais;
+- 234 Reels realmente derivados e validados;
+- 78 músicas com 3 Reels;
+- 234 covers, 234 metadados técnicos e 234 pacotes editoriais;
 - 78 manifestos de música e um manifest geral JSON/HTML;
 - 0 falhas no run final de geração, editorial ou validação;
 - 0 masters alterados, ausentes ou com checksum divergente.
@@ -144,6 +144,6 @@ Antes de uma nova execução integral:
 ## Limite de fase
 
 A Fase 6 cria inventário de conteúdo. Não cria publication jobs, não chama
-Meta, não habilita full-auto e não coleta analytics. A próxima fase deve
-priorizar revisão humana de qualidade, correções editoriais/Bíblia e uma
-política explícita de seleção antes de qualquer agendamento.
+Meta, não habilita full-auto e não coleta analytics. A Fase 6.1 adiciona
+curadoria, revisão humana de qualidade e correções editoriais/Bíblia antes de
+qualquer agendamento.

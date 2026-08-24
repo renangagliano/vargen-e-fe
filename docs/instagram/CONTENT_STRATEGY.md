@@ -27,10 +27,10 @@ Mensagem central: **A Bíblia transformada em música.**
 
 O catálogo real descoberto contém categorias como `7 Dias com Deus  Fé, Força e Superação`, `Advento`, `Anunciação`, `Domingo da Páscoa`, `Quaresma`, `Solenidades`, `Tempo Comum`, `Tempo do Natal` e `12 Meses com Deus`. As entradas de `src/data/songs.ts` são a autoridade; não inventar músicas, referências ou datas.
 
-Na Fase 6, 78 masters locais geraram 233 Reels: 77 músicas receberam três
-derivados e uma recebeu dois. Isso é resultado do score e do overlap, não uma
-quota editorial. O inventário fica em `Reels/catalog-review.html` para revisão
-local.
+Na Fase 6, 78 masters locais geraram 234 Reels. A Fase 6.1 recalibrou o
+portfólio para 111 ativos e 123 em espera, preservando todos os arquivos para
+revisão futura. O inventário técnico fica em Reels/catalog-review.html e a
+fila curada em Reels/catalog-curation.html.
 
 ## Formatos a testar
 
@@ -76,7 +76,8 @@ Cada hipótese precisa de controle, variante, métrica primária, janela e amost
 ## Pacotes produzidos na Fase 6
 
 Os geradores catalogais produzem título, hook, caption, CTA, hashtags,
-content pillar, cover text e espaçamento recomendado. Não produzem
+content pillar, cover text e espaçamento recomendado. A curadoria acrescenta
+ranking relativo, valor incremental, tier e decisão de portfólio. Não produzem
 promessas de milagre, dinheiro ou engajamento artificial. Os pacotes não são
 publicáveis enquanto direitos, revisão humana, referência bíblica e gates
 técnicos não forem confirmados.

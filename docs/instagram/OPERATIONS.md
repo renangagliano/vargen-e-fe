@@ -33,13 +33,18 @@ npm run catalog:editorial -- --resume=true
 npm run catalog:validate -- --resume=true
 npm run catalog:manifest
 npm run catalog:status
+npm run curation:sample
+npm run curation:run
+npm run curation:status
+npm run curation:manifest
 ```
 
 O fluxo completo é resumível e idempotente. Antes da geração integral,
 verifique armazenamento e `media:verify`. O pipeline processa apenas os 78
 assets locais/matched; a canção sem MP4 não é substituída. O resultado final
-validado desta fase é 233 Reels, 233 covers, 233 pacotes editoriais e 78
-reviews por música.
+validado da Fase 6 é 234 Reels, 234 covers, 234 pacotes editoriais e 78
+reviews por música. A Fase 6.1 mantém os arquivos e grava a curadoria em
+SQLite e nos manifestos locais; não cria schedules.
 
 `catalog:analyze -- --dry-run` calcula candidatos sem renderizar. Geração,
 editorial e validação devem ser executadas separadamente para permitir
