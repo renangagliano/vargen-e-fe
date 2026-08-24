@@ -23,5 +23,7 @@ jobs:
         run: npm run lint
       - name: Typecheck
         run: npm run typecheck
+      - name: Media foundation tests
+        run: npm run media:test
       - name: Build
         run: npm run build

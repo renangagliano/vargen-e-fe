@@ -1,0 +1,8 @@
+import "./paths.test.js";
+import "./checksum.test.js";
+import "./discovery.test.js";
+import "./matching.test.js";
+import "./database.test.js";
+import "./ffmpeg.test.js";
+import "./automation.test.js";
+import "./reels-structure.test.js";

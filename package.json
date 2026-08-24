@@ -7,7 +7,14 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "media:build": "tsc -p tools/instagram-reels/tsconfig.json",
+    "media:test": "npm run media:build && node --test tools/instagram-reels/dist/tests/index.test.js",
+    "media:doctor": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js doctor",
+    "media:scan": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js scan",
+    "media:list": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js list",
+    "media:inspect": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js inspect",
+    "media:verify": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js verify"
   },
   "dependencies": {
     "next": "latest",
