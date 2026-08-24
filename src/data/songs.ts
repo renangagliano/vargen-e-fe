@@ -1,3 +1,5 @@
+import { siteConfig } from "@/config/site";
+
 export type Song = {
   title: string;
   slug: string;
@@ -8,6 +10,7 @@ export type Song = {
   youtubeUrl: string;
   spotifyUrl: string | null;
   appleMusicUrl: string | null;
+  audioUrl: string;
   thumbnail: string;
   description: string;
   releaseDate: string;
@@ -15,17 +18,139 @@ export type Song = {
   videoId?: string;
 };
 
-export const songs: Song[] = [
-  { title: "Vem, Senhor", slug: "vem-senhor", liturgicalSeason: "advento", celebration: "1º Domingo do Advento", liturgicalYear: "C", scripture: ["Mt 24, 37–44", "Is 2, 1–5"], youtubeUrl: "https://www.youtube.com/@vargenefe", spotifyUrl: null, appleMusicUrl: null, thumbnail: "/brand/placeholder-artwork.svg", description: "Uma canção de espera e vigilância para abrir o caminho do Advento.", releaseDate: "2025-11-30", featured: true },
-  { title: "A Palavra Se Fez Carne", slug: "a-palavra-se-fez-carne", liturgicalSeason: "natal", celebration: "Natal do Senhor", liturgicalYear: "C", scripture: ["Jo 1, 1–18", "Is 52, 7–10"], youtubeUrl: "https://www.youtube.com/@vargenefe", spotifyUrl: null, appleMusicUrl: null, thumbnail: "/brand/placeholder-artwork.svg", description: "Rock contemplativo para o mistério do Deus que vem morar entre nós.", releaseDate: "2025-12-25", featured: false },
-  { title: "No Caminho", slug: "no-caminho", liturgicalSeason: "tempo-comum", celebration: "3º Domingo do Tempo Comum", liturgicalYear: "C", scripture: ["Lc 1, 1–4; 4, 14–21", "Ne 8, 2–4a.5–6.8–10"], youtubeUrl: "https://www.youtube.com/@vargenefe", spotifyUrl: null, appleMusicUrl: null, thumbnail: "/brand/placeholder-artwork.svg", description: "A Palavra lida, ouvida e vivida no caminho cotidiano da comunidade.", releaseDate: "2026-01-25", featured: false },
-  { title: "Volta Para Casa", slug: "volta-para-casa", liturgicalSeason: "quaresma", celebration: "4º Domingo da Quaresma", liturgicalYear: "C", scripture: ["Lc 15, 1–3.11–32", "Js 5, 9a.10–12"], youtubeUrl: "https://www.youtube.com/@vargenefe", spotifyUrl: null, appleMusicUrl: null, thumbnail: "/brand/placeholder-artwork.svg", description: "Uma canção sobre misericórdia, retorno e a casa que permanece aberta.", releaseDate: "2026-03-15", featured: false },
-  { title: "A Cruz e o Silêncio", slug: "a-cruz-e-o-silencio", liturgicalSeason: "semana-santa", celebration: "Sexta-feira da Paixão", liturgicalYear: "C", scripture: ["Jo 18, 1–19, 42", "Is 52, 13–53, 12"], youtubeUrl: "https://www.youtube.com/@vargenefe", spotifyUrl: null, appleMusicUrl: null, thumbnail: "/brand/placeholder-artwork.svg", description: "Uma faixa densa e reverente para contemplar a entrega de Cristo.", releaseDate: "2026-04-03", featured: false },
-  { title: "Amanheceu", slug: "amanheceu", liturgicalSeason: "pascoa", celebration: "Domingo da Páscoa", liturgicalYear: "C", scripture: ["Jo 20, 1–9", "At 10, 34a.37–43"], youtubeUrl: "https://www.youtube.com/@vargenefe", spotifyUrl: null, appleMusicUrl: null, thumbnail: "/brand/placeholder-artwork.svg", description: "Do silêncio do sepulcro nasce um refrão de vida nova e esperança.", releaseDate: "2026-04-05", featured: false },
-  { title: "Sopra em Nós", slug: "sopra-em-nos", liturgicalSeason: "pentecostes", celebration: "Pentecostes", liturgicalYear: "C", scripture: ["Jo 20, 19–23", "At 2, 1–11"], youtubeUrl: "https://www.youtube.com/@vargenefe", spotifyUrl: null, appleMusicUrl: null, thumbnail: "/brand/placeholder-artwork.svg", description: "Um pedido de presença e envio guiado pelo sopro do Espírito.", releaseDate: "2026-05-24", featured: false },
-  { title: "Mãe do Sim", slug: "mae-do-sim", liturgicalSeason: "solenidades", celebration: "Assunção de Nossa Senhora", liturgicalYear: "C", scripture: ["Lc 1, 39–56", "Ap 11, 19a; 12, 1–6a.10ab"], youtubeUrl: "https://www.youtube.com/@vargenefe", spotifyUrl: null, appleMusicUrl: null, thumbnail: "/brand/placeholder-artwork.svg", description: "Uma canção mariana sobre disponibilidade, presença e gratidão.", releaseDate: "2026-08-15", featured: false },
-  { title: "Rei da Paz", slug: "rei-da-paz", liturgicalSeason: "solenidades", celebration: "Cristo Rei do Universo", liturgicalYear: "C", scripture: ["Lc 23, 35–43", "2Sm 5, 1–3"], youtubeUrl: "https://www.youtube.com/@vargenefe", spotifyUrl: null, appleMusicUrl: null, thumbnail: "/brand/placeholder-artwork.svg", description: "O encerramento do ano litúrgico em uma declaração de confiança.", releaseDate: "2026-11-22", featured: false },
+type TrackSeed = readonly [category: string, title: string, videoId?: string];
+
+const tracks: TrackSeed[] = [
+  ["7 Dias com Deus  Fé, Força e Superação", "Domingo - Tudo esta completo", "jgAIViHiKIc"],
+  ["7 Dias com Deus  Fé, Força e Superação", "Quarta-feira - A terra voltara a florescer", "mHOnHmnuh4U"],
+  ["7 Dias com Deus  Fé, Força e Superação", "Quinta-feira - Luzes para o caminho", "S6Soi3yVWAA"],
+  ["7 Dias com Deus  Fé, Força e Superação", "Sabado - A sua imagem", "AqzQkdLv9sM"],
+  ["7 Dias com Deus  Fé, Força e Superação", "Segunda-feira - Que haja luz", "A5edaH75D64"],
+  ["7 Dias com Deus  Fé, Força e Superação", "Sexta-feira - Feitos para ir alem", "FdD7_tkgxwk"],
+  ["7 Dias com Deus  Fé, Força e Superação", "Terca-feira - Entre o ceu e as aguas", "_T_g9ElI0Cg"],
+  ["Advento", "Alegria que Liberta", "Cms1utfbzes"],
+  ["Advento", "Vigilância", "52F3ysbRwjM"],
+  ["Advento", "Voz no Deserto", "sQnp_TwuFbc"],
+  ["Anunciação", "Deus Conosco", "37jILc6zKdo"],
+  ["Anunciação", "Sob o Mesmo Teto — Sagrada Família"],
+  ["Domingo da Páscoa", "A Minha Paz Vos Dou", "vJIad9pC9qA"],
+  ["Domingo da Páscoa", "Como Eu Vos Amei", "cyDyA6thL0A"],
+  ["Domingo da Páscoa", "Meu Senhor e Meu Deus", "x52OnBZQyLk"],
+  ["Domingo da Páscoa", "Ninguém Vai Me Arrancar de Tuas Mãos", "EFb_oAzvu9s"],
+  ["Domingo da Páscoa", "Que Todos Sejam Um", "Nn9SEZLVA3I"],
+  ["Domingo da Páscoa", "Tu Me Amas", "zhIqxz6oIjo"],
+  ["Domingo da Páscoa", "Viu e Acreditou", "Wa7gB0JBziA"],
+  ["Domingo de Ramos e da Paixão", "Em Tuas Mãos", "sYUMYwCoBNE"],
+  ["Quaresma", "Deixa-a Ainda Este Ano", "ea9ftq1765A"],
+  ["Quaresma", "Escutai-O", "uh2Gg7JeM9Y"],
+  ["Quaresma", "Está Escrito", "GZHJTAWtUqI"],
+  ["Quaresma", "Eu Também Não Te Condeno", "r7qMWg0qesA"],
+  ["Quaresma", "Quando Ainda Estava Longe", "3OQiObdPoJU"],
+  ["Solenidades", "Eu Sou a Ressurreição e a Vida", "IFWujghupbA"],
+  ["Solenidades", "Fazei Tudo o Que Ele Vos Disser", "3pU3ppm9OrA"],
+  ["Solenidades", "Guardei a Fé", "EdYt5rUWxh0"],
+  ["Solenidades", "Minha Alma Engrandece o Senhor", "Rav8VyTl1fY"],
+  ["Solenidades", "Sereis Minhas Testemunhas", "0vUWZXNhJS0"],
+  ["Solenidades", "Um Só Deus de Amor", "9X0szfms-2Q"],
+  ["Tempo Comum", "A Melhor Parte", "mksuLEVcZU0"],
+  ["Tempo Comum", "A Messe é Grande", "DmJWKRvUk2Q"],
+  ["Tempo Comum", "Aumenta a Nossa Fé", "OPW_0kZ76ok"],
+  ["Tempo Comum", "Basta Uma Palavra", "EMk1I5MWS5s"],
+  ["Tempo Comum", "Como o Pai é Misericordioso", "DA1t8o3FCqw"],
+  ["Tempo Comum", "Deus dos Vivos", "p0GeROttA1Y"],
+  ["Tempo Comum", "E os Outros Nove, Onde Estão", "TI5YEwZxfuQ"],
+  ["Tempo Comum", "Escolhe o Último Lugar"],
+  ["Tempo Comum", "Estava Perdido e Foi Encontrado"],
+  ["Tempo Comum", "Hoje a Salvação Entrou Nesta Casa"],
+  ["Tempo Comum", "Jovem, Eu Te Ordeno, Levanta-te!"],
+  ["Tempo Comum", "Lâmpadas Acesas"],
+  ["Tempo Comum", "Lembra-te de Mim no Teu Reino"],
+  ["Tempo Comum", "Mãos no Arado"],
+  ["Tempo Comum", "Muito Amou, Muito Foi Perdoado"],
+  ["Tempo Comum", "Não Podeis Servir a Dois Senhores"],
+  ["Tempo Comum", "O Ano da Graça"],
+  ["Tempo Comum", "O Dom Maior"],
+  ["Tempo Comum", "O Preço de Te Seguir"],
+  ["Tempo Comum", "O Vinho Novo"],
+  ["Tempo Comum", "Onde Está Tua Riqueza"],
+  ["Tempo Comum", "Pelos Frutos Conhecereis"],
+  ["Tempo Comum", "Rezar Sempre, Nunca Desistir"],
+  ["Tempo Comum", "Senhor, Ensina-nos a Rezar"],
+  ["Tempo Comum", "Tem Piedade de Mim"],
+  ["Tempo Comum", "Unção e Missão"],
+  ["Tempo Comum", "Vai e Faze o Mesmo"],
+  ["Tempo Comum", "Vim Trazer Fogo à Terra"],
+  ["Tempo Comum", "À Minha Porta", "VNiSeeJp3hM"],
+  ["Tempo Comum", "Águas Profundas", "eBPNDTLlPs4"],
+  ["Tempo Comum", "Árvore Junto às Águas", "ENPc0_AI25Y"],
+  ["Tempo Comum", "É Pela Perseverança", "l_xPC_5xJBI"],
+  ["Tempo Comum", "E Vós, Quem Dizeis Que Eu Sou", "SpGswtyFbvs"],
+  ["Tempo do Natal", "A Estrela e o Rei", "dqQFqB-GiJU"],
+  ["Tempo do Natal", "Escudo do Lar", "h2LJzIKv_ww"],
+  ["Tempo do Natal", "O Céu se Abriu", "xh-CSWGVdAw"],
+  ["12 Meses com Deus", "Até Aqui Nos Sustentou — Fevereiro"],
+  ["12 Meses com Deus", "Até Aqui, Deus Foi Fiel — Dezembro"],
+  ["12 Meses com Deus", "Conte as Bênçãos — Novembro"],
+  ["12 Meses com Deus", "Depois da Cruz, a Vida — Abril"],
+  ["12 Meses com Deus", "Força Para Continuar — Julho"],
+  ["12 Meses com Deus", "Gigantes Vão Cair — Outubro"],
+  ["12 Meses com Deus", "No Meio da Tempestade — Junho"],
+  ["12 Meses com Deus", "Pedras Viraram Altares — Agosto"],
+  ["12 Meses com Deus", "Quando as Águas se Abriram — Março"],
+  ["12 Meses com Deus", "Tempo de Colheita — Setembro"],
+  ["12 Meses com Deus", "Tudo Vem de Tuas Mãos — Maio"],
+  ["12 Meses com Deus", "Um Novo Caminho — Janeiro"],
 ];
+
+const seasonByCategory: Record<string, string> = {
+  "7 Dias com Deus  Fé, Força e Superação": "7-dias",
+  Advento: "advento",
+  Anunciação: "anunciacao",
+  "Domingo da Páscoa": "pascoa",
+  "Domingo de Ramos e da Paixão": "semana-santa",
+  Quaresma: "quaresma",
+  Solenidades: "solenidades",
+  "Tempo Comum": "tempo-comum",
+  "Tempo do Natal": "natal",
+  "12 Meses com Deus": "12-meses",
+};
+
+function slugify(value: string) {
+  return value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+}
+
+function encodePathSegment(value: string) {
+  return encodeURIComponent(value);
+}
+
+function makeDescription(category: string, title: string) {
+  if (category === "12 Meses com Deus") {
+    const month = title.split(" — ").at(-1) ?? "o mês";
+    return `Uma canção de Vargen & Fé para atravessar ${month.toLocaleLowerCase("pt-BR")} com gratidão, esperança e oração.`;
+  }
+  if (category === "7 Dias com Deus  Fé, Força e Superação") {
+    return "Uma faixa da série 7 Dias com Deus para acompanhar a oração, a força e a superação em cada dia.";
+  }
+  return `Uma canção de Vargen & Fé para acompanhar ${category.toLocaleLowerCase("pt-BR")}, com a Palavra em movimento e espaço para oração.`;
+}
+
+export const songs: Song[] = tracks.map(([category, title, videoId]) => ({
+  title,
+  slug: slugify(`${category}-${title}`),
+  liturgicalSeason: seasonByCategory[category],
+  celebration: category === "12 Meses com Deus" ? `Mês de ${title.split(" — ").at(-1)}` : category,
+  liturgicalYear: "C",
+  scripture: [],
+  youtubeUrl: videoId ? `https://www.youtube.com/watch?v=${videoId}` : siteConfig.youtube,
+  spotifyUrl: null,
+  appleMusicUrl: null,
+  audioUrl: `/audio/${encodePathSegment(category)}/${encodePathSegment(title)}.mp3`,
+  thumbnail: "/brand/placeholder-artwork.svg",
+  description: makeDescription(category, title),
+  releaseDate: "2026-08-24",
+  featured: title === "A Minha Paz Vos Dou",
+  ...(videoId ? { videoId } : {}),
+}));
 
 export function getSong(slug: string) {
   return songs.find((song) => song.slug === slug);
