@@ -1,4 +1,4 @@
-# Estratégia de conteúdo inicial
+# Estratégia de conteúdo — Fases 4 e 6
 
 Esta é uma hipótese editorial para testar após o piloto; não é uma promessa de alcance ou monetização.
 
@@ -27,6 +27,11 @@ Mensagem central: **A Bíblia transformada em música.**
 
 O catálogo real descoberto contém categorias como `7 Dias com Deus  Fé, Força e Superação`, `Advento`, `Anunciação`, `Domingo da Páscoa`, `Quaresma`, `Solenidades`, `Tempo Comum`, `Tempo do Natal` e `12 Meses com Deus`. As entradas de `src/data/songs.ts` são a autoridade; não inventar músicas, referências ou datas.
 
+Na Fase 6, 78 masters locais geraram 233 Reels: 77 músicas receberam três
+derivados e uma recebeu dois. Isso é resultado do score e do overlap, não uma
+quota editorial. O inventário fica em `Reels/catalog-review.html` para revisão
+local.
+
 ## Formatos a testar
 
 - hook lírico curto;
@@ -47,6 +52,10 @@ Não publicar variantes quase idênticas em sequência. Um mesmo song pode ter v
 - não prometer milagres, dinheiro ou resultado espiritual;
 - não comprar seguidores, likes, comentários ou visualizações;
 - usar somente áudio/visual com direitos comprovados;
+- manter `RIGHTS_PENDING_CONFIRMATION` como gate até confirmação deliberada;
+- manter todo pacote em `READY_FOR_HUMAN_REVIEW` até decisão humana;
+- marcar `BIBLE_REFERENCE_REVIEW_REQUIRED` quando a fonte não validar uma
+  referência precisa;
 - considerar calendário litúrgico somente com datas verificadas.
 
 ## Métrica de sucesso
@@ -63,3 +72,11 @@ Serão registradas como experimentos, não como fatos:
 4. conteúdo litúrgico pode ter melhor relevância em janelas próximas à celebração.
 
 Cada hipótese precisa de controle, variante, métrica primária, janela e amostra antes de gerar recomendação.
+
+## Pacotes produzidos na Fase 6
+
+Os geradores catalogais produzem título, hook, caption, CTA, hashtags,
+content pillar, cover text e espaçamento recomendado. Não produzem
+promessas de milagre, dinheiro ou engajamento artificial. Os pacotes não são
+publicáveis enquanto direitos, revisão humana, referência bíblica e gates
+técnicos não forem confirmados.

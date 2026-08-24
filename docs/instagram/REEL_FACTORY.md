@@ -1,4 +1,4 @@
-# Reel Factory — desenho da Fase 2
+# Reel Factory — implementação das Fases 3 e 6
 
 ## Entrada
 
@@ -12,26 +12,32 @@
 ## Saída por candidato
 
 ```text
-generated/reels/<song-slug>/
+Reels/<collection>/<song-slug>/
   reel-<id>.mp4
   reel-<id>.jpg
-  reel-<id>.srt       # somente quando timing real existir
+  reel-<id>.cover.jpg
+  reel-<id>.editorial.json
   reel-<id>.metadata.json
+  review.json
 ```
 
 O local final pode mudar para storage de artefatos; esta estrutura é apenas o contrato conceitual do piloto.
 
-## Pipeline proposto
+## Pipeline implementado
 
-1. `ffprobe` extrai duração, dimensão, codecs, FPS, bitrate, canais e checksum externo.
-2. Análise identifica energia, silêncio, entradas vocais, transições e candidatos.
-3. Scoring heurístico ordena candidatos sem alegar modelo treinado.
-4. FFmpeg extrai trecho sem tocar na fonte.
-5. Fonte horizontal recebe crop validado, composição preservadora ou layout de marca; nunca esticar.
-6. Render final mira 1080x1920, 9:16, H.264 e AAC configuráveis.
-7. Logo, hook e legendas obedecem safe zones móveis.
-8. Cover é extraída de frame representativo.
-9. Quality gates validam decodificação, áudio, duração, proporção, texto e lineage.
+1. `ffprobe` lê duração, dimensão, codecs, FPS, bitrate, canais e streams.
+2. A análise RMS gera amostras de energia e mudanças dinâmicas; timing de
+   letras não é inventado.
+3. O seletor catalogal gera 18 s, 30 s e 52 s somente quando score,
+   confiança e overlap passam os thresholds configurados.
+4. FFmpeg usa seek antecipado e renderiza apenas em pasta derivada.
+5. Fonte horizontal recebe composição com background vertical e foreground
+   proporcional; nunca é esticada.
+6. Render final mira 1080x1920, 9:16, H.264, AAC e 30 fps.
+7. Logo e cover obedecem safe zones móveis; legendas ficam para fase futura
+   enquanto não houver sincronização confiável.
+8. Cada Reel recebe thumbnail, cover, metadata, editorial JSON e provenance.
+9. FFprobe valida decodificação, duração, proporção, codecs, áudio e lineage.
 
 ## Seleção
 
@@ -47,11 +53,20 @@ score = hook_strength
       - overlap_penalty
 ```
 
-Pesos devem ser configuração. `historical_pattern_score` fica indisponível até haver dados reais.
+Na Fase 6 o score concreto registra energia, pico, continuidade, silêncio e
+mudança dinâmica em `score_breakdown`. Histórico de performance e machine
+learning ficam indisponíveis até haver dados reais.
 
-## Bloqueio atual
+## Operação catalogal
 
-Nenhum MP4 foi encontrado e FFmpeg/FFprobe não estão instalados no PATH. Não foi gerado nenhum arquivo de Reel nesta fase.
+Use `catalog:analyze`, `catalog:generate`, `catalog:validate` e
+`catalog:editorial` com `--resume=true`. A geração integral validada criou
+233 Reels para 78 masters. Veja `CATALOG_FACTORY.md` para thresholds,
+retomada, canary e manifestos.
+
+Nenhum pacote é aprovado automaticamente: o estado inicial é
+`READY_FOR_HUMAN_REVIEW`, os direitos permanecem pendentes e a publicação
+permanece desativada.
 ## Phase 3 pilot
 
 The Phase 3 media-only pilot is implemented in `tools/instagram-reels`.

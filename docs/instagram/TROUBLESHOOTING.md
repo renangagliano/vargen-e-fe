@@ -1,4 +1,4 @@
-# Troubleshooting da Fase 1
+# Troubleshooting das Fases 1–6
 
 ## Não há MP4
 
@@ -16,13 +16,49 @@ VARGEN_REELS_OUTPUT_ROOT=<diretório separado para derivados>
 VARGEN_PIPELINE_STATE_ROOT=<diretório local fora do OneDrive>
 ```
 
-Nesta máquina a pasta não foi localizada automaticamente e nenhuma dessas variáveis estava definida.
+Nesta máquina, a raiz local foi validada e o catálogo real contém 78 MP4
+disponíveis. O pipeline continua exigindo configuração por ambiente; não
+copie o caminho da máquina para o código versionado.
 
 ## FFmpeg não encontrado
 
 Sintoma: `Get-Command ffmpeg` e `Get-Command ffprobe` retornam `NOT_FOUND`.
 
-Ação: instalar versão aprovada no ambiente ou conectar componente existente comprovado. O `winget` e o Chocolatey estão disponíveis; a opção recomendada é `winget install --id Gyan.FFmpeg --exact`, executada pelo operador. Registrar versão com `ffmpeg -version` e `ffprobe -version`. Nenhuma instalação foi executada pelo agente.
+Ação: instalar versão aprovada no ambiente ou conectar componente existente comprovado. O `winget` e o Chocolatey estão disponíveis; a opção recomendada é `winget install --id Gyan.FFmpeg --exact`, executada pelo operador. Registrar versão com `ffmpeg -version` e `ffprobe -version`. Nenhuma instalação automática é necessária quando ambos passam. A Fase 6 usa timeout e arquivos temporários para isolar falhas de render.
+
+## Geração lenta ou interrompida
+
+Use `catalog:status` para localizar o último run e rerode:
+
+```text
+npm run media:verify
+npm run catalog:storage -- --assets=78
+npm run catalog:generate -- --resume=true
+```
+
+O mecanismo reutiliza outputs com checksum e versões iguais. Não mate o
+processo durante uma gravação se puder evitar; se houver interrupção,
+procure apenas temporários `.part-*` dentro de `VARGEN_REELS_OUTPUT_ROOT`.
+Não apague MP4 finais, covers, masters ou o SQLite sem diagnóstico.
+
+## Storage insuficiente
+
+`catalog:storage` estima bytes com base nos derivados existentes e no teto
+configurado. A geração integral falha fechada com `INSUFFICIENT_STORAGE`
+quando o espaço livre não é suficiente. Libere espaço ou reduza o escopo com
+`--limit`/`--assets`; não mude o root dos masters.
+
+## Referência bíblica pendente
+
+Pacotes sem referência comprovada recebem `bible_reference_review_required`.
+Isso é uma revisão editorial, não uma falha técnica. Nunca completar
+capítulo/verso por inferência do título.
+
+## Pacote editorial ausente
+
+Rerode `catalog:editorial -- --resume=true`. O resolvedor usa o diretório
+real dos derivados, inclusive o slug histórico do piloto. Depois confirme
+`catalog:status` com a contagem de pacotes igual à contagem de Reels.
 
 ## Instagram conectado, mas sem API
 

@@ -23,6 +23,28 @@ npm run media:verify
 
 O `media:scan` não usa a biblioteca `public/audio` como substituto e falha explicitamente quando `VARGEN_MEDIA_ROOT` não está configurado.
 
+## Fase 6 — processamento catalogal
+
+```text
+npm run catalog:storage -- --assets=78
+npm run catalog:analyze -- --limit=3 --dry-run
+npm run catalog:generate -- --resume=true
+npm run catalog:editorial -- --resume=true
+npm run catalog:validate -- --resume=true
+npm run catalog:manifest
+npm run catalog:status
+```
+
+O fluxo completo é resumível e idempotente. Antes da geração integral,
+verifique armazenamento e `media:verify`. O pipeline processa apenas os 78
+assets locais/matched; a canção sem MP4 não é substituída. O resultado final
+validado desta fase é 233 Reels, 233 covers, 233 pacotes editoriais e 78
+reviews por música.
+
+`catalog:analyze -- --dry-run` calcula candidatos sem renderizar. Geração,
+editorial e validação devem ser executadas separadamente para permitir
+inspeção. Nenhum desses comandos agenda ou publica.
+
 ## Modos de publicação
 
 - `dry-run`: gera/valida e simula, sem publicar;
@@ -87,6 +109,10 @@ Os limites são configuráveis por `MAX_REELS_PER_DAY`, `MIN_HOURS_BETWEEN_REELS
 várias coleções -> validação
 catálogo completo -> somente após estabilidade
 ```
+
+Na Fase 6, o canary de três músicas foi executado antes do catálogo: uma
+litúrgica, uma de jornada semanal e uma de outra categoria existente. O
+canary passou antes da geração dos 78 assets.
 
 ## Backup e retenção
 
