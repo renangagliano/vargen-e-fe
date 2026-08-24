@@ -87,6 +87,45 @@ export type CandidateCategory =
 
 export type CandidateStatus = "PROPOSED" | "SELECTED" | "REJECTED" | "GENERATED" | "VALIDATED" | "VALIDATION_FAILED";
 
+export type CurationQualityTier = "TIER_A" | "TIER_B" | "TIER_C" | "TIER_D" | "TIER_REJECT";
+export type PortfolioStatus = "ACTIVE" | "HOLD" | "REJECTED";
+export type CurationDecision = "KEEP_PRIMARY" | "KEEP_SECONDARY" | "KEEP_EXCEPTIONAL_THIRD" | "HOLD" | "REJECT_REDUNDANT" | "REJECT_LOW_VALUE" | "REJECT_WEAK_BOUNDARY" | "REJECT_LOW_DISTINCTIVENESS";
+export type BibleReferenceStatus = "VERIFIED" | "INFERRED_REVIEW_REQUIRED" | "MISSING" | "CONFLICT";
+export type Seasonality = "EVERGREEN" | "LITURGICAL_SEASONAL" | "WEEKDAY_SPECIFIC" | "MONTH_SPECIFIC" | "DEVOTIONAL";
+
+export type ReelCuration = {
+  curation_id: string;
+  reel_id: string;
+  candidate_id: string;
+  source_asset_id: string;
+  curation_version: string;
+  absolute_quality_score: number;
+  relative_song_score: number;
+  distinctiveness_score: number;
+  editorial_value_score: number;
+  technical_quality_score: number;
+  boundary_quality_score: number;
+  visual_quality_score: number;
+  audio_quality_score: number;
+  content_density_score: number;
+  curation_score: number;
+  incremental_editorial_value: number;
+  overlap_percentage: number;
+  timestamp_distance_ms: number;
+  section_separation: number;
+  within_song_rank: number;
+  quality_tier: CurationQualityTier;
+  portfolio_status: PortfolioStatus;
+  curation_decision: CurationDecision;
+  curation_reason: string;
+  third_reel_justification: string | null;
+  bible_reference_status: BibleReferenceStatus;
+  seasonality: Seasonality;
+  calendar_context: string | null;
+  created_at: string;
+  curated_at: string;
+};
+
 export type AudioEnergySample = {
   timeMs: number;
   rmsDb: number;

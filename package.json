@@ -36,7 +36,11 @@
     "catalog:editorial": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js catalog:editorial",
     "catalog:status": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js catalog:status",
     "catalog:manifest": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js catalog:manifest",
-    "catalog:storage": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js catalog:storage"
+    "catalog:storage": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js catalog:storage",
+    "curation:sample": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js curation:sample",
+    "curation:run": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js curation:run",
+    "curation:status": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js curation:status",
+    "curation:manifest": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js curation:manifest"
   },
   "dependencies": {
     "next": "latest",

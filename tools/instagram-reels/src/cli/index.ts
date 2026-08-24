@@ -6,6 +6,7 @@ import { analyzeReelAsset, assetArgument, generateReelPilot, inspectReel, listRe
 import { generateEditorialBatchCommand, generateEditorialCommand, requiredArgument, reviewEditorialCommand } from "./editorial.js";
 import { runPublishingCommand } from "./publishing.js";
 import { runCatalogFactoryCommand } from "./catalog-factory.js";
+import { runCurationCommand } from "./curation.js";
 
 function filterArgument(args: string[]): string | undefined {
   const value = args.find((arg) => arg.startsWith("--"));
@@ -17,6 +18,7 @@ async function main(): Promise<void> {
   const config = loadConfig();
   if (await runPublishingCommand(command, args)) return;
   if (await runCatalogFactoryCommand(command, args)) return;
+  if (await runCurationCommand(command, args)) return;
   switch (command) {
     case "doctor": {
       const checks = await runDoctor(config);
@@ -61,7 +63,7 @@ async function main(): Promise<void> {
       await reviewEditorialCommand(requiredArgument(args));
       return;
     default:
-      console.log("Usage: doctor | scan | list ... | catalog:analyze|catalog:generate|catalog:validate|catalog:editorial [--limit=N] [--collection=C] [--song=S] [--assets=id1,id2] [--resume=false] | catalog:status | catalog:manifest | catalog:storage --assets=N | reel:analyze <asset-id> | reel:candidates <asset-id> | reel:generate <asset-id> | reel:inspect <reel-id> | reel:validate <reel-id> | reel:editorial <reel-id> | reel:editorial-batch <asset-id> | reel:review <asset-id> | reel:rights <reel-id> confirm|reject --by=<operator> | reel:approve <reel-id> --version=1 --by=<operator> | reel:eligibility <reel-id> | reel:schedule <reel-id> <datetime> --by=<operator> | publish:dry-run <reel-id> | publish:status <job-id> | scheduler:run-once");
+      console.log("Usage: doctor | scan | list ... | catalog:analyze|catalog:generate|catalog:validate|catalog:editorial [--limit=N] [--collection=C] [--song=S] [--assets=id1,id2] [--resume=false] | catalog:status | catalog:manifest | catalog:storage --assets=N | curation:sample | curation:run | curation:status | curation:manifest | reel:analyze <asset-id> | reel:candidates <asset-id> | reel:generate <asset-id> | reel:inspect <reel-id> | reel:validate <reel-id> | reel:editorial <reel-id> | reel:editorial-batch <asset-id> | reel:review <asset-id> | reel:rights <reel-id> confirm|reject --by=<operator> | reel:approve <reel-id> --version=1 --by=<operator> | reel:eligibility <reel-id> | reel:schedule <reel-id> <datetime> --by=<operator> | publish:dry-run <reel-id> | publish:status <job-id> | scheduler:run-once");
       process.exitCode = command ? 1 : 0;
   }
 }

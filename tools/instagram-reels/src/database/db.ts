@@ -2,7 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import type { MediaConfig } from "../config/index.js";
-import type { MediaMetadata, AvailabilityStatus, RightsStatus, SongMatch, ReelCandidate, CandidateStatus, EditorialPackage, EditorialReviewStatus, PublicationJob, PublicationMode, PublicationStatus, FailureClass, MediaAnalysisReport } from "../shared/types.js";
+import type { MediaMetadata, AvailabilityStatus, RightsStatus, SongMatch, ReelCandidate, CandidateStatus, EditorialPackage, EditorialReviewStatus, PublicationJob, PublicationMode, PublicationStatus, FailureClass, MediaAnalysisReport, ReelCuration } from "../shared/types.js";
 import { databasePath } from "../config/index.js";
 
 type SqlRow = Record<string, unknown>;
@@ -355,6 +355,74 @@ export function derivedReelById(db: DatabaseSync, reelId: string): SqlRow | unde
 
 export function derivedReelsForAsset(db: DatabaseSync, assetId: string): SqlRow[] {
   return db.prepare("SELECT * FROM derived_reels WHERE source_asset_id = ? ORDER BY output_relative_path").all(assetId) as SqlRow[];
+}
+
+export function saveCuration(db: DatabaseSync, curation: ReelCuration): ReelCuration {
+  db.prepare(`
+    INSERT INTO reel_curations (
+      curation_id, reel_id, candidate_id, source_asset_id, curation_version,
+      absolute_quality_score, relative_song_score, distinctiveness_score,
+      editorial_value_score, technical_quality_score, boundary_quality_score,
+      visual_quality_score, audio_quality_score, content_density_score,
+      curation_score, incremental_editorial_value, overlap_percentage,
+      timestamp_distance_ms, section_separation, within_song_rank, quality_tier,
+      portfolio_status, curation_decision, curation_reason,
+      third_reel_justification, bible_reference_status, seasonality,
+      calendar_context, created_at, curated_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ON CONFLICT(reel_id, curation_version) DO UPDATE SET
+      candidate_id = excluded.candidate_id,
+      source_asset_id = excluded.source_asset_id,
+      absolute_quality_score = excluded.absolute_quality_score,
+      relative_song_score = excluded.relative_song_score,
+      distinctiveness_score = excluded.distinctiveness_score,
+      editorial_value_score = excluded.editorial_value_score,
+      technical_quality_score = excluded.technical_quality_score,
+      boundary_quality_score = excluded.boundary_quality_score,
+      visual_quality_score = excluded.visual_quality_score,
+      audio_quality_score = excluded.audio_quality_score,
+      content_density_score = excluded.content_density_score,
+      curation_score = excluded.curation_score,
+      incremental_editorial_value = excluded.incremental_editorial_value,
+      overlap_percentage = excluded.overlap_percentage,
+      timestamp_distance_ms = excluded.timestamp_distance_ms,
+      section_separation = excluded.section_separation,
+      within_song_rank = excluded.within_song_rank,
+      quality_tier = excluded.quality_tier,
+      portfolio_status = excluded.portfolio_status,
+      curation_decision = excluded.curation_decision,
+      curation_reason = excluded.curation_reason,
+      third_reel_justification = excluded.third_reel_justification,
+      bible_reference_status = excluded.bible_reference_status,
+      seasonality = excluded.seasonality,
+      calendar_context = excluded.calendar_context,
+      curated_at = excluded.curated_at
+  `).run(
+    curation.curation_id, curation.reel_id, curation.candidate_id, curation.source_asset_id, curation.curation_version,
+    curation.absolute_quality_score, curation.relative_song_score, curation.distinctiveness_score,
+    curation.editorial_value_score, curation.technical_quality_score, curation.boundary_quality_score,
+    curation.visual_quality_score, curation.audio_quality_score, curation.content_density_score,
+    curation.curation_score, curation.incremental_editorial_value, curation.overlap_percentage,
+    curation.timestamp_distance_ms, curation.section_separation, curation.within_song_rank,
+    curation.quality_tier, curation.portfolio_status, curation.curation_decision, curation.curation_reason,
+    curation.third_reel_justification, curation.bible_reference_status, curation.seasonality,
+    curation.calendar_context, curation.created_at, curation.curated_at,
+  );
+  return curation;
+}
+
+export function latestCuration(db: DatabaseSync, reelId: string): ReelCuration | undefined {
+  return db.prepare("SELECT * FROM reel_curations WHERE reel_id = ? ORDER BY curated_at DESC, curation_version DESC LIMIT 1").get(reelId) as ReelCuration | undefined;
+}
+
+export function curationsForAsset(db: DatabaseSync, assetId: string, version?: string): ReelCuration[] {
+  if (version) return db.prepare("SELECT * FROM reel_curations WHERE source_asset_id = ? AND curation_version = ? ORDER BY within_song_rank, reel_id").all(assetId, version) as ReelCuration[];
+  return db.prepare("SELECT * FROM reel_curations WHERE source_asset_id = ? ORDER BY curated_at DESC, within_song_rank, reel_id").all(assetId) as ReelCuration[];
+}
+
+export function curationRows(db: DatabaseSync, version?: string): ReelCuration[] {
+  if (version) return db.prepare("SELECT * FROM reel_curations WHERE curation_version = ? ORDER BY source_asset_id, within_song_rank, reel_id").all(version) as ReelCuration[];
+  return db.prepare("SELECT * FROM reel_curations ORDER BY curated_at DESC, source_asset_id, within_song_rank, reel_id").all() as ReelCuration[];
 }
 
 export function saveEditorialPackage(db: DatabaseSync, editorial: EditorialPackage): EditorialPackage {

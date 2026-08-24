@@ -194,6 +194,43 @@ CREATE TABLE IF NOT EXISTS reel_editorial_packages (
 
 CREATE INDEX IF NOT EXISTS idx_editorial_packages_reel ON reel_editorial_packages(reel_id);
 
+CREATE TABLE IF NOT EXISTS reel_curations (
+  curation_id TEXT PRIMARY KEY,
+  reel_id TEXT NOT NULL REFERENCES derived_reels(reel_id) ON DELETE CASCADE,
+  candidate_id TEXT NOT NULL REFERENCES reel_candidates(candidate_id) ON DELETE CASCADE,
+  source_asset_id TEXT NOT NULL REFERENCES media_assets(asset_id) ON DELETE CASCADE,
+  curation_version TEXT NOT NULL,
+  absolute_quality_score REAL NOT NULL,
+  relative_song_score REAL NOT NULL,
+  distinctiveness_score REAL NOT NULL,
+  editorial_value_score REAL NOT NULL,
+  technical_quality_score REAL NOT NULL,
+  boundary_quality_score REAL NOT NULL,
+  visual_quality_score REAL NOT NULL,
+  audio_quality_score REAL NOT NULL,
+  content_density_score REAL NOT NULL,
+  curation_score REAL NOT NULL,
+  incremental_editorial_value REAL NOT NULL,
+  overlap_percentage REAL NOT NULL,
+  timestamp_distance_ms INTEGER NOT NULL,
+  section_separation REAL NOT NULL,
+  within_song_rank INTEGER NOT NULL,
+  quality_tier TEXT NOT NULL,
+  portfolio_status TEXT NOT NULL,
+  curation_decision TEXT NOT NULL,
+  curation_reason TEXT NOT NULL,
+  third_reel_justification TEXT,
+  bible_reference_status TEXT NOT NULL,
+  seasonality TEXT NOT NULL,
+  calendar_context TEXT,
+  created_at TEXT NOT NULL,
+  curated_at TEXT NOT NULL,
+  UNIQUE(reel_id, curation_version)
+);
+
+CREATE INDEX IF NOT EXISTS idx_reel_curations_asset ON reel_curations(source_asset_id, curation_version);
+CREATE INDEX IF NOT EXISTS idx_reel_curations_status ON reel_curations(portfolio_status, quality_tier);
+
 CREATE TABLE IF NOT EXISTS publication_jobs (
   publication_job_id TEXT PRIMARY KEY,
   publication_key TEXT NOT NULL UNIQUE,
