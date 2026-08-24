@@ -52,3 +52,26 @@ Pesos devem ser configuração. `historical_pattern_score` fica indisponível at
 ## Bloqueio atual
 
 Nenhum MP4 foi encontrado e FFmpeg/FFprobe não estão instalados no PATH. Não foi gerado nenhum arquivo de Reel nesta fase.
+## Phase 3 pilot
+
+The Phase 3 media-only pilot is implemented in `tools/instagram-reels`.
+
+It performs heuristic RMS audio analysis, bounded-overlap candidate selection,
+vertical foreground-preserving composition, thumbnail generation, FFprobe
+validation and SQLite provenance. Lyrics are not burned into the pilot because
+the repository does not contain reliable synchronized lyric timing.
+
+Commands:
+
+```text
+npm run reel:analyze -- <asset-id>
+npm run reel:candidates -- <asset-id>
+npm run reel:generate -- <asset-id>
+npm run reel:inspect -- <reel-id>
+npm run reel:validate -- <reel-id>
+```
+
+The generator writes derived files only under `VARGEN_REELS_OUTPUT_ROOT` and
+uses temporary files with recognized media extensions. A final file is only
+renamed into place after FFmpeg exits successfully and FFprobe validation
+passes. Source SHA-256 is checked before and after the complete pilot.

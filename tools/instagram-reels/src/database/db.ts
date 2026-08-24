@@ -2,7 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import type { MediaConfig } from "../config/index.js";
-import type { MediaMetadata, AvailabilityStatus, RightsStatus, SongMatch } from "../shared/types.js";
+import type { MediaMetadata, AvailabilityStatus, RightsStatus, SongMatch, ReelCandidate, CandidateStatus } from "../shared/types.js";
 import { databasePath } from "../config/index.js";
 
 type SqlRow = Record<string, unknown>;
@@ -169,4 +169,102 @@ export function duplicateChecksums(db: DatabaseSync): SqlRow[] {
 export function catalogCounts(db: DatabaseSync): Record<string, number> {
   const rows = db.prepare("SELECT COALESCE(m.match_status, 'UNMATCHED') AS status, COUNT(DISTINCT a.asset_id) AS count FROM media_assets a LEFT JOIN song_media_matches m ON m.asset_id = a.asset_id GROUP BY status").all() as Array<{ status: string; count: number }>;
   return Object.fromEntries(rows.map((row) => [row.status, Number(row.count)]));
+}
+
+export function upsertReelCandidate(db: DatabaseSync, candidate: ReelCandidate): void {
+  const timestamp = now();
+  db.prepare(`
+    INSERT INTO reel_candidates (
+      candidate_id, source_asset_id, start_time_ms, end_time_ms, duration_ms,
+      category, score, selection_reason, status, fingerprint, created_at, updated_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ON CONFLICT(candidate_id) DO UPDATE SET
+      start_time_ms = excluded.start_time_ms,
+      end_time_ms = excluded.end_time_ms,
+      duration_ms = excluded.duration_ms,
+      category = excluded.category,
+      score = excluded.score,
+      selection_reason = excluded.selection_reason,
+      status = excluded.status,
+      fingerprint = excluded.fingerprint,
+      updated_at = excluded.updated_at
+  `).run(
+    candidate.candidateId, candidate.sourceAssetId, candidate.startTimeMs, candidate.endTimeMs,
+    candidate.durationMs, candidate.category, candidate.score, candidate.selectionReason,
+    candidate.status, candidate.fingerprint, timestamp, timestamp,
+  );
+}
+
+export function candidateById(db: DatabaseSync, candidateId: string): SqlRow | undefined {
+  return db.prepare("SELECT * FROM reel_candidates WHERE candidate_id = ?").get(candidateId) as SqlRow | undefined;
+}
+
+export function candidatesForAsset(db: DatabaseSync, assetId: string): SqlRow[] {
+  return db.prepare("SELECT * FROM reel_candidates WHERE source_asset_id = ? ORDER BY start_time_ms").all(assetId) as SqlRow[];
+}
+
+export function setCandidateStatus(db: DatabaseSync, candidateId: string, status: CandidateStatus): void {
+  db.prepare("UPDATE reel_candidates SET status = ?, updated_at = ? WHERE candidate_id = ?").run(status, now(), candidateId);
+}
+
+export function upsertDerivedReel(db: DatabaseSync, input: {
+  reelId: string;
+  candidateId: string;
+  sourceAssetId: string;
+  outputRelativePath: string;
+  thumbnailRelativePath: string;
+  metadataRelativePath: string;
+  videoCodec: string | null;
+  audioCodec: string | null;
+  width: number | null;
+  height: number | null;
+  fps: number | null;
+  durationMs: number | null;
+  fileSize: number | null;
+  validationStatus: "PASS" | "FAIL";
+  rightsStatus: RightsStatus;
+  sourceChecksumBefore: string | null;
+  sourceChecksumAfter: string | null;
+  templateVersion: string;
+  processingVersion: string;
+}): void {
+  const timestamp = now();
+  db.prepare(`
+    INSERT INTO derived_reels (
+      reel_id, candidate_id, source_asset_id, output_relative_path,
+      thumbnail_relative_path, metadata_relative_path, video_codec, audio_codec,
+      width, height, fps, duration_ms, file_size, validation_status, rights_status,
+      source_checksum_before, source_checksum_after, template_version,
+      processing_version, created_at, updated_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ON CONFLICT(reel_id) DO UPDATE SET
+      output_relative_path = excluded.output_relative_path,
+      thumbnail_relative_path = excluded.thumbnail_relative_path,
+      metadata_relative_path = excluded.metadata_relative_path,
+      video_codec = excluded.video_codec,
+      audio_codec = excluded.audio_codec,
+      width = excluded.width,
+      height = excluded.height,
+      fps = excluded.fps,
+      duration_ms = excluded.duration_ms,
+      file_size = excluded.file_size,
+      validation_status = excluded.validation_status,
+      rights_status = excluded.rights_status,
+      source_checksum_before = excluded.source_checksum_before,
+      source_checksum_after = excluded.source_checksum_after,
+      template_version = excluded.template_version,
+      processing_version = excluded.processing_version,
+      updated_at = excluded.updated_at
+  `).run(
+    input.reelId, input.candidateId, input.sourceAssetId, input.outputRelativePath,
+    input.thumbnailRelativePath, input.metadataRelativePath, input.videoCodec,
+    input.audioCodec, input.width, input.height, input.fps, input.durationMs,
+    input.fileSize, input.validationStatus, input.rightsStatus,
+    input.sourceChecksumBefore, input.sourceChecksumAfter, input.templateVersion,
+    input.processingVersion, timestamp, timestamp,
+  );
+}
+
+export function derivedReelById(db: DatabaseSync, reelId: string): SqlRow | undefined {
+  return db.prepare("SELECT * FROM derived_reels WHERE reel_id = ?").get(reelId) as SqlRow | undefined;
 }

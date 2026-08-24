@@ -14,7 +14,12 @@
     "media:scan": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js scan",
     "media:list": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js list",
     "media:inspect": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js inspect",
-    "media:verify": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js verify"
+    "media:verify": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js verify",
+    "reel:analyze": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js reel:analyze",
+    "reel:candidates": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js reel:candidates",
+    "reel:generate": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js reel:generate",
+    "reel:inspect": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js reel:inspect",
+    "reel:validate": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js reel:validate"
   },
   "dependencies": {
     "next": "latest",

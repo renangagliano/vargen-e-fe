@@ -13,6 +13,9 @@ export type MediaConfig = {
   pipelineStateRootConfigured: boolean;
   ffmpegBin: string | null;
   ffprobeBin: string | null;
+  reelSafeZoneTopPx: number;
+  reelSafeZoneBottomPx: number;
+  reelSafeZoneSidePx: number;
 };
 
 function configuredPath(value: string | undefined, fallback: string): { value: string; configured: boolean } {
@@ -48,6 +51,10 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env, repoRoot = proc
     : { value: null, configured: false };
   const state = configuredPath(effectiveEnv.VARGEN_PIPELINE_STATE_ROOT, path.join(os.tmpdir(), "vargen-e-fe-pipeline-state"));
   const media = effectiveEnv.VARGEN_MEDIA_ROOT?.trim();
+  const numeric = (key: string, fallback: number): number => {
+    const value = Number(effectiveEnv[key]);
+    return Number.isFinite(value) && value >= 0 ? Math.round(value) : fallback;
+  };
 
   return {
     repoRoot: normalizedRepoRoot,
@@ -60,6 +67,9 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env, repoRoot = proc
     pipelineStateRootConfigured: state.configured,
     ffmpegBin: effectiveEnv.FFMPEG_BIN?.trim() || null,
     ffprobeBin: effectiveEnv.FFPROBE_BIN?.trim() || null,
+    reelSafeZoneTopPx: numeric("REEL_SAFE_ZONE_TOP_PX", 120),
+    reelSafeZoneBottomPx: numeric("REEL_SAFE_ZONE_BOTTOM_PX", 300),
+    reelSafeZoneSidePx: numeric("REEL_SAFE_ZONE_SIDE_PX", 80),
   };
 }
 

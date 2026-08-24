@@ -6,3 +6,4 @@ import "./database.test.js";
 import "./ffmpeg.test.js";
 import "./automation.test.js";
 import "./reels-structure.test.js";
+import "./reels.test.js";
