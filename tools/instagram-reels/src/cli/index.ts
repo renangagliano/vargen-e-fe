@@ -15,6 +15,7 @@ import { runInstagramConnectivityCommand } from "./connectivity.js";
 import { runPilotCommand } from "./pilot.js";
 import { runTemporaryMediaCommand } from "./temporary-media.js";
 import { runPersonalMicrosoftCommand } from "./personal-microsoft.js";
+import { runInstagramConfigCheckCommand } from "./config-check.js";
 
 function filterArgument(args: string[]): string | undefined {
   const value = args.find((arg) => arg.startsWith("--"));
@@ -24,6 +25,7 @@ function filterArgument(args: string[]): string | undefined {
 async function main(): Promise<void> {
   const [, , command, ...args] = process.argv;
   const config = loadConfig();
+  if (await runInstagramConfigCheckCommand(command, config.repoRoot)) return;
   if (await runInstagramConnectivityCommand(command)) return;
   if (await runPersonalMicrosoftCommand(command, config)) return;
   if (await runTemporaryMediaCommand(command, args, config)) return;

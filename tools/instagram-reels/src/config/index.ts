@@ -45,7 +45,7 @@ function configuredPath(value: string | undefined, fallback: string): { value: s
     : { value: fallback, configured: false };
 }
 
-function loadLocalEnvironment(env: NodeJS.ProcessEnv, repoRoot: string): NodeJS.ProcessEnv {
+export function loadProjectEnvironment(env: NodeJS.ProcessEnv = process.env, repoRoot = process.cwd()): NodeJS.ProcessEnv {
   if (env !== process.env) return env;
   const localEnvPath = path.join(repoRoot, ".env.local");
   if (!fs.existsSync(localEnvPath)) return env;
@@ -64,7 +64,7 @@ function loadLocalEnvironment(env: NodeJS.ProcessEnv, repoRoot: string): NodeJS.
 
 export function loadConfig(env: NodeJS.ProcessEnv = process.env, repoRoot = process.cwd()): MediaConfig {
   const normalizedRepoRoot = path.resolve(repoRoot);
-  const effectiveEnv = loadLocalEnvironment(env, normalizedRepoRoot);
+  const effectiveEnv = loadProjectEnvironment(env, normalizedRepoRoot);
   const toolRoot = path.join(normalizedRepoRoot, "tools", "instagram-reels");
   const output = effectiveEnv.VARGEN_REELS_OUTPUT_ROOT?.trim()
     ? { value: path.resolve(effectiveEnv.VARGEN_REELS_OUTPUT_ROOT.trim()), configured: true }
