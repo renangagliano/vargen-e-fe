@@ -14,6 +14,35 @@ import { endReviewSession, getReviewSessionProgress, nextReviewItem, recalculate
 
 export type ReviewServerOptions = { host?: string; port?: number };
 
+const LOCAL_REVIEW_HOSTS = new Set(["127.0.0.1", "localhost"]);
+
+/**
+ * Validate browser origins for state-changing cockpit requests.
+ *
+ * The cockpit is an HTTP localhost-only service.  A missing Origin is kept
+ * compatible with the previous policy, while a supplied Origin must be a
+ * structurally valid HTTP origin for the configured cockpit port.
+ */
+export function isAllowedLocalReviewOrigin(origin: string | undefined, configuredPort: number): boolean {
+  if (origin === undefined) return true;
+  if (origin !== origin.trim() || origin.toLowerCase() === "null") return false;
+
+  let parsed: URL;
+  try {
+    parsed = new URL(origin);
+  } catch {
+    return false;
+  }
+
+  if (parsed.protocol !== "http:") return false;
+  if (!LOCAL_REVIEW_HOSTS.has(parsed.hostname)) return false;
+  if (parsed.username || parsed.password) return false;
+  if (parsed.pathname !== "/" || parsed.search || parsed.hash) return false;
+
+  const effectivePort = parsed.port || "80";
+  return effectivePort === String(configuredPort);
+}
+
 function escapeHtml(value: unknown): string {
   return String(value ?? "").replace(/[&<>\"]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;" }[char] ?? char));
 }
@@ -102,14 +131,11 @@ const APP_HTML_PHASE72 = APP_HTML
   .replace("+' · direitos confirmados '+p.rights_confirmed}", "+' · direitos confirmados '+p.rights_confirmed+' · Section 8 '+p.section8_processed+'/'+p.total+' · FAST_PATH '+p.section8_fast_path+' · qualidade S8 '+(p.section8_average_quality??'—')}")
   .replace("</script></body>", "const previousRenderDetail=renderDetail;renderDetail=function(){previousRenderDetail();const item=state.items.find(row=>row.reel_id===state.selected);if(!item)return;const panel=document.createElement('div');panel.id='section9Readiness';panel.className='ai-suggestion';panel.textContent='Calculando CONTENT_READY...';$('detail').appendChild(panel);api('/api/reels/'+encodeURIComponent(item.reel_id)+'/readiness').then(readiness=>{const gates=Object.entries(readiness.gates||{}).map(([key,value])=>'<div><b>'+esc(key)+'</b>: <span class=\"'+(value==='PASS'?'ok':'warn')+'\">'+esc(value)+'</span></div>').join('');panel.innerHTML='<b>'+esc(readiness.status)+'</b>'+gates+(readiness.reasons?.length?'<p class=\"warn\">Bloqueios: '+esc(readiness.reasons.join(', '))+'</p>':'')}).catch(error=>{panel.textContent=error instanceof Error?error.message:'READINESS_ERROR';panel.className='ai-suggestion error'})};document.addEventListener('keydown',event=>{if(['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName))return;const key=event.key.toLowerCase();if(key==='n'){event.preventDefault();sessionNext()}if(key==='e'){event.preventDefault();document.getElementById('fCaption')?.focus()}if(key==='v'&&document.getElementById('verifyBible')&&confirm('Verificar explicitamente a referência bíblica exibida?'))document.getElementById('verifyBible').click();if(key==='a'&&document.getElementById('approve')&&confirm('Aprovar editorialmente esta versão?'))document.getElementById('approve').click();if(key==='c'&&document.getElementById('rights')&&confirm('Confirmar os direitos desta fonte?'))document.getElementById('rights').click();if(key==='r'&&document.getElementById('reject')&&confirm('Rejeitar este Reel?'))document.getElementById('reject').click();if(key==='m'&&document.getElementById('needs'))document.getElementById('needs').click()});</script></body>");
 
-async function handle(req: http.IncomingMessage, res: http.ServerResponse, config: MediaConfig): Promise<void> {
+async function handle(req: http.IncomingMessage, res: http.ServerResponse, config: MediaConfig, reviewPort: number): Promise<void> {
   const url = new URL(req.url ?? "/", "http://127.0.0.1");
   if (req.method === "POST" && url.pathname.startsWith("/api/")) {
     const origin = req.headers.origin;
-    if (origin) {
-      const originUrl = new URL(origin);
-      if (!["http://127.0.0.1", "http://localhost"].includes(originUrl.origin)) throw new Error("LOCAL_ORIGIN_REQUIRED");
-    }
+    if (!isAllowedLocalReviewOrigin(origin, reviewPort)) throw new Error("LOCAL_ORIGIN_REQUIRED");
     if (!String(req.headers["content-type"] ?? "").toLowerCase().startsWith("application/json")) throw new Error("JSON_CONTENT_TYPE_REQUIRED");
   }
   if (req.method === "GET" && url.pathname === "/") { res.writeHead(200, { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" }); res.end(APP_HTML_PHASE72); return; }
@@ -169,8 +195,9 @@ async function handle(req: http.IncomingMessage, res: http.ServerResponse, confi
 
 export function createReviewServer(config: MediaConfig, options: ReviewServerOptions = {}): http.Server {
   const host = options.host ?? config.reviewHost;
+  const port = options.port ?? config.reviewPort;
   if (host !== "127.0.0.1" && host !== "localhost") throw new Error("REVIEW_COCKPIT_MUST_BIND_LOCALHOST");
-  return http.createServer((req, res) => { void handle(req, res, config).catch((error) => json(res, 400, { error: error instanceof Error ? error.message : "REQUEST_FAILED" })); });
+  return http.createServer((req, res) => { void handle(req, res, config, port).catch((error) => json(res, 400, { error: error instanceof Error ? error.message : "REQUEST_FAILED" })); });
 }
 
 export async function startReviewCockpit(config: MediaConfig, options: ReviewServerOptions = {}): Promise<http.Server> {

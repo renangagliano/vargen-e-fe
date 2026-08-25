@@ -8,7 +8,7 @@ import { openDatabase, saveCuration, saveEditorialPackage, saveSongMatch, upsert
 import { generateEditorialPackage } from "../src/editorial/generator.js";
 import { sha256File } from "../src/media/checksum.js";
 import { approveEditorial } from "../src/publishing/approval.js";
-import { createReviewServer } from "../src/review/server.js";
+import { createReviewServer, isAllowedLocalReviewOrigin } from "../src/review/server.js";
 import { isBibleReferenceStructurallyValid, saveBibleReferenceDraft, verifyBibleReference, bibleReferenceStatus } from "../src/review/bible.js";
 import { confirmSourceRights, rejectSourceRights, RIGHTS_CONFIRMATION_STATEMENT } from "../src/review/rights.js";
 import { evaluateContentReadiness } from "../src/review/readiness.js";
@@ -71,6 +71,58 @@ test("cockpit binds only to localhost and media paths cannot escape output root"
   assert.equal((server.address() as { address: string }).address, "127.0.0.1");
   await new Promise<void>((resolve) => server.close(() => resolve()));
   await assert.rejects(() => resolveReviewFile(item.config, "../source/secret.mp4"), /REVIEW_FILE_OUTSIDE_OUTPUT_ROOT/);
+});
+
+test("localhost origin validation accepts only the configured HTTP cockpit port", () => {
+  const port = 4177;
+  assert.equal(isAllowedLocalReviewOrigin("http://127.0.0.1:4177", port), true);
+  assert.equal(isAllowedLocalReviewOrigin("http://localhost:4177", port), true);
+  assert.equal(isAllowedLocalReviewOrigin(undefined, port), true);
+  assert.equal(isAllowedLocalReviewOrigin("http://127.0.0.1:9999", port), false);
+  assert.equal(isAllowedLocalReviewOrigin("http://localhost.evil.com:4177", port), false);
+  assert.equal(isAllowedLocalReviewOrigin("http://192.168.1.10:4177", port), false);
+  assert.equal(isAllowedLocalReviewOrigin("https://localhost:4177", port), false);
+  assert.equal(isAllowedLocalReviewOrigin("null", port), false);
+  assert.equal(isAllowedLocalReviewOrigin("http://localhost:4177/path", port), false);
+  assert.equal(isAllowedLocalReviewOrigin("not-an-origin", port), false);
+});
+
+test("valid local origin reaches the rights endpoint without confirming rights", async () => {
+  const item = await fixture();
+  const server = createReviewServer(item.config);
+  await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
+  const address = server.address() as { port: number };
+  const response = await fetch(`http://127.0.0.1:${address.port}/api/assets/${encodeURIComponent(item.assetId)}/rights`, {
+    method: "POST",
+    headers: { origin: `http://127.0.0.1:${item.config.reviewPort}`, "content-type": "application/json" },
+    body: JSON.stringify({ action: "confirm" }),
+  });
+  assert.equal(response.status, 400);
+  assert.equal((await response.json() as { error: string }).error, "RIGHTS_ACTOR_AND_NOTE_REQUIRED");
+  const db = openDatabase(item.config);
+  try {
+    assert.equal((db.prepare("SELECT rights_status FROM media_assets WHERE asset_id = ?").get(item.assetId) as { rights_status: string }).rights_status, "RIGHTS_PENDING_CONFIRMATION");
+  } finally {
+    db.close();
+    await new Promise<void>((resolve) => server.close(() => resolve()));
+  }
+});
+
+test("GET behavior remains unchanged while POST rejects non-local origins", async () => {
+  const item = await fixture();
+  const server = createReviewServer(item.config);
+  await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
+  const address = server.address() as { port: number };
+  const health = await fetch(`http://127.0.0.1:${address.port}/health`, { headers: { origin: "https://example.com" } });
+  assert.equal(health.status, 200);
+  const rejected = await fetch(`http://127.0.0.1:${address.port}/api/assets/${encodeURIComponent(item.assetId)}/rights`, {
+    method: "POST",
+    headers: { origin: "https://example.com", "content-type": "application/json" },
+    body: JSON.stringify({ action: "confirm" }),
+  });
+  assert.equal(rejected.status, 400);
+  assert.equal((await rejected.json() as { error: string }).error, "LOCAL_ORIGIN_REQUIRED");
+  await new Promise<void>((resolve) => server.close(() => resolve()));
 });
 
 test("Bible draft and explicit verification are versioned and auditable", async () => {
