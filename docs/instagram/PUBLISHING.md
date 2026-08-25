@@ -6,7 +6,7 @@ Phase 5 adds a local, durable control plane for future Instagram publishing. It 
 
 `INSTAGRAM_PUBLISH_MODE=dry-run` is the default. It creates a safe payload, checks gates and records `DRY_RUN_VALIDATED` or `DRY_RUN_BLOCKED`; it never calls a network publisher.
 
-`approval` requires explicit rights confirmation and editorial approval before a job can be scheduled. `full-auto` is a future mode and remains disabled until official Meta eligibility, a verified temporary media provider and operational approval are present.
+`approval` requires explicit rights confirmation and editorial approval before a job can be scheduled. `full-auto` remains a future mode and requires capability-based Meta readiness, a verified temporary media provider and operational approval.
 
 ## Gates
 
@@ -39,9 +39,9 @@ Section 9 termina em `CONTENT_READY`. O inventário local
 `content-ready.json` contém somente conteúdo tecnicamente validado,
 editorialmente aprovado, com Bíblia verificada e direitos confirmados pelo
 operador. Esse arquivo é uma fronteira para a futura Section 10; não cria
-jobs, não agenda, não publica e não chama a Meta. `META_PRODUCTION_ELIGIBLE`
-continua independente e bloqueado enquanto a verificação empresarial
-externa não estiver resolvida.
+jobs, não agenda, não publica e não chama a Meta. A prontidão da API é
+independente do `CONTENT_READY` e somente pode avançar após a validação
+oficial de conta e permissões.
 
 ## Durable publication state
 
@@ -59,5 +59,6 @@ Dry-run outcomes are separate from real `PUBLISHED` state.
 Antes de qualquer futura fila de publicação, o cockpit exige aprovação
 editorial, direitos confirmados e referências bíblicas verificadas. `APPROVED`
 é independente de `CONTENT_READY`; Meta continua bloqueada por
-`META_BUSINESS_VERIFICATION_REQUIRED`. Nenhuma rota do cockpit chama a API
-Meta.
+`META_CONNECTIVITY_VALIDATION_REQUIRED` até o workflow somente leitura provar
+a conta configurada e as permissões de publicação. Nenhuma rota do cockpit
+chama a API Meta.

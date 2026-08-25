@@ -11,6 +11,7 @@ import { runReviewCommand } from "./review.js";
 import { runAiReviewCommand } from "./ai-review.js";
 import { runIntelligenceCommand } from "./intelligence.js";
 import { runKnowledgeCommand } from "./knowledge.js";
+import { runInstagramConnectivityCommand } from "./connectivity.js";
 
 function filterArgument(args: string[]): string | undefined {
   const value = args.find((arg) => arg.startsWith("--"));
@@ -20,6 +21,7 @@ function filterArgument(args: string[]): string | undefined {
 async function main(): Promise<void> {
   const [, , command, ...args] = process.argv;
   const config = loadConfig();
+  if (await runInstagramConnectivityCommand(command)) return;
   if (await runAiReviewCommand(command, args)) return;
   if (await runKnowledgeCommand(command, args)) return;
   if (await runIntelligenceCommand(command, args)) return;
@@ -71,7 +73,7 @@ async function main(): Promise<void> {
       await reviewEditorialCommand(requiredArgument(args));
       return;
     default:
-      console.log("Usage: doctor | scan | list | review:instagram | review:list --queue=primary|secondary|hold | review:progress | review:report | review:approve|review:reject|review:needs-changes <reel-id> --version=1 --by=<operator> | review:readiness <reel-id> | bible:set <reel-id> <reference> --by=<operator> | bible:verify <reel-id> --by=<operator> | rights:status [asset-id] | rights:confirm-source <asset-id> --confirm=I_CONFIRM_RIGHTS --by=<operator> | rights:reject-source <asset-id> --by=<operator> | ...");
+      console.log("Usage: doctor | scan | list | instagram:connectivity | review:instagram | review:list --queue=primary|secondary|hold | review:progress | review:report | review:approve|review:reject|review:needs-changes <reel-id> --version=1 --by=<operator> | review:readiness <reel-id> | bible:set <reel-id> <reference> --by=<operator> | bible:verify <reel-id> --by=<operator> | rights:status [asset-id] | rights:confirm-source <asset-id> --confirm=I_CONFIRM_RIGHTS --by=<operator> | rights:reject-source <asset-id> --by=<operator> | ...");
       process.exitCode = command ? 1 : 0;
   }
 }

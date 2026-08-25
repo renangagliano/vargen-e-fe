@@ -83,21 +83,15 @@ test("mock publisher exposes safe success and failure scenarios", async () => {
   assert.equal((await new MockInstagramPublisher("permanent-failure").publish({ jobId: "job", payload, mode: "approval" })).failureClass, "PERMANENT");
 });
 
-test("Meta publisher fails closed while production eligibility is false", async () => {
-  const previous = process.env.META_PRODUCTION_ELIGIBLE;
-  process.env.META_PRODUCTION_ELIGIBLE = "false";
-  try {
-    const publisher = new MetaInstagramPublisher();
-    assert.equal(publisher.validateConfiguration().ok, false);
-    const payload = await publisher.preparePublication({ reelId: "reel", editorialVersion: 1, caption: "caption", coverPath: "cover", targetAccount: "account" });
-    const result = await publisher.publish({ jobId: "job", payload, mode: "approval" });
-    assert.equal(result.status, "BLOCKED_EXTERNAL");
-    assert.equal(result.errorCode, "META_BUSINESS_VERIFICATION_REQUIRED");
-    assert.ok(!JSON.stringify(result).includes("access_token"));
-  } finally {
-    if (previous === undefined) delete process.env.META_PRODUCTION_ELIGIBLE;
-    else process.env.META_PRODUCTION_ELIGIBLE = previous;
-  }
+test("Meta publisher requires capability validation and never uses the legacy global blocker", async () => {
+  const publisher = new MetaInstagramPublisher();
+  assert.equal(publisher.validateConfiguration().ok, false);
+  assert.ok(publisher.validateConfiguration().reasons.includes("META_CONNECTIVITY_VALIDATION_REQUIRED"));
+  const payload = await publisher.preparePublication({ reelId: "reel", editorialVersion: 1, caption: "caption", coverPath: "cover", targetAccount: "account" });
+  const result = await publisher.publish({ jobId: "job", payload, mode: "approval" });
+  assert.equal(result.status, "BLOCKED_EXTERNAL");
+  assert.ok(!result.errorCode?.includes("BUSINESS_VERIFICATION"));
+  assert.ok(!JSON.stringify(result).includes("access_token"));
 });
 
 test("SQLite publication job can be durably locked once", async () => {

@@ -13,18 +13,53 @@ approved time-limited HTTPS media URL
   -> later collect official insights
 ```
 
-The current project is externally blocked by Meta business verification/App Review requirements. `META_PRODUCTION_ELIGIBLE=false` is the safe state. While false, the adapter returns `BLOCKED_EXTERNAL` with `META_BUSINESS_VERIFICATION_REQUIRED` and performs no HTTP call.
+Section 8.1 replaces the former universal business-verification assumption
+with capability-based readiness. The read-only connectivity validator checks
+the configured account and permission evidence through official Graph API GET
+requests. It does not create a media container and never calls
+`media_publish`. Ambiguous or missing capability evidence remains fail-closed.
+
+The Meta publisher itself still returns `BLOCKED_EXTERNAL` until a verified
+connectivity result, an approved temporary HTTPS media provider, and all
+existing human governance gates are supplied. Credentials alone never make
+the publisher ready.
+
+Readiness states are:
+
+```text
+UNCONFIGURED -> CREDENTIALS_PRESENT -> AUTHENTICATED -> ACCOUNT_VERIFIED
+  -> PUBLISH_PERMISSION_VERIFIED -> READY_FOR_CONTROLLED_TEST
+  -> BLOCKED | ERROR
+```
 
 Expected configuration is injected at runtime only:
 
 ```text
-META_PRODUCTION_ELIGIBLE=false
-META_GRAPH_API_VERSION=
+META_GRAPH_API_VERSION=v22.0
+META_GRAPH_API_BASE_URL=https://graph.facebook.com
+META_PERMISSIONS_ENDPOINT=/me/permissions
 META_APP_ID=
 INSTAGRAM_ACCOUNT_ID=
 INSTAGRAM_ACCESS_TOKEN=
 ```
 
+`META_APP_SECRET` is injected by the protected runtime when configured. The
+read-only probe does not need to send it, and the implementation never logs,
+stores or includes it in a URL. The access token is sent only as an
+`Authorization: Bearer` header for the request lifetime.
+
+Run the validation manually with:
+
+```text
+npm run instagram:connectivity
+```
+
+The preferred real execution is the manually triggered GitHub Actions
+workflow `Instagram API Connectivity`, using the `instagram-production`
+environment. It reports only check states, safe account metadata and
+sanitized errors. A successful result means `READY_FOR_CONTROLLED_TEST`, not
+permission to publish automatically.
+
 Secrets are never stored in SQLite payloads, audit metadata, logs or Git. The current `DryRunPublicationMediaProvider` produces a non-routable `dry-run.invalid` URL to validate payload shape without exposing OneDrive. A future provider must create a time-limited HTTPS URL for only the selected Reel and revoke it after publication.
 
-The connected Maestri Instagram portal is an operator inspection/configuration surface, not the production publisher.
+The connected Maestri Instagram portal is an operator inspection/configuration surface, not the production publisher. Credential rotation is performed by replacing the GitHub Environment secret, rerunning the connectivity workflow, and reviewing the resulting account ID and permission state; old tokens must not be copied into Git, `.env.local`, SQLite or reports.

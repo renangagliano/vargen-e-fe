@@ -1,6 +1,7 @@
 import type { FailureClass, PublicationMode, PublicationPayload } from "../shared/types.js";
 import { runtimeEnvironmentValue } from "../config/automation.js";
 import { DryRunPublicationMediaProvider, type PublicationMediaProvider } from "./media-provider.js";
+import type { InstagramApiReadinessState } from "./connectivity.js";
 
 export type PublisherResult = {
   status: "PUBLISHED" | "DRY_RUN_VALIDATED" | "BLOCKED_EXTERNAL" | "FAILED";
@@ -99,19 +100,22 @@ export class MockInstagramPublisher implements SocialPublisher {
 export class MetaInstagramPublisher implements SocialPublisher {
   readonly name = "meta-instagram";
 
-  private readonly productionEligible = runtimeEnvironmentValue("META_PRODUCTION_ELIGIBLE")?.toLowerCase() === "true";
   private readonly graphApiVersion = runtimeEnvironmentValue("META_GRAPH_API_VERSION") ?? "";
   private readonly appId = runtimeEnvironmentValue("META_APP_ID") ?? "";
   private readonly accessToken = runtimeEnvironmentValue("INSTAGRAM_ACCESS_TOKEN") ?? "";
   private readonly accountId = runtimeEnvironmentValue("INSTAGRAM_ACCOUNT_ID") ?? "";
 
+  public constructor(private readonly readiness?: { state: InstagramApiReadinessState; readyForControlledTest: boolean }) {}
+
   validateConfiguration(): { ok: boolean; reasons: string[] } {
     const reasons: string[] = [];
-    if (!this.productionEligible) reasons.push("META_BUSINESS_VERIFICATION_REQUIRED");
     if (!this.graphApiVersion) reasons.push("META_GRAPH_API_VERSION_MISSING");
     if (!this.appId) reasons.push("META_APP_ID_MISSING");
     if (!this.accountId) reasons.push("INSTAGRAM_ACCOUNT_ID_MISSING");
     if (!this.accessToken) reasons.push("INSTAGRAM_ACCESS_TOKEN_MISSING");
+    if (!this.readiness?.readyForControlledTest || this.readiness.state !== "READY_FOR_CONTROLLED_TEST") {
+      reasons.push("META_CONNECTIVITY_VALIDATION_REQUIRED");
+    }
     return { ok: reasons.length === 0, reasons };
   }
 
@@ -130,7 +134,7 @@ export class MetaInstagramPublisher implements SocialPublisher {
   async publish(_context: PublisherContext): Promise<PublisherResult> {
     const configuration = this.validateConfiguration();
     if (!configuration.ok) {
-      return { status: "BLOCKED_EXTERNAL", errorCode: configuration.reasons[0] ?? "META_NOT_ELIGIBLE", errorMessageSafe: "Official Meta publication is externally blocked or not configured.", failureClass: "EXTERNAL_BLOCKER" };
+      return { status: "BLOCKED_EXTERNAL", errorCode: configuration.reasons[0] ?? "META_CONNECTIVITY_VALIDATION_REQUIRED", errorMessageSafe: "Official Meta publication requires validated account capability and approval gates.", failureClass: "EXTERNAL_BLOCKER" };
     }
     return { status: "BLOCKED_EXTERNAL", errorCode: "META_PUBLISHER_REQUIRES_APPROVED_MEDIA_PROVIDER", errorMessageSafe: "A verified temporary HTTPS media provider is required before Meta publication.", failureClass: "EXTERNAL_BLOCKER" };
   }

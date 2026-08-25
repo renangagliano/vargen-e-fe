@@ -66,6 +66,21 @@ Sintoma: portal Instagram aparece no `maestri list`, porém o repositório não 
 
 Ação: manter inspeção de portal separada da Graph API. Criar app/OAuth somente quando a implementação atingir a fronteira Meta e houver aprovação humana.
 
+## Validar conectividade oficial Meta
+
+Execute `npm run instagram:connectivity` somente em ambiente que injeta os
+secrets protegidos. Para a validação real, use manualmente o workflow
+`Instagram API Connectivity` no environment `instagram-production`. O comando
+faz apenas GETs de identidade e permissões. `CONFIGURATION_ERROR` indica
+variável ausente; `AUTHENTICATION_ERROR` indica token inválido/expirado;
+`ACCOUNT_MISMATCH` indica que a resposta não corresponde ao
+`INSTAGRAM_ACCOUNT_ID`; `PERMISSION_ERROR` indica permissão ausente ou
+indeterminada; `META_API_ERROR` indica falha de transporte/API. Nunca trate
+um resultado `LIMITED`, `BLOCKED` ou `ERROR` como autorização para publicar.
+Rotacione o token substituindo o secret no GitHub Environment e execute o
+workflow novamente. Não copie tokens para `.env.local`, SQLite, logs ou
+relatórios.
+
 ## Site estático
 
 Sintoma: `output: "export"`, deploy GitHub Pages e nenhuma API route.

@@ -4,7 +4,9 @@
 
 O portal Instagram do Maestri está conectado a uma conta profissional `@vargen.fe`, observada como Creator. Isso prova acesso de sessão no portal, mas não prova que exista um Meta Developer App, OAuth, token, permissão de publicação ou acesso de analytics.
 
-O código do repositório não contém integração Meta.
+O repositório contém uma validação de conectividade somente leitura em
+`tools/instagram-reels/src/publishing/connectivity.ts`. Ela não substitui o
+fluxo oficial de publicação e não cria containers.
 
 ## Caminho técnico pretendido
 
@@ -26,7 +28,12 @@ Antes de qualquer publicação real:
 8. confirmar direitos dos vídeos, músicas, letras e visuais;
 9. confirmar política de retenção dos dados e métricas.
 
-Nenhuma dessas ações foi executada nesta fase.
+Para validar a configuração protegida sem publicar, execute manualmente o
+workflow `Instagram API Connectivity` no GitHub Environment
+`instagram-production`, ou `npm run instagram:connectivity` em um ambiente
+local explicitamente configurado. O workflow informa apenas se a conta é
+acessível, se o ID coincide e se as permissões requeridas foram observadas.
+Nenhuma dessas ações autoriza publicação automaticamente.
 
 ## Compatibilidade com full-auto futuro
 

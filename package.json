@@ -15,6 +15,7 @@
     "media:list": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js list",
     "media:inspect": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js inspect",
     "media:verify": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js verify",
+    "instagram:connectivity": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js instagram:connectivity",
     "reel:analyze": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js reel:analyze",
     "reel:candidates": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js reel:candidates",
     "reel:generate": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js reel:generate",

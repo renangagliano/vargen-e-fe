@@ -102,5 +102,7 @@ serves only approved generated output paths.
 Rights remain `RIGHTS_PENDING_CONFIRMATION` until an operator deliberately
 uses the existing rights workflow. `CONTENT_READY` still requires human
 editorial approval, human Bible verification where required, rights
-confirmation, technical validation and source integrity. `META_PRODUCTION_ELIGIBLE`
-is unchanged and no Meta call is made by Section 8.
+confirmation, technical validation and source integrity. Meta API capability
+is independent; Section 8.1 local tests make no Meta call, and the manual
+connectivity workflow is read-only and cannot create a media container or
+publish.

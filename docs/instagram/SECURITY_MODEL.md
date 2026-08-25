@@ -60,7 +60,13 @@ credencial de LLM ou chamada Meta. Sugestões AI ficam em tabelas separadas,
 não satisfazem gates humanos e só podem ser aplicadas por ação explícita do
 operador.
 
-`META_PRODUCTION_ELIGIBLE=false` é fail-closed até a verificação empresarial e o acesso oficial serem comprovados. O adaptador Meta não usa browser automation e não expõe o OneDrive.
+O acesso Meta usa prontidão baseada em capacidade, não um bloqueador
+empresarial universal. A validação oficial é somente leitura, usa headers
+`Authorization: Bearer`, sanitiza respostas e exige identidade de conta e
+permissões verificadas antes de produzir `READY_FOR_CONTROLLED_TEST`. O
+publisher continua fail-closed sem esse resultado, sem provider HTTPS
+temporário aprovado e sem gates humanos. O adaptador não usa browser
+automation e não expõe o OneDrive.
 
 ## Logs e incidentes
 

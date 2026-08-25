@@ -83,6 +83,23 @@ voltar a `NOT_READY`.
 
 Os três pilotos continuam `RIGHTS_PENDING_CONFIRMATION`, `READY_FOR_HUMAN_REVIEW` e `NOT_PUBLISHED`; não foram promovidos por automação.
 
+## Section 8.1 — conectividade oficial Meta
+
+A validação real é manual e somente leitura:
+
+```text
+npm run instagram:connectivity
+```
+
+No GitHub Actions, execute manualmente o workflow `Instagram API
+Connectivity` com o environment `instagram-production`. Ele injeta secrets
+e variables protegidos, valida identidade da conta e consulta permissões sem
+criar container, chamar `media_publish` ou agendar publicação. O resultado
+esperado para uma configuração completamente validada é
+`READY_FOR_CONTROLLED_TEST`; `LIMITED`, `BLOCKED` e `ERROR` exigem diagnóstico
+e não autorizam publicação. O token nunca aparece em URL, log, relatório ou
+artefato.
+
 ## Lifecycle futuro de publicação
 
 ```text
