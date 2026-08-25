@@ -205,6 +205,16 @@ test("non-professional account types are blocked when Meta exposes the type", as
   assert.equal(result.checks.accountCompatibility, "FAIL");
 });
 
+test("Meta MEDIA_CREATOR account type is accepted as a professional Instagram account", async () => {
+  const result = await new MetaInstagramConnectivityValidator(config(), async (input) => {
+    return String(input).includes("/me/permissions")
+      ? response({ data: [{ permission: "instagram_business_basic", status: "granted" }, { permission: "instagram_business_content_publish", status: "granted" }] })
+      : response({ id: "123", username: "vargen.fe", account_type: "MEDIA_CREATOR" });
+  }).validate();
+  assert.equal(result.state, "READY_FOR_CONTROLLED_TEST");
+  assert.equal(result.checks.accountCompatibility, "PASS");
+});
+
 test("missing account type remains limited rather than being treated as compatible", async () => {
   const result = await new MetaInstagramConnectivityValidator(config(), async (input) => {
     return String(input).includes("/me/permissions")

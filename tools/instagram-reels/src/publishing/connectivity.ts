@@ -294,7 +294,7 @@ function stateForError(errorCode: ConnectivityErrorCode): "BLOCKED" | "ERROR" {
 
 function compatibilityStatus(accountType: string | undefined): ConnectivityCheckStatus {
   if (!accountType) return "LIMITED";
-  return accountType === "BUSINESS" || accountType === "CREATOR" ? "PASS" : "FAIL";
+  return accountType === "BUSINESS" || accountType === "CREATOR" || accountType === "MEDIA_CREATOR" ? "PASS" : "FAIL";
 }
 
 function pathIsForbidden(pathname: string): boolean {
