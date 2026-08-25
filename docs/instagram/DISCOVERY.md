@@ -15,7 +15,7 @@ Branch criada: `feature/instagram-reels-growth-engine`
 
 O projeto atual é um site institucional Next.js/React/TypeScript exportado estaticamente para GitHub Pages. O conteúdo é majoritariamente estático, com catálogo gerado em `src/data/songs.ts`, 79 arquivos MP3 em `public/audio` e links parciais para vídeos do YouTube. Não existem backend, banco, fila, worker, scheduler de produção, pipeline audiovisual, integração Meta ou módulo Instagram no código.
 
-Não foram encontrados MP4 no repositório nem na árvore `C:\Users\erengag\OneDrive - Ericsson\Documents\Repository`. O usuário informou que existem vídeos reais, portanto eles estão fora do escopo de arquivos atualmente montado ou ainda não foram disponibilizados ao workspace.
+Não foram encontrados MP4 no repositório nem na árvore local de mídia montada para esta execução. O usuário informou que existem vídeos reais, portanto eles estão fora do escopo de arquivos atualmente montado ou ainda não foram disponibilizados ao workspace.
 
 ## Inventário solicitado
 

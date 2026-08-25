@@ -5,7 +5,7 @@
 O catálogo editorial da Phase 7.3 é o arquivo mestre:
 
 ```text
-C:\Users\erengag\OneDrive - Ericsson\Desktop\Renan\Vargen Band\Reels\vargen-fe-knowledge-base-master.json
+EXTERNAL_PERSONAL_KNOWLEDGE_BASE_FILE
 ```
 
 O arquivo contém 79 registros e foi integrado ao repositório como uma cópia
