@@ -491,6 +491,11 @@ export function formatInstagramConnectivityResult(result: InstagramConnectivityR
     `API host: ${result.apiHost}`,
     `Authentication endpoint: ${result.authenticationEndpoint}`,
     `Authorization method: ${result.authorizationMethod}`,
+    ...(result.account ? [
+      `Authenticated account ID: ${result.account.id}`,
+      `Authenticated username: ${result.account.username ?? "NOT_RETURNED"}`,
+      `Authenticated account type: ${result.account.account_type ?? "NOT_RETURNED"}`,
+    ] : []),
     "Token shape diagnostics:",
     `token_present=${tokenShape.tokenPresent}`,
     `token_length=${tokenShape.tokenLength}`,

@@ -79,6 +79,9 @@ test("successful connectivity validates account identity and permissions without
   assert.match(output, /API host: graph\.instagram\.com/);
   assert.match(output, /Authentication endpoint: \/me/);
   assert.match(output, /Authorization method: Bearer header/);
+  assert.match(output, /Authenticated account ID: 123/);
+  assert.match(output, /Authenticated username: vargen_fe/);
+  assert.match(output, /Authenticated account type: BUSINESS/);
   assert.match(output, /token_present=true/);
   assert.ok(!output.includes(secret));
 });
