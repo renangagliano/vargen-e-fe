@@ -4,6 +4,7 @@ import type { MediaConfig } from "../config/index.js";
 import { derivedReelById, inspectAsset, latestEditorialPackage, openDatabase, successfulPublicationExists } from "../database/db.js";
 import { sha256File } from "../media/checksum.js";
 import { publicationKey } from "../publishing/jobs.js";
+import { audit } from "../publishing/audit.js";
 import { bibleReferenceStatus } from "./bible.js";
 import { resolveReviewFile } from "./files.js";
 import type { ContentReadinessStatus } from "../shared/types.js";
@@ -64,6 +65,10 @@ export async function evaluateContentReadiness(reelId: string, config: MediaConf
     if (gates.duplicate_publication_check !== "PASS") reasons.push("PUBLICATION_ALREADY_SUCCEEDED");
     const status: ContentReadinessStatus = Object.values(gates).every((value) => value === "PASS") ? "CONTENT_READY" : "NOT_READY";
     const result = { reel_id: reelId, status, editorial_version: editorial?.editorial_version ?? null, gates, reasons: [...new Set(reasons)], evaluated_at: new Date().toISOString() };
+    const previous = db.prepare("SELECT status FROM content_readiness WHERE reel_id = ?").get(reelId) as { status?: string } | undefined;
+    if (previous?.status !== result.status && (previous?.status === "CONTENT_READY" || result.status === "CONTENT_READY")) {
+      audit(db, { eventId: `content-ready-transition:${reelId}:${previous?.status ?? "NONE"}:${result.status}:${result.evaluated_at}`, entityType: "REEL", entityId: reelId, eventType: result.status === "CONTENT_READY" ? "CONTENT_READY_ACHIEVED" : "CONTENT_READY_REVOKED", actor: "content-readiness-engine", metadata: { previous_status: previous?.status ?? null, status: result.status, editorial_version: result.editorial_version, reasons: result.reasons } });
+    }
     db.prepare(`
       INSERT INTO content_readiness (reel_id, status, editorial_version, gates_json, reasons_json, evaluated_at)
       VALUES (?, ?, ?, ?, ?, ?)

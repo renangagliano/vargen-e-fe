@@ -10,7 +10,7 @@ import { loadKnowledgeBase, knowledgeContext } from "../intelligence/knowledge-b
 import { bibleReferenceStatus } from "./bible.js";
 import { evaluateContentReadiness } from "./readiness.js";
 
-export type ReviewQueue = "primary" | "secondary" | "hold" | "fast-path" | "evidence-needed";
+export type ReviewQueue = "primary" | "secondary" | "hold" | "fast-path" | "standard-review" | "evidence-needed";
 export type ReviewFilters = {
   collection?: string;
   qualityTier?: CurationQualityTier;
@@ -144,7 +144,7 @@ export async function listReviewItems(queue: ReviewQueue = "primary", filters: R
     const curations = latestCurations(db);
     const items: ReviewItem[] = [];
     for (const curation of curations.values()) {
-      const baseQueue: ReviewQueue = queue === "fast-path" || queue === "evidence-needed" ? "primary" : queue;
+      const baseQueue: ReviewQueue = queue === "fast-path" || queue === "standard-review" || queue === "evidence-needed" ? "primary" : queue;
       if (!curation || !queuePredicate(baseQueue, curation.portfolio_status, curation.within_song_rank)) continue;
       const reel = derivedReelById(db, curation.reel_id);
       const asset = inspectAsset(db, curation.source_asset_id);
@@ -155,7 +155,8 @@ export async function listReviewItems(queue: ReviewQueue = "primary", filters: R
       const candidate = db.prepare("SELECT start_time_ms, end_time_ms, score FROM reel_candidates WHERE candidate_id = ?").get(curation.candidate_id) as Row | undefined;
       const ai = latestAi(db, curation.reel_id);
       const section8 = latestSection8(db, curation.reel_id);
-      if (queue === "fast-path" && ai.calibration?.fast_path_status !== "FAST_PATH") continue;
+      if (queue === "fast-path" && section8.calibration?.review_queue !== "FAST_PATH") continue;
+      if (queue === "standard-review" && section8.calibration?.review_queue !== "STANDARD_REVIEW") continue;
       if (queue === "evidence-needed" && ai.calibration?.evidence_needed_status !== "EVIDENCE_NEEDED") continue;
       const item: ReviewItem = {
         reel_id: curation.reel_id,
@@ -206,6 +207,7 @@ export async function getReviewItem(reelId: string, config: MediaConfig): Promis
 export async function reviewProgress(config: MediaConfig): Promise<Record<string, unknown>> {
   const items = await listReviewItems("primary", {}, config);
   const reviewed = items.filter((item) => item.editorial?.review_status && item.editorial.review_status !== "READY_FOR_HUMAN_REVIEW");
+  const approvedReadiness = await Promise.all(items.filter((item) => item.editorial?.review_status === "APPROVED").map((item) => evaluateContentReadiness(item.reel_id, config)));
   const countBy = (predicate: (item: ReviewItem) => boolean) => items.filter(predicate).length;
   return {
     queue: "PRIMARY",
@@ -245,6 +247,11 @@ export async function reviewProgress(config: MediaConfig): Promise<Record<string
     section8_generic_medium: countBy((item) => item.section8_calibration?.generic_language_level === "GENERIC_MEDIUM"),
     section8_generic_high: countBy((item) => item.section8_calibration?.generic_language_level === "GENERIC_HIGH"),
     section8_average_quality: (() => { const values = items.map((item) => item.section8_calibration?.editorial_quality_score).filter((value): value is number => typeof value === "number"); return values.length ? Math.round(values.reduce((sum, value) => sum + value, 0) / values.length * 100) / 100 : null; })(),
+    fast_path_total: countBy((item) => item.section8_calibration?.review_queue === "FAST_PATH"),
+    standard_review_total: countBy((item) => item.section8_calibration?.review_queue === "STANDARD_REVIEW"),
+    fast_path_reviewed: items.filter((item) => item.section8_calibration?.review_queue === "FAST_PATH" && item.editorial?.review_status !== "READY_FOR_HUMAN_REVIEW").length,
+    standard_reviewed: items.filter((item) => item.section8_calibration?.review_queue === "STANDARD_REVIEW" && item.editorial?.review_status !== "READY_FOR_HUMAN_REVIEW").length,
+    content_ready: approvedReadiness.filter((item) => item.status === "CONTENT_READY").length,
   };
 }
 

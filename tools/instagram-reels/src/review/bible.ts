@@ -195,6 +195,7 @@ export async function verifyBibleReference(reelId: string, actor: string, note: 
     const updated = sourceFromRow(latestSourceRow(verifiedDb, reelId));
     if (!updated) throw new Error("BIBLE_REFERENCE_NOT_FOUND");
     audit(verifiedDb, { entityType: "REEL", entityId: reelId, eventType: "BIBLE_REFERENCE_VERIFIED", actor: actor.trim(), metadata: { reference: updated.reference, source_type: updated.source_type } });
+    audit(verifiedDb, { eventId: `section9-bible-human-verified:${reelId}:${updated.reference}`, entityType: "REEL", entityId: reelId, eventType: "BIBLE_HUMAN_VERIFIED", actor: actor.trim(), metadata: { reference: updated.reference, source_type: updated.source_type, verification: "explicit_operator_action" } });
     return updated;
   } finally { verifiedDb.close(); }
 }

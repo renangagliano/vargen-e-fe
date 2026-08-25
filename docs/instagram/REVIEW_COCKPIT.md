@@ -78,6 +78,31 @@ bloqueia `CONTENT_READY`.
 
 ## CONTENT_READY
 
+## Section 9 — sessão acelerada e readiness
+
+O cockpit agora oferece sessões persistentes para as filas `FAST_PATH` (52)
+e `STANDARD_REVIEW` (26). Selecione uma dessas filas, clique em **INICIAR
+SESSÃO** e use **PRÓXIMO PENDENTE**; o operador pode fechar e reabrir o
+cockpit usando o mesmo `session_id` pela CLI. A sessão registra apenas
+progresso operacional, nunca uma aprovação automática.
+
+O painel do Reel exibe o checklist vivo de `CONTENT_READY`, com cada gate e
+os bloqueios exatos. O manifesto `content-ready.json` só inclui itens que
+passaram em todos os gates. Rights, Bíblia e aprovação continuam ações
+independentes e explícitas.
+
+Comandos de apoio:
+
+```powershell
+npm run review:next -- --queue=fast-path
+npm run review:section9-report
+npm run rights:preview -- <asset-id>
+npm run content-ready:list
+```
+
+O cockpit permanece estritamente local, não é exportado pelo Next.js e não
+publica conteúdo.
+
 `CONTENT_READY` é um estado de governança separado de `READY_FOR_PUBLISHING`.
 Exige validação técnica, integridade da fonte, aprovação editorial, referência
 bíblica verificada, direitos confirmados, arquivos presentes e proteção contra

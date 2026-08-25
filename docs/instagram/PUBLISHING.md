@@ -33,6 +33,16 @@ node tools/instagram-reels/dist/src/cli/index.js reel:schedule <reel-id> <ISO-da
 
 The pilot remains rights-pending and must not be confirmed automatically.
 
+## Section 9 handoff
+
+Section 9 termina em `CONTENT_READY`. O inventário local
+`content-ready.json` contém somente conteúdo tecnicamente validado,
+editorialmente aprovado, com Bíblia verificada e direitos confirmados pelo
+operador. Esse arquivo é uma fronteira para a futura Section 10; não cria
+jobs, não agenda, não publica e não chama a Meta. `META_PRODUCTION_ELIGIBLE`
+continua independente e bloqueado enquanto a verificação empresarial
+externa não estiver resolvida.
+
 ## Durable publication state
 
 SQLite persists publication jobs, idempotency keys, retry metadata, safe payloads and audit events. Runtime state is outside Git and outside the OneDrive master directory.
