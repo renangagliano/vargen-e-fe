@@ -34,6 +34,11 @@ export function runtimeEnvironmentValue(key: string, env: NodeJS.ProcessEnv = pr
   return (env === process.env ? loadLocalEnvironment(env) : env)[key]?.trim() || undefined;
 }
 
+export function runtimeEnvironmentRawValue(key: string, env: NodeJS.ProcessEnv = process.env): string | undefined {
+  const value = (env === process.env ? loadLocalEnvironment(env) : env)[key];
+  return value || undefined;
+}
+
 function loadLocalEnvironment(env: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
   const filePath = path.join(process.cwd(), ".env.local");
   if (!fs.existsSync(filePath)) return env;

@@ -42,7 +42,7 @@ Expected configuration is injected at runtime only:
 
 ```text
 META_GRAPH_API_VERSION=v22.0
-META_GRAPH_API_BASE_URL=https://graph.facebook.com
+META_GRAPH_API_BASE_URL=https://graph.instagram.com
 META_PERMISSIONS_ENDPOINT=/me/permissions
 META_APP_ID=
 INSTAGRAM_ACCOUNT_ID=

@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   formatInstagramConnectivityResult,
+  inspectInstagramTokenShape,
   loadInstagramConnectivityConfig,
   MetaInstagramConnectivityValidator,
   assertReadOnlyConnectivityOperation,
@@ -18,7 +19,7 @@ function config(overrides: Partial<InstagramConnectivityConfig> = {}): Instagram
     accountId: "123",
     accessToken: secret,
     graphApiVersion: "v22.0",
-    graphApiBaseUrl: "https://graph.facebook.com",
+    graphApiBaseUrl: "https://graph.instagram.com",
     permissionsEndpoint: "/me/permissions",
     timeoutMs: 1000,
     ...overrides,
@@ -67,13 +68,87 @@ test("successful connectivity validates account identity and permissions without
   assert.equal(result.checks.accountIdMatch, "PASS");
   assert.equal(calls.length, 2);
   assert.ok(calls.every((call) => call.method === "GET"));
+  assert.equal(calls[0]?.url, "https://graph.instagram.com/v22.0/me?fields=id%2Cusername%2Cname%2Caccount_type");
+  assert.equal(calls[1]?.url, "https://graph.instagram.com/v22.0/me/permissions");
   assert.ok(calls.every((call) => !call.url.includes("access_token") && !call.url.includes("media_publish") && !call.url.match(/\/media(?:\/|$)/)));
   assert.ok(calls.every((call) => call.authorization === `Bearer ${secret}`));
   assert.ok(!JSON.stringify(result).includes(secret));
   const output = formatInstagramConnectivityResult(result);
   assert.match(output, /Publishing executed: NO/);
   assert.match(output, /Configuration: PASS/);
+  assert.match(output, /API host: graph\.instagram\.com/);
+  assert.match(output, /Authentication endpoint: \/me/);
+  assert.match(output, /Authorization method: Bearer header/);
+  assert.match(output, /token_present=true/);
   assert.ok(!output.includes(secret));
+});
+
+test("raw token shape diagnostics are safe and do not expose token content", () => {
+  const diagnostics = inspectInstagramTokenShape(`  ${secret}\r\n`);
+  assert.deepEqual(diagnostics, {
+    tokenPresent: true,
+    tokenLength: secret.length + 4,
+    tokenPrefixLengthSafe: 8,
+    leadingWhitespace: true,
+    trailingWhitespace: true,
+    containsNewline: true,
+    containsCarriageReturn: true,
+    containsSpace: true,
+    startsWithBearerLiteral: false,
+    startsWithQuote: false,
+    endsWithQuote: false,
+  });
+  assert.ok(!JSON.stringify(diagnostics).includes(secret));
+});
+
+test("token loading uses INSTAGRAM_ACCESS_TOKEN and never substitutes app credentials", () => {
+  const loaded = loadInstagramConnectivityConfig({
+    META_APP_ID: "test-app",
+    META_APP_SECRET: "app-secret-must-not-be-used-as-token",
+    INSTAGRAM_ACCOUNT_ID: "123",
+    INSTAGRAM_ACCESS_TOKEN: secret,
+  } as unknown as NodeJS.ProcessEnv);
+  assert.equal(loaded.accessToken, secret);
+  assert.equal(loaded.appSecretPresent, true);
+  assert.ok(!JSON.stringify({ accessToken: loaded.accessToken }).includes("app-secret-must-not-be-used-as-token"));
+});
+
+test("leading, trailing, LF, and CRLF whitespace is trimmed before the bearer header", async () => {
+  for (const rawToken of [`  ${secret}`, `${secret}  `, `\n${secret}`, `${secret}\n`, `\r\n${secret}\r\n`]) {
+    const calls: Array<{ url: string; method: string; authorization: string | null }> = [];
+    const loaded = loadInstagramConnectivityConfig({
+      META_APP_ID: "test-app",
+      META_APP_SECRET: "test-secret",
+      INSTAGRAM_ACCOUNT_ID: "123",
+      INSTAGRAM_ACCESS_TOKEN: rawToken,
+      META_GRAPH_API_VERSION: "v22.0",
+    } as unknown as NodeJS.ProcessEnv);
+    const result = await new MetaInstagramConnectivityValidator(loaded, successfulFetch(calls)).validate();
+    assert.equal(result.state, "READY_FOR_CONTROLLED_TEST");
+    assert.ok(calls.every((call) => call.authorization === `Bearer ${secret}`));
+  }
+});
+
+test("literal Bearer prefix is rejected instead of being duplicated", async () => {
+  let calls = 0;
+  const result = await new MetaInstagramConnectivityValidator(config({ accessToken: `Bearer ${secret}` }), async () => {
+    calls += 1;
+    return response({});
+  }).validate();
+  assert.equal(result.errorCode, "CONFIGURATION_ERROR");
+  assert.ok(result.errorMessageSafe?.includes("INSTAGRAM_ACCESS_TOKEN_MUST_CONTAIN_RAW_TOKEN"));
+  assert.equal(calls, 0);
+});
+
+test("quoted token values are rejected without stripping token characters", async () => {
+  let calls = 0;
+  const result = await new MetaInstagramConnectivityValidator(config({ accessToken: `"${secret}"` }), async () => {
+    calls += 1;
+    return response({});
+  }).validate();
+  assert.equal(result.errorCode, "CONFIGURATION_ERROR");
+  assert.ok(result.errorMessageSafe?.includes("INSTAGRAM_ACCESS_TOKEN_MUST_NOT_BE_QUOTED"));
+  assert.equal(calls, 0);
 });
 
 test("invalid token returns an authentication error with sanitized Meta detail", async () => {
@@ -174,6 +249,17 @@ test("non-official Graph hosts are rejected before bearer credentials are sent",
     return response({ id: "123" });
   }).validate();
   assert.equal(result.state, "UNCONFIGURED");
+  assert.equal(result.errorCode, "CONFIGURATION_ERROR");
+  assert.ok(result.errorMessageSafe?.includes("META_GRAPH_API_BASE_URL_INVALID"));
+  assert.equal(calls, 0);
+});
+
+test("the Facebook Graph host is rejected for Instagram Login tokens", async () => {
+  let calls = 0;
+  const result = await new MetaInstagramConnectivityValidator(config({ graphApiBaseUrl: "https://graph.facebook.com" }), async () => {
+    calls += 1;
+    return response({ id: "123" });
+  }).validate();
   assert.equal(result.errorCode, "CONFIGURATION_ERROR");
   assert.ok(result.errorMessageSafe?.includes("META_GRAPH_API_BASE_URL_INVALID"));
   assert.equal(calls, 0);

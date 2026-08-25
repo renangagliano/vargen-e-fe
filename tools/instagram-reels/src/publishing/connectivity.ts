@@ -1,8 +1,9 @@
-import { runtimeEnvironmentValue } from "../config/automation.js";
+import { runtimeEnvironmentRawValue, runtimeEnvironmentValue } from "../config/automation.js";
 
-export const DEFAULT_META_GRAPH_API_BASE_URL = "https://graph.facebook.com";
+export const DEFAULT_META_GRAPH_API_BASE_URL = "https://graph.instagram.com";
 export const DEFAULT_META_GRAPH_API_VERSION = "v22.0";
 export const DEFAULT_META_CONNECTIVITY_TIMEOUT_MS = 15_000;
+export const INSTAGRAM_PROFILE_ENDPOINT = "/me";
 
 export type InstagramApiReadinessState =
   | "UNCONFIGURED"
@@ -39,6 +40,21 @@ export type InstagramConnectivityConfig = {
   graphApiBaseUrl: string;
   permissionsEndpoint: string;
   timeoutMs: number;
+  tokenShape?: InstagramTokenShapeDiagnostics;
+};
+
+export type InstagramTokenShapeDiagnostics = {
+  tokenPresent: boolean;
+  tokenLength: number;
+  tokenPrefixLengthSafe: number;
+  leadingWhitespace: boolean;
+  trailingWhitespace: boolean;
+  containsNewline: boolean;
+  containsCarriageReturn: boolean;
+  containsSpace: boolean;
+  startsWithBearerLiteral: boolean;
+  startsWithQuote: boolean;
+  endsWithQuote: boolean;
 };
 
 export type InstagramAccountMetadata = {
@@ -72,6 +88,10 @@ export type InstagramConnectivityResult = {
   permissions?: InstagramPermission[];
   errorCode?: ConnectivityErrorCode;
   errorMessageSafe?: string;
+  apiHost: string;
+  authenticationEndpoint: string;
+  authorizationMethod: "Bearer header";
+  tokenShape: InstagramTokenShapeDiagnostics;
 };
 
 export type MetaConnectivityFetch = (input: string | URL, init?: RequestInit) => Promise<Response>;
@@ -90,7 +110,7 @@ const REQUIRED_PERMISSION_ALIASES: ReadonlyArray<ReadonlyArray<string>> = [
   ["instagram_content_publish", "instagram_business_content_publish"],
 ];
 
-const OFFICIAL_META_GRAPH_HOSTS = new Set(["graph.facebook.com", "graph.instagram.com"]);
+const OFFICIAL_META_GRAPH_HOSTS = new Set(["graph.instagram.com"]);
 
 function record(value: unknown): JsonRecord | undefined {
   return typeof value === "object" && value !== null && !Array.isArray(value) ? value as JsonRecord : undefined;
@@ -105,17 +125,36 @@ function envValue(key: string, env: NodeJS.ProcessEnv): string | undefined {
   return value || undefined;
 }
 
+export function inspectInstagramTokenShape(rawAccessToken: string | undefined): InstagramTokenShapeDiagnostics {
+  const token = rawAccessToken ?? "";
+  return {
+    tokenPresent: token.length > 0,
+    tokenLength: token.length,
+    tokenPrefixLengthSafe: Math.min(token.length, 8),
+    leadingWhitespace: token.length > 0 && /^\s/.test(token),
+    trailingWhitespace: token.length > 0 && /\s$/.test(token),
+    containsNewline: token.includes("\n"),
+    containsCarriageReturn: token.includes("\r"),
+    containsSpace: token.includes(" "),
+    startsWithBearerLiteral: /^Bearer\s+/i.test(token),
+    startsWithQuote: /^["']/.test(token),
+    endsWithQuote: /["']$/.test(token),
+  };
+}
+
 export function loadInstagramConnectivityConfig(env: NodeJS.ProcessEnv = process.env): InstagramConnectivityConfig {
   const appSecret = envValue("META_APP_SECRET", env);
+  const rawAccessToken = runtimeEnvironmentRawValue("INSTAGRAM_ACCESS_TOKEN", env);
   return {
     appId: envValue("META_APP_ID", env),
     appSecretPresent: Boolean(appSecret),
     accountId: envValue("INSTAGRAM_ACCOUNT_ID", env),
-    accessToken: envValue("INSTAGRAM_ACCESS_TOKEN", env),
+    accessToken: rawAccessToken?.trim() || undefined,
     graphApiVersion: envValue("META_GRAPH_API_VERSION", env) ?? DEFAULT_META_GRAPH_API_VERSION,
     graphApiBaseUrl: envValue("META_GRAPH_API_BASE_URL", env) ?? DEFAULT_META_GRAPH_API_BASE_URL,
     permissionsEndpoint: envValue("META_PERMISSIONS_ENDPOINT", env) ?? "/me/permissions",
     timeoutMs: Number(envValue("META_CONNECTIVITY_TIMEOUT_MS", env) ?? DEFAULT_META_CONNECTIVITY_TIMEOUT_MS),
+    tokenShape: inspectInstagramTokenShape(rawAccessToken),
   };
 }
 
@@ -141,6 +180,10 @@ function invalidConfiguration(config: InstagramConnectivityConfig): string[] {
   if (!config.permissionsEndpoint.startsWith("/") || config.permissionsEndpoint.includes("..") || config.permissionsEndpoint.includes("?") || config.permissionsEndpoint.includes("#") || pathIsForbidden(config.permissionsEndpoint)) {
     invalid.push("META_PERMISSIONS_ENDPOINT_INVALID");
   }
+  const tokenShape = config.tokenShape ?? inspectInstagramTokenShape(config.accessToken);
+  if (tokenShape.startsWithBearerLiteral) invalid.push("INSTAGRAM_ACCESS_TOKEN_MUST_CONTAIN_RAW_TOKEN");
+  if (tokenShape.startsWithQuote || tokenShape.endsWithQuote) invalid.push("INSTAGRAM_ACCESS_TOKEN_MUST_NOT_BE_QUOTED");
+  if (config.accessToken && /\s/.test(config.accessToken)) invalid.push("INSTAGRAM_ACCESS_TOKEN_INTERNAL_WHITESPACE");
   if (!Number.isInteger(config.timeoutMs) || config.timeoutMs < 1000 || config.timeoutMs > 60_000) invalid.push("META_CONNECTIVITY_TIMEOUT_INVALID");
   return invalid;
 }
@@ -171,11 +214,23 @@ function errorDetails(body: unknown, status: number, accessToken?: string): Meta
   };
 }
 
-function resultBase(configurationPresent: boolean, credentialsPresent: boolean): InstagramConnectivityResult {
+function safeHost(baseUrl: string): string {
+  try {
+    return new URL(baseUrl).hostname;
+  } catch {
+    return "invalid";
+  }
+}
+
+function resultBase(config: InstagramConnectivityConfig, configurationPresent: boolean, credentialsPresent: boolean): InstagramConnectivityResult {
   return {
     state: configurationPresent && credentialsPresent ? "CREDENTIALS_PRESENT" : "UNCONFIGURED",
     publishingCapability: "BLOCKED",
     readyForControlledTest: false,
+    apiHost: safeHost(config.graphApiBaseUrl),
+    authenticationEndpoint: INSTAGRAM_PROFILE_ENDPOINT,
+    authorizationMethod: "Bearer header",
+    tokenShape: config.tokenShape ?? inspectInstagramTokenShape(config.accessToken),
     checks: {
       configuration: configurationPresent ? "PASS" : "FAIL",
       credentials: credentialsPresent ? "PASS" : "FAIL",
@@ -190,7 +245,7 @@ function resultBase(configurationPresent: boolean, credentialsPresent: boolean):
 
 function accountMetadata(body: unknown): InstagramAccountMetadata | undefined {
   const value = record(body);
-  const id = text(value?.id);
+  const id = text(value?.id) ?? text(value?.user_id);
   if (!id) return undefined;
   return {
     id,
@@ -288,7 +343,7 @@ export class MetaInstagramConnectivityValidator {
   public async validate(): Promise<InstagramConnectivityResult> {
     const credentialErrors = missingConfiguration(this.config);
     const configurationErrors = invalidConfiguration(this.config);
-    const result = resultBase(configurationErrors.length === 0, credentialErrors.length === 0);
+    const result = resultBase(this.config, configurationErrors.length === 0, credentialErrors.length === 0);
     if (credentialErrors.length > 0 || configurationErrors.length > 0) {
       return {
         ...result,
@@ -299,7 +354,7 @@ export class MetaInstagramConnectivityValidator {
 
     let accountResponse: Awaited<ReturnType<MetaInstagramConnectivityValidator["getJson"]>>;
     try {
-      accountResponse = await this.getJson(`/${this.config.accountId!}`, {
+      accountResponse = await this.getJson(INSTAGRAM_PROFILE_ENDPOINT, {
         fields: "id,username,name,account_type",
       });
     } catch {
@@ -427,11 +482,27 @@ export class MetaInstagramConnectivityValidator {
 
 export function formatInstagramConnectivityResult(result: InstagramConnectivityResult): string {
   const status = (value: ConnectivityCheckStatus): string => value;
+  const tokenShape = result.tokenShape;
   return [
     "Instagram API Connectivity",
     "---------------------------",
     `Configuration: ${status(result.checks.configuration)}`,
     `Credentials: ${status(result.checks.credentials)}`,
+    `API host: ${result.apiHost}`,
+    `Authentication endpoint: ${result.authenticationEndpoint}`,
+    `Authorization method: ${result.authorizationMethod}`,
+    "Token shape diagnostics:",
+    `token_present=${tokenShape.tokenPresent}`,
+    `token_length=${tokenShape.tokenLength}`,
+    `token_prefix_length_safe=${tokenShape.tokenPrefixLengthSafe}`,
+    `leading_whitespace=${tokenShape.leadingWhitespace}`,
+    `trailing_whitespace=${tokenShape.trailingWhitespace}`,
+    `contains_newline=${tokenShape.containsNewline}`,
+    `contains_carriage_return=${tokenShape.containsCarriageReturn}`,
+    `contains_space=${tokenShape.containsSpace}`,
+    `starts_with_bearer_literal=${tokenShape.startsWithBearerLiteral}`,
+    `starts_with_quote=${tokenShape.startsWithQuote}`,
+    `ends_with_quote=${tokenShape.endsWithQuote}`,
     `Authentication: ${status(result.checks.authentication)}`,
     `Account access: ${status(result.checks.accountAccess)}`,
     `Account ID match: ${status(result.checks.accountIdMatch)}`,

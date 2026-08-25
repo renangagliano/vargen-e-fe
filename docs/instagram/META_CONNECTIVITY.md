@@ -7,11 +7,12 @@ job, or change rights, Bible, editorial, or `CONTENT_READY` state.
 ## Architecture
 
 The connectivity adapter is
-`tools/instagram-reels/src/publishing/connectivity.ts`. It sends the access
-token only in an `Authorization: Bearer` header and accepts only official
-HTTPS Graph hosts. The probe reads:
+`tools/instagram-reels/src/publishing/connectivity.ts`. For the Instagram
+Login flow it uses `https://graph.instagram.com`, sends the raw access token
+only in an `Authorization: Bearer` header, and accepts only that official
+HTTPS host. The probe reads:
 
-1. configured account metadata (`id`, `username`, `name`, `account_type`);
+1. `/me` account metadata (`id`, `username`, `name`, `account_type`);
 2. the configured account identity match;
 3. read-only permission evidence from the configured permissions endpoint.
 
@@ -56,6 +57,12 @@ The manual workflow uses the `instagram-production` environment:
 The app secret is injected for environment completeness but is not sent by
 the read-only probe. Neither secret is printed, persisted, placed in a URL,
 stored in SQLite, or uploaded as an artifact.
+
+The CLI may print only non-sensitive token-shape diagnostics: presence,
+length, whitespace/quote flags, and whether a literal `Bearer` prefix was
+provided. It never prints token characters or an authorization header. The
+stored secret must contain only the raw token; surrounding whitespace is
+trimmed, while quoted or `Bearer`-prefixed values fail closed.
 
 ## Local command
 
