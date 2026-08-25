@@ -61,6 +61,11 @@
     ,"ai-review:reel": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js ai-review:reel"
     ,"ai-review:report": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js ai-review:report"
     ,"ai-review:apply": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js ai-review:apply"
+    ,"biblical:registry": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js biblical:registry"
+    ,"biblical:resolve": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js biblical:resolve"
+    ,"editorial:calibrate": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js editorial:calibrate"
+    ,"editorial:report": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js editorial:report"
+    ,"ai-review:phase72": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js ai-review:phase72"
   },
   "dependencies": {
     "next": "latest",

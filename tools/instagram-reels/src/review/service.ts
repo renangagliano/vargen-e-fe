@@ -5,11 +5,11 @@ import { curationRows, derivedReelById, inspectAsset, latestCuration, latestEdit
 import { loadSongCatalog } from "../matching/catalog.js";
 import { approveEditorial, rejectEditorial, requestEditorialChanges } from "../publishing/approval.js";
 import { editEditorialPackage, type EditorialEdit } from "../publishing/editorial-edit.js";
-import type { AiBibleSuggestion, AiEditorialSuggestion, AiReviewResult, CurationQualityTier, EditorialPackage, EditorialReviewStatus, PortfolioStatus } from "../shared/types.js";
+import type { AiBibleSuggestion, AiEditorialSuggestion, AiReviewResult, BiblicalResolutionEvidence, CurationQualityTier, EditorialCalibration, EditorialPackage, EditorialReviewStatus, PortfolioStatus } from "../shared/types.js";
 import { bibleReferenceStatus } from "./bible.js";
 import { evaluateContentReadiness } from "./readiness.js";
 
-export type ReviewQueue = "primary" | "secondary" | "hold";
+export type ReviewQueue = "primary" | "secondary" | "hold" | "fast-path" | "evidence-needed";
 export type ReviewFilters = {
   collection?: string;
   qualityTier?: CurationQualityTier;
@@ -19,6 +19,8 @@ export type ReviewFilters = {
   contentPillar?: string;
   seasonality?: string;
   calendarContext?: string;
+  fastPath?: string;
+  evidenceNeeded?: string;
 };
 
 export type ReviewItem = {
@@ -45,6 +47,8 @@ export type ReviewItem = {
   ai_review?: AiReviewResult | null;
   ai_bible_suggestion?: AiBibleSuggestion | null;
   ai_editorial_suggestion?: AiEditorialSuggestion | null;
+  editorial_calibration?: EditorialCalibration | null;
+  bible_resolution?: BiblicalResolutionEvidence | null;
 };
 
 type Row = Record<string, unknown>;
@@ -57,10 +61,12 @@ function latestCurations(db: ReturnType<typeof openDatabase>): Map<string, Retur
   return map;
 }
 
-function latestAi(db: ReturnType<typeof openDatabase>, reelId: string): { review: AiReviewResult | null; bible: AiBibleSuggestion | null; editorial: AiEditorialSuggestion | null } {
+function latestAi(db: ReturnType<typeof openDatabase>, reelId: string): { review: AiReviewResult | null; bible: AiBibleSuggestion | null; editorial: AiEditorialSuggestion | null; calibration: EditorialCalibration | null; bibleResolution: BiblicalResolutionEvidence | null } {
   const row = db.prepare("SELECT * FROM ai_reel_reviews WHERE reel_id = ? ORDER BY updated_at DESC LIMIT 1").get(reelId) as Row | undefined;
   const bibleRow = db.prepare("SELECT * FROM ai_bible_suggestions WHERE reel_id = ? ORDER BY updated_at DESC LIMIT 1").get(reelId) as Row | undefined;
   const editorialRow = db.prepare("SELECT * FROM ai_editorial_suggestions WHERE reel_id = ? ORDER BY updated_at DESC LIMIT 1").get(reelId) as Row | undefined;
+  const calibrationRow = db.prepare("SELECT * FROM editorial_calibrations WHERE reel_id = ? ORDER BY updated_at DESC LIMIT 1").get(reelId) as Row | undefined;
+  const resolutionRow = db.prepare("SELECT * FROM biblical_resolution_suggestions WHERE reel_id = ? ORDER BY updated_at DESC LIMIT 1").get(reelId) as Row | undefined;
   const stringValue = (value: unknown, fallback = "") => value === null || value === undefined ? fallback : String(value);
   const numberValue = (value: unknown, fallback = 0) => { const parsed = Number(value); return Number.isFinite(parsed) ? parsed : fallback; };
   const review: AiReviewResult | null = row ? {
@@ -68,7 +74,14 @@ function latestAi(db: ReturnType<typeof openDatabase>, reelId: string): { review
   } : null;
   const bible: AiBibleSuggestion | null = bibleRow ? { suggestion_id: stringValue(bibleRow.suggestion_id), reel_id: stringValue(bibleRow.reel_id), ai_review_version: stringValue(bibleRow.ai_review_version), reference: bibleRow.reference ? stringValue(bibleRow.reference) : null, book: bibleRow.book ? stringValue(bibleRow.book) : null, chapter: bibleRow.chapter === null || bibleRow.chapter === undefined ? null : numberValue(bibleRow.chapter), verse_range: bibleRow.verse_range ? stringValue(bibleRow.verse_range) : null, confidence: stringValue(bibleRow.confidence) as AiBibleSuggestion["confidence"], evidence_sources: JSON.parse(stringValue(bibleRow.evidence_sources_json, "[]")) as string[], reasoning_summary: stringValue(bibleRow.reasoning_summary), status: stringValue(bibleRow.status) as AiBibleSuggestion["status"], engine_version: stringValue(bibleRow.engine_version) } : null;
   const editorial: AiEditorialSuggestion | null = editorialRow ? { suggestion_id: stringValue(editorialRow.suggestion_id), reel_id: stringValue(editorialRow.reel_id), ai_review_version: stringValue(editorialRow.ai_review_version), base_editorial_version: numberValue(editorialRow.base_editorial_version), suggested_package: JSON.parse(stringValue(editorialRow.suggested_package_json, "{}")), changed_fields: JSON.parse(stringValue(editorialRow.changed_fields_json, "[]")) as string[], reasoning_summary: stringValue(editorialRow.reasoning_summary), status: stringValue(editorialRow.status) as AiEditorialSuggestion["status"], engine_version: stringValue(editorialRow.engine_version) } : null;
-  return { review, bible, editorial };
+  const calibration: EditorialCalibration | null = calibrationRow ? { reel_id: stringValue(calibrationRow.reel_id), song_slug: stringValue(calibrationRow.song_slug), calibration_version: stringValue(calibrationRow.calibration_version), structural_scores: JSON.parse(stringValue(calibrationRow.structural_scores_json, "{}")), quality_scores: JSON.parse(stringValue(calibrationRow.quality_scores_json, "{}")), generic_language_level: stringValue(calibrationRow.generic_language_level) as EditorialCalibration["generic_language_level"], generic_phrases: JSON.parse(stringValue(calibrationRow.generic_phrases_json, "[]")), cross_catalog_similarity: JSON.parse(stringValue(calibrationRow.cross_catalog_similarity_json, "{}")), editorial_quality_score: numberValue(calibrationRow.editorial_quality_score), distinctiveness_score: numberValue(calibrationRow.distinctiveness_score), retention_score: numberValue(calibrationRow.retention_score), overall_score: numberValue(calibrationRow.overall_score), duplicate_risk: stringValue(calibrationRow.duplicate_risk) as EditorialCalibration["duplicate_risk"], related_reel_ids: JSON.parse(stringValue(calibrationRow.related_reel_ids_json, "[]")), biblical_evidence_status: stringValue(calibrationRow.biblical_evidence_status), recommendation: stringValue(calibrationRow.recommendation) as EditorialCalibration["recommendation"], fast_path_status: stringValue(calibrationRow.fast_path_status) as EditorialCalibration["fast_path_status"], evidence_needed_status: stringValue(calibrationRow.evidence_needed_status) as EditorialCalibration["evidence_needed_status"], review_priority_score: numberValue(calibrationRow.review_priority_score), review_priority_rank: calibrationRow.review_priority_rank === null || calibrationRow.review_priority_rank === undefined ? null : numberValue(calibrationRow.review_priority_rank), suggested_package: JSON.parse(stringValue(calibrationRow.suggested_package_json, "{}")), reasoning_summary: stringValue(calibrationRow.reasoning_summary), engine_version: stringValue(calibrationRow.engine_version) } : null;
+  let bibleResolution: BiblicalResolutionEvidence | null = null;
+  if (resolutionRow) {
+    const ids = JSON.parse(stringValue(resolutionRow.evidence_source_record_ids_json, "[]")) as string[];
+    const sourceRows = ids.length ? db.prepare(`SELECT source_record_id, source_type, source_location, is_authoritative, source_title FROM song_source_registry WHERE source_record_id IN (${ids.map(() => "?").join(",")})`).all(...ids) as Row[] : [];
+    bibleResolution = { resolution_id: stringValue(resolutionRow.resolution_id), song_slug: stringValue(resolutionRow.song_slug), reel_id: stringValue(resolutionRow.reel_id), suggested_reference: resolutionRow.suggested_reference ? stringValue(resolutionRow.suggested_reference) : null, resolution_type: stringValue(resolutionRow.resolution_type) as BiblicalResolutionEvidence["resolution_type"], confidence: stringValue(resolutionRow.confidence) as BiblicalResolutionEvidence["confidence"], evidence_source_record_ids: ids, evidence_excerpt_safe: stringValue(resolutionRow.evidence_excerpt_safe), reasoning_summary: stringValue(resolutionRow.reasoning_summary), status: stringValue(resolutionRow.status) as BiblicalResolutionEvidence["status"], sources: sourceRows.map((source) => ({ source_record_id: stringValue(source.source_record_id), source_type: stringValue(source.source_type), source_location: stringValue(source.source_location), is_authoritative: Boolean(source.is_authoritative), source_title: source.source_title ? stringValue(source.source_title) : null })) };
+  }
+  return { review, bible, editorial, calibration, bibleResolution };
 }
 
 export function queuePredicate(queue: ReviewQueue, portfolioStatus: PortfolioStatus, rank: number): boolean {
@@ -86,7 +99,9 @@ export function filterReviewItems(items: ReviewItem[], filters: ReviewFilters = 
     (!filters.rightsStatus || item.rights_status === filters.rightsStatus) &&
     (!filters.contentPillar || item.editorial?.content_pillar === filters.contentPillar) &&
     (!filters.seasonality || item.curation.seasonality === filters.seasonality) &&
-    (!filters.calendarContext || item.curation.calendar_context === filters.calendarContext),
+    (!filters.calendarContext || item.curation.calendar_context === filters.calendarContext) &&
+    (!filters.fastPath || item.editorial_calibration?.fast_path_status === filters.fastPath) &&
+    (!filters.evidenceNeeded || item.editorial_calibration?.evidence_needed_status === filters.evidenceNeeded),
   );
 }
 
@@ -110,7 +125,8 @@ export async function listReviewItems(queue: ReviewQueue = "primary", filters: R
     const curations = latestCurations(db);
     const items: ReviewItem[] = [];
     for (const curation of curations.values()) {
-      if (!curation || !queuePredicate(queue, curation.portfolio_status, curation.within_song_rank)) continue;
+      const baseQueue: ReviewQueue = queue === "fast-path" || queue === "evidence-needed" ? "primary" : queue;
+      if (!curation || !queuePredicate(baseQueue, curation.portfolio_status, curation.within_song_rank)) continue;
       const reel = derivedReelById(db, curation.reel_id);
       const asset = inspectAsset(db, curation.source_asset_id);
       const editorial = latestEditorialPackage(db, curation.reel_id) ?? null;
@@ -118,6 +134,9 @@ export async function listReviewItems(queue: ReviewQueue = "primary", filters: R
       const song = catalogBySlug.get(stringValue(asset.song_slug));
       const bible = bibleReferenceStatus(db, curation.reel_id);
       const candidate = db.prepare("SELECT start_time_ms, end_time_ms, score FROM reel_candidates WHERE candidate_id = ?").get(curation.candidate_id) as Row | undefined;
+      const ai = latestAi(db, curation.reel_id);
+      if (queue === "fast-path" && ai.calibration?.fast_path_status !== "FAST_PATH") continue;
+      if (queue === "evidence-needed" && ai.calibration?.evidence_needed_status !== "EVIDENCE_NEEDED") continue;
       const item: ReviewItem = {
         reel_id: curation.reel_id,
         candidate_id: curation.candidate_id,
@@ -139,13 +158,15 @@ export async function listReviewItems(queue: ReviewQueue = "primary", filters: R
         bible,
         rights_status: stringValue(reel.rights_status),
         publication_status: stringValue(reel.publication_status),
-        ai_review: latestAi(db, curation.reel_id).review,
-        ai_bible_suggestion: latestAi(db, curation.reel_id).bible,
-        ai_editorial_suggestion: latestAi(db, curation.reel_id).editorial,
+        ai_review: ai.review,
+        ai_bible_suggestion: ai.bible,
+        ai_editorial_suggestion: ai.editorial,
+        editorial_calibration: ai.calibration,
+        bible_resolution: ai.bibleResolution,
       };
       items.push(item);
     }
-    items.sort((a, b) => (a.ai_review?.review_priority_rank ?? 9999) - (b.ai_review?.review_priority_rank ?? 9999) || a.collection.localeCompare(b.collection, "pt-BR") || a.song_title.localeCompare(b.song_title, "pt-BR") || a.curation.rank - b.curation.rank);
+    items.sort((a, b) => (a.editorial_calibration?.review_priority_rank ?? a.ai_review?.review_priority_rank ?? 9999) - (b.editorial_calibration?.review_priority_rank ?? b.ai_review?.review_priority_rank ?? 9999) || a.collection.localeCompare(b.collection, "pt-BR") || a.song_title.localeCompare(b.song_title, "pt-BR") || a.curation.rank - b.curation.rank);
     return filterReviewItems(items, filters);
   } finally { db.close(); }
 }
@@ -187,6 +208,9 @@ export async function reviewProgress(config: MediaConfig): Promise<Record<string
     ai_bible_medium: countBy((item) => item.ai_bible_suggestion?.confidence === "MEDIUM"),
     ai_bible_low: countBy((item) => item.ai_bible_suggestion?.confidence === "LOW"),
     ai_bible_insufficient: countBy((item) => item.ai_bible_suggestion?.status === "INSUFFICIENT_EVIDENCE"),
+    calibration_fast_path: countBy((item) => item.editorial_calibration?.fast_path_status === "FAST_PATH"),
+    calibration_evidence_needed: countBy((item) => item.editorial_calibration?.evidence_needed_status === "EVIDENCE_NEEDED"),
+    calibration_average_score: (() => { const values = items.map((item) => item.editorial_calibration?.overall_score).filter((value): value is number => typeof value === "number"); return values.length ? Math.round(values.reduce((sum, value) => sum + value, 0) / values.length * 100) / 100 : null; })(),
   };
 }
 

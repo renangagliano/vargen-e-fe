@@ -1,5 +1,9 @@
 # Modelo de segurança
 
+## Phase 7.2 intelligence boundary
+
+O registro de fontes é somente leitura para fontes catalográficas e mídia mestre. Conteúdo editorial gerado é explicitamente não autoritativo para Escritura. Sugestões bíblicas mantêm IDs de fonte e trechos seguros, mas nunca transitam verificação bíblica humana, direitos, aprovação editorial, CONTENT_READY, publicação ou elegibilidade Meta. Nenhum LLM externo, Meta API ou automação de navegador é usado.
+
 ## Princípios
 
 - least privilege;

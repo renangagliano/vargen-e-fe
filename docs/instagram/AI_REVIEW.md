@@ -1,5 +1,9 @@
 # Fase 7.1 — AI-assisted content review
 
+## Extensão Phase 7.2
+
+A Phase 7.2 adiciona o registro de fontes bíblicas e a calibração editorial v2. Consulte `BIBLICAL_SOURCE_REGISTRY.md` e `EDITORIAL_CALIBRATION.md`. O provider permanece determinístico/local; não há LLM configurado.
+
 ## Limite deliberado
 
 O pre-review é uma camada de assistência, não uma autoridade editorial. A

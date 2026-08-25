@@ -234,7 +234,7 @@ export type EditorialPackage = {
   review_note?: string | null;
 };
 
-export type BibleSourceType = "CATALOG_METADATA" | "SONG_METADATA" | "LYRICS_METADATA" | "PROJECT_DOCUMENTATION" | "HUMAN_ENTERED" | "OTHER_VERIFIED_LOCAL_SOURCE";
+export type BibleSourceType = "CATALOG_METADATA" | "SONG_METADATA" | "LYRICS_METADATA" | "SONG_LYRICS" | "SONG_CREATION_PROMPT" | "SUNO_PROMPT" | "PROJECT_DOCUMENTATION" | "LITURGICAL_METADATA" | "VIDEO_METADATA" | "HUMAN_ENTERED" | "HUMAN_PROVIDED_REFERENCE" | "GENERATED_EDITORIAL" | "OTHER_LOCAL_SOURCE" | "OTHER_VERIFIED_LOCAL_SOURCE";
 export type BibleVerificationStatus = "VERIFIED" | "REVIEW_REQUIRED" | "MISSING" | "CONFLICT";
 export type ContentReadinessStatus = "CONTENT_READY" | "NOT_READY";
 
@@ -244,6 +244,63 @@ export type AiRiskLevel = "LOW" | "MEDIUM" | "HIGH";
 export type AiBibleConfidence = "HIGH" | "MEDIUM" | "LOW";
 export type AiBibleSuggestionStatus = "AI_SUGGESTED" | "HUMAN_VERIFIED" | "REJECTED" | "CONFLICT" | "INSUFFICIENT_EVIDENCE";
 export type AiEditorialSuggestionStatus = "PROPOSED" | "APPLIED" | "DISMISSED";
+
+export type BiblicalResolutionType = "SUGGESTED_EXPLICIT" | "SUGGESTED_CORROBORATED" | "SUGGESTED_NARRATIVE" | "HUMAN_VERIFIED" | "INSUFFICIENT" | "CONFLICT";
+export type BiblicalResolutionConfidence = "HIGH" | "MEDIUM" | "LOW";
+export type BiblicalResolutionStatus = "AI_SUGGESTED" | "HUMAN_VERIFIED" | "REJECTED" | "CONFLICT" | "INSUFFICIENT_EVIDENCE";
+
+export type SourceRegistryRecord = {
+  source_record_id: string;
+  song_slug: string;
+  source_type: BibleSourceType;
+  source_location: string;
+  content_hash: string;
+  source_title: string | null;
+  source_version: string | null;
+  is_authoritative: boolean;
+  discovered_at: string;
+  metadata_json_safe: Record<string, unknown>;
+};
+
+export type EditorialCalibration = {
+  reel_id: string;
+  song_slug: string;
+  calibration_version: string;
+  structural_scores: Record<string, number>;
+  quality_scores: Record<string, number>;
+  generic_language_level: "GENERIC_LOW" | "GENERIC_MEDIUM" | "GENERIC_HIGH";
+  generic_phrases: string[];
+  cross_catalog_similarity: Record<string, unknown>;
+  editorial_quality_score: number;
+  distinctiveness_score: number;
+  retention_score: number;
+  overall_score: number;
+  duplicate_risk: AiDuplicateRisk;
+  related_reel_ids: string[];
+  biblical_evidence_status: string;
+  recommendation: AiRecommendation;
+  fast_path_status: "FAST_PATH" | "NOT_ELIGIBLE";
+  evidence_needed_status: "EVIDENCE_NEEDED" | "NOT_NEEDED";
+  review_priority_score: number;
+  review_priority_rank: number | null;
+  suggested_package: Partial<EditorialPackage>;
+  reasoning_summary: string;
+  engine_version: string;
+};
+
+export type BiblicalResolutionEvidence = {
+  resolution_id: string;
+  song_slug: string;
+  reel_id: string;
+  suggested_reference: string | null;
+  resolution_type: BiblicalResolutionType;
+  confidence: BiblicalResolutionConfidence;
+  evidence_source_record_ids: string[];
+  evidence_excerpt_safe: string;
+  reasoning_summary: string;
+  status: BiblicalResolutionStatus;
+  sources: Array<{ source_record_id: string; source_type: string; source_location: string; is_authoritative: boolean; source_title: string | null }>;
+};
 
 export type AiReviewResult = {
   reel_id: string;

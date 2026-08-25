@@ -13,3 +13,4 @@ import "./catalog.test.js";
 import "./curation.test.js";
 import "./review.test.js";
 import "./ai-review.test.js";
+import "./intelligence.test.js";

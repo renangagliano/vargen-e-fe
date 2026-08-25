@@ -46,11 +46,13 @@ function filtersFromUrl(url: URL): ReviewFilters {
     contentPillar: url.searchParams.get("pillar") || undefined,
     seasonality: url.searchParams.get("seasonality") || undefined,
     calendarContext: url.searchParams.get("calendar") || undefined,
+    fastPath: url.searchParams.get("fastPath") || undefined,
+    evidenceNeeded: url.searchParams.get("evidenceNeeded") || undefined,
   };
 }
 
 function queueFrom(value: string | null): ReviewQueue {
-  if (value === "secondary" || value === "hold") return value;
+  if (value === "secondary" || value === "hold" || value === "fast-path" || value === "evidence-needed") return value;
   return "primary";
 }
 
@@ -84,6 +86,13 @@ async function action(kind,x){const actor=prompt('Nome do operador (VARGEN_REVIE
 $('queue').onchange=()=>{state.selected=null;load()};['filterReview','filterBible','filterCollection','filterTier','filterRights','filterPillar','filterSeasonality','filterCalendar'].forEach(id=>$(id).onchange=load);$('search').oninput=renderList;document.addEventListener('keydown',e=>{if(['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName))return;if(e.key==='ArrowRight'){const i=state.items.findIndex(x=>x.reel_id===state.selected);state.selected=state.items[Math.min(state.items.length-1,i+1)]?.reel_id;renderList();renderDetail()}if(e.key==='ArrowLeft'){const i=state.items.findIndex(x=>x.reel_id===state.selected);state.selected=state.items[Math.max(0,i-1)]?.reel_id;renderList();renderDetail()}});load().catch(e=>{$('empty').textContent=e.message;$('empty').className='notice error'});
 </script></body></html>`;
 
+// Phase 7.2 presentation additions are injected into the existing local cockpit
+// template so the public static site remains completely untouched.
+const APP_HTML_PHASE72 = APP_HTML
+  .replace('<option value="hold">Hold · 123</option>', '<option value="hold">Hold · 123</option><option value="fast-path">FAST_PATH</option><option value="evidence-needed">EVIDENCE_NEEDED</option>')
+  .replace('const ae=x.ai_editorial_suggestion;const aiCell=', 'const ae=x.ai_editorial_suggestion;const cal=x.editorial_calibration;const br=x.bible_resolution;const phase72=cal?\'<div class="ai-suggestion"><b>Calibração editorial v2</b><br>Estrutural: \' + esc(JSON.stringify(cal.structural_scores)) + \'<br>Qualidade: \' + esc(cal.editorial_quality_score) + \' · distinção: \' + esc(cal.distinctiveness_score) + \' · retenção: \' + esc(cal.retention_score) + \'<br>Fila: \' + esc(cal.fast_path_status) + \' · \' + esc(cal.evidence_needed_status) + \' · duplicação: \' + esc(cal.duplicate_risk) + \'</div>\':\'\';const evidence72=br?\'<div class="ai-suggestion"><b>Evidência bíblica — requer verificação humana</b><br>Sugestão: \' + esc(br.suggested_reference||\'Sem sugestão\') + \' · \' + esc(br.confidence) + \' · \' + esc(br.resolution_type) + \'<br><small>\' + esc(br.reasoning_summary) + \'</small><br><small>Fonte: \' + esc(br.sources.map(s=>s.source_location).join(\', \')||\'Nenhuma fonte autoritativa\') + \'</small><blockquote>\' + esc(br.evidence_excerpt_safe||\'Sem trecho seguro\') + \'</blockquote></div>\':\'\';const aiCell=')
+  .replace("'</section><div class=\"grid\">", "'+phase72+evidence72+'</section><div class=\"grid\">");
+
 async function handle(req: http.IncomingMessage, res: http.ServerResponse, config: MediaConfig): Promise<void> {
   const url = new URL(req.url ?? "/", "http://127.0.0.1");
   if (req.method === "POST" && url.pathname.startsWith("/api/")) {
@@ -94,7 +103,7 @@ async function handle(req: http.IncomingMessage, res: http.ServerResponse, confi
     }
     if (!String(req.headers["content-type"] ?? "").toLowerCase().startsWith("application/json")) throw new Error("JSON_CONTENT_TYPE_REQUIRED");
   }
-  if (req.method === "GET" && url.pathname === "/") { res.writeHead(200, { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" }); res.end(APP_HTML); return; }
+  if (req.method === "GET" && url.pathname === "/") { res.writeHead(200, { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" }); res.end(APP_HTML_PHASE72); return; }
   if (req.method === "GET" && url.pathname === "/health") { json(res, 200, { status: "ok", binding: config.reviewHost, publishing: "disabled-in-phase-7" }); return; }
   if (req.method === "GET" && url.pathname === "/api/progress") { json(res, 200, await reviewProgress(config)); return; }
   if (req.method === "GET" && url.pathname === "/api/reels") { json(res, 200, await listReviewItems(queueFrom(url.searchParams.get("queue")), filtersFromUrl(url), config)); return; }

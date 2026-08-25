@@ -138,3 +138,6 @@ aprovação, confirmação de direitos, jobs de publicação ou chamadas Meta.
 O provider atual é `DeterministicLocalProvider`; a ausência de um provedor LLM
 externo é intencional. Referências bíblicas sem evidência local ficam como
 `INSUFFICIENT_EVIDENCE` e exigem entrada/verificação humana no cockpit.
+## Phase 7.2 local intelligence
+
+Use `npm run ai-review:phase72` for the ten-song calibration sample and run the `--full` form only after the sample is discriminative. `npm run biblical:registry` and `npm run biblical:resolve` rebuild the source and evidence reports. These operations are read-only with respect to master media and cannot approve content, verify Scripture, confirm rights, schedule or publish.
