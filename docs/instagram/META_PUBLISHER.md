@@ -32,6 +32,12 @@ UNCONFIGURED -> CREDENTIALS_PRESENT -> AUTHENTICATED -> ACCOUNT_VERIFIED
   -> BLOCKED | ERROR
 ```
 
+`LIMITED` is used when Meta exposes only partial capability evidence, such
+as a missing account type or incomplete permission set. Safe error
+classification includes `TOKEN_EXPIRED`, `RATE_LIMITED`, `NETWORK_ERROR`,
+`ACCOUNT_NOT_COMPATIBLE` and `META_API_ERROR`; these are not rewritten as a
+business-verification blocker.
+
 Expected configuration is injected at runtime only:
 
 ```text

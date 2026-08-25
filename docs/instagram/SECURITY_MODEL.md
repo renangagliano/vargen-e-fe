@@ -68,6 +68,11 @@ publisher continua fail-closed sem esse resultado, sem provider HTTPS
 temporário aprovado e sem gates humanos. O adaptador não usa browser
 automation e não expõe o OneDrive.
 
+A connectivity mode aceita somente operações GET de identidade/permissão. O
+guard rejeita POST, `/media` e `media_publish`; o comando não importa
+scheduler, jobs ou mutações de estado de publicação. Respostas da Meta são
+limitadas a detalhes seguros, com token-like values mascarados.
+
 ## Logs e incidentes
 
 Logs estruturados devem registrar stage, status, duração, error code e retry count, sem conteúdo sensível. Erros de token, permissão ou direitos devem interromper a fronteira Meta e pedir ação humana.

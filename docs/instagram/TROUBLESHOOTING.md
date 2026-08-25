@@ -81,6 +81,13 @@ Rotacione o token substituindo o secret no GitHub Environment e execute o
 workflow novamente. Não copie tokens para `.env.local`, SQLite, logs ou
 relatórios.
 
+`LIMITED` não é sucesso parcial para publicação: significa que a conta foi
+alcançada, mas a compatibilidade profissional ou a permissão requerida não
+foi comprovada integralmente. `TOKEN_EXPIRED` exige renovação oficial do
+token; `RATE_LIMITED` exige espera; `NETWORK_ERROR` exige diagnóstico do
+runner. Consulte `META_CONNECTIVITY.md` para a matriz completa. Nenhuma
+dessas condições cria container ou altera jobs.
+
 ## Site estático
 
 Sintoma: `output: "export"`, deploy GitHub Pages e nenhuma API route.

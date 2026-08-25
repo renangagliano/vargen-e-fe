@@ -11,6 +11,7 @@ export type InstagramApiReadinessState =
   | "ACCOUNT_VERIFIED"
   | "PUBLISH_PERMISSION_VERIFIED"
   | "READY_FOR_CONTROLLED_TEST"
+  | "LIMITED"
   | "BLOCKED"
   | "ERROR";
 
@@ -22,7 +23,11 @@ export type ConnectivityErrorCode =
   | "CONFIGURATION_ERROR"
   | "AUTHENTICATION_ERROR"
   | "ACCOUNT_MISMATCH"
+  | "ACCOUNT_NOT_COMPATIBLE"
   | "PERMISSION_ERROR"
+  | "TOKEN_EXPIRED"
+  | "RATE_LIMITED"
+  | "NETWORK_ERROR"
   | "META_API_ERROR";
 
 export type InstagramConnectivityConfig = {
@@ -49,10 +54,12 @@ export type InstagramPermission = {
 };
 
 export type ConnectivityChecks = {
+  configuration: ConnectivityCheckStatus;
   credentials: ConnectivityCheckStatus;
   authentication: ConnectivityCheckStatus;
   accountAccess: ConnectivityCheckStatus;
   accountIdMatch: ConnectivityCheckStatus;
+  accountCompatibility: ConnectivityCheckStatus;
   publishingCapability: ConnectivityCheckStatus;
 };
 
@@ -70,6 +77,13 @@ export type InstagramConnectivityResult = {
 export type MetaConnectivityFetch = (input: string | URL, init?: RequestInit) => Promise<Response>;
 
 type JsonRecord = Record<string, unknown>;
+
+type MetaErrorDetails = {
+  code: string;
+  message: string;
+  subcode?: string;
+  type?: string;
+};
 
 const REQUIRED_PERMISSION_ALIASES: ReadonlyArray<ReadonlyArray<string>> = [
   ["instagram_basic", "instagram_business_basic"],
@@ -107,14 +121,14 @@ export function loadInstagramConnectivityConfig(env: NodeJS.ProcessEnv = process
 
 function missingConfiguration(config: InstagramConnectivityConfig): string[] {
   const missing: string[] = [];
-  if (!config.appId) missing.push("META_APP_ID_MISSING");
-  if (!config.accountId) missing.push("INSTAGRAM_ACCOUNT_ID_MISSING");
   if (!config.accessToken) missing.push("INSTAGRAM_ACCESS_TOKEN_MISSING");
+  if (!config.accountId) missing.push("INSTAGRAM_ACCOUNT_ID_MISSING");
   return missing;
 }
 
 function invalidConfiguration(config: InstagramConnectivityConfig): string[] {
   const invalid: string[] = [];
+  if (!config.appId) invalid.push("META_APP_ID_MISSING");
   if (!/^v\d+\.\d+$/.test(config.graphApiVersion)) invalid.push("META_GRAPH_API_VERSION_INVALID");
   try {
     const url = new URL(config.graphApiBaseUrl);
@@ -124,9 +138,10 @@ function invalidConfiguration(config: InstagramConnectivityConfig): string[] {
   } catch {
     invalid.push("META_GRAPH_API_BASE_URL_INVALID");
   }
-  if (!config.permissionsEndpoint.startsWith("/") || config.permissionsEndpoint.includes("..") || config.permissionsEndpoint.includes("?")) {
+  if (!config.permissionsEndpoint.startsWith("/") || config.permissionsEndpoint.includes("..") || config.permissionsEndpoint.includes("?") || config.permissionsEndpoint.includes("#") || pathIsForbidden(config.permissionsEndpoint)) {
     invalid.push("META_PERMISSIONS_ENDPOINT_INVALID");
   }
+  if (!Number.isInteger(config.timeoutMs) || config.timeoutMs < 1000 || config.timeoutMs > 60_000) invalid.push("META_CONNECTIVITY_TIMEOUT_INVALID");
   return invalid;
 }
 
@@ -134,31 +149,40 @@ function safeMessage(message: string, secrets: ReadonlyArray<string | undefined>
   let sanitized = message
     .replace(/([?&]access_token=)[^&\s]+/gi, "$1[REDACTED]")
     .replace(/(bearer\s+)[^\s]+/gi, "$1[REDACTED]")
-    .replace(/(appsecret_proof=)[^&\s]+/gi, "$1[REDACTED]");
+    .replace(/(appsecret_proof=)[^&\s]+/gi, "$1[REDACTED]")
+    .replace(/\bEA[A-Za-z0-9_-]{16,}\b/g, "[REDACTED_TOKEN]")
+    .replace(/\b(access[_ -]?token|refresh[_ -]?token|authorization)\s*[:=]\s*[^\s,;]+/gi, "$1=[REDACTED]");
   for (const secret of secrets) {
     if (secret) sanitized = sanitized.split(secret).join("[REDACTED]");
   }
   return sanitized.slice(0, 500);
 }
 
-function errorDetails(body: unknown, status: number, accessToken?: string): { code: string; message: string } {
+function errorDetails(body: unknown, status: number, accessToken?: string): MetaErrorDetails {
   const bodyRecord = record(body);
   const apiError = record(bodyRecord?.error) ?? bodyRecord;
   const code = text(apiError?.code) ?? `HTTP_${status}`;
   const message = safeMessage(text(apiError?.message) ?? `Meta API request failed with HTTP ${status}.`, [accessToken]);
-  return { code, message };
+  return {
+    code,
+    message,
+    ...(text(apiError?.error_subcode) ? { subcode: text(apiError?.error_subcode) } : {}),
+    ...(text(apiError?.type) ? { type: text(apiError?.type) } : {}),
+  };
 }
 
-function resultBase(configured: boolean): InstagramConnectivityResult {
+function resultBase(configurationPresent: boolean, credentialsPresent: boolean): InstagramConnectivityResult {
   return {
-    state: configured ? "CREDENTIALS_PRESENT" : "UNCONFIGURED",
-    publishingCapability: configured ? "BLOCKED" : "BLOCKED",
+    state: configurationPresent && credentialsPresent ? "CREDENTIALS_PRESENT" : "UNCONFIGURED",
+    publishingCapability: "BLOCKED",
     readyForControlledTest: false,
     checks: {
-      credentials: configured ? "PASS" : "FAIL",
+      configuration: configurationPresent ? "PASS" : "FAIL",
+      credentials: credentialsPresent ? "PASS" : "FAIL",
       authentication: "NOT_RUN",
       accountAccess: "NOT_RUN",
       accountIdMatch: "NOT_RUN",
+      accountCompatibility: "NOT_RUN",
       publishingCapability: "NOT_RUN",
     },
   };
@@ -191,9 +215,42 @@ function requiredPermissionsGranted(items: InstagramPermission[]): boolean {
   return REQUIRED_PERMISSION_ALIASES.every((aliases) => items.some((item) => aliases.includes(item.permission) && item.status.toLowerCase() === "granted"));
 }
 
+function tokenExpired(error?: MetaErrorDetails): boolean {
+  return error?.subcode === "463" || error?.subcode === "467" || /token.*expired|session.*expired|expired.*token/i.test(error?.message ?? "");
+}
+
+function rateLimited(status: number, error?: MetaErrorDetails): boolean {
+  return status === 429 || ["4", "17", "32", "613"].includes(error?.code ?? "");
+}
+
+function responseErrorCode(status: number, error: MetaErrorDetails | undefined, permissionRequest: boolean): ConnectivityErrorCode {
+  if (tokenExpired(error)) return "TOKEN_EXPIRED";
+  if (rateLimited(status, error)) return "RATE_LIMITED";
+  if (status === 401 || error?.code === "190") return "AUTHENTICATION_ERROR";
+  if (status === 403 || (permissionRequest && ["10", "200", "299"].includes(error?.code ?? ""))) return "PERMISSION_ERROR";
+  return "META_API_ERROR";
+}
+
+function stateForError(errorCode: ConnectivityErrorCode): "BLOCKED" | "ERROR" {
+  return errorCode === "AUTHENTICATION_ERROR" || errorCode === "TOKEN_EXPIRED" || errorCode === "PERMISSION_ERROR" || errorCode === "ACCOUNT_NOT_COMPATIBLE"
+    ? "BLOCKED"
+    : "ERROR";
+}
+
+function compatibilityStatus(accountType: string | undefined): ConnectivityCheckStatus {
+  if (!accountType) return "LIMITED";
+  return accountType === "BUSINESS" || accountType === "CREATOR" ? "PASS" : "FAIL";
+}
+
 function pathIsForbidden(pathname: string): boolean {
   const normalized = pathname.toLowerCase();
   return normalized.includes("media_publish") || /(^|\/)media(\/|$)/.test(normalized);
+}
+
+export function assertReadOnlyConnectivityOperation(method: string, pathname: string): void {
+  if (method.toUpperCase() !== "GET" || !pathname.startsWith("/") || pathname.includes("..") || pathIsForbidden(pathname)) {
+    throw new Error("CONNECTIVITY_READ_ONLY_OPERATION_FORBIDDEN");
+  }
 }
 
 export class MetaInstagramConnectivityValidator {
@@ -202,10 +259,8 @@ export class MetaInstagramConnectivityValidator {
     private readonly fetchImpl: MetaConnectivityFetch = fetch,
   ) {}
 
-  private async getJson(pathname: string, query: Record<string, string>): Promise<{ ok: boolean; status: number; body: unknown; error?: { code: string; message: string } }> {
-    if (!pathname.startsWith("/") || pathname.includes("..") || pathIsForbidden(pathname)) {
-      throw new Error("CONNECTIVITY_PUBLISH_OPERATION_FORBIDDEN");
-    }
+  private async getJson(pathname: string, query: Record<string, string>): Promise<{ ok: boolean; status: number; body: unknown; error?: MetaErrorDetails }> {
+    assertReadOnlyConnectivityOperation("GET", pathname);
     const base = this.config.graphApiBaseUrl.replace(/\/$/, "");
     const version = this.config.graphApiVersion.replace(/^\/+|\/+$/g, "");
     const url = new URL(`${base}/${version}/${pathname.replace(/^\/+/, "")}`);
@@ -231,13 +286,14 @@ export class MetaInstagramConnectivityValidator {
   }
 
   public async validate(): Promise<InstagramConnectivityResult> {
-    const missing = [...missingConfiguration(this.config), ...invalidConfiguration(this.config)];
-    const result = resultBase(missing.length === 0);
-    if (missing.length > 0) {
+    const credentialErrors = missingConfiguration(this.config);
+    const configurationErrors = invalidConfiguration(this.config);
+    const result = resultBase(configurationErrors.length === 0, credentialErrors.length === 0);
+    if (credentialErrors.length > 0 || configurationErrors.length > 0) {
       return {
         ...result,
         errorCode: "CONFIGURATION_ERROR",
-        errorMessageSafe: missing.join(", "),
+        errorMessageSafe: [...configurationErrors, ...credentialErrors].join(", "),
       };
     }
 
@@ -246,21 +302,21 @@ export class MetaInstagramConnectivityValidator {
       accountResponse = await this.getJson(`/${this.config.accountId!}`, {
         fields: "id,username,name,account_type",
       });
-    } catch (error) {
+    } catch {
       return {
         ...result,
         state: "ERROR",
-        errorCode: "META_API_ERROR",
-        errorMessageSafe: "Meta API connectivity request failed safely.",
+        errorCode: "NETWORK_ERROR",
+        errorMessageSafe: "Meta API network request failed safely.",
       };
     }
     if (!accountResponse.ok) {
-      const authenticationFailure = accountResponse.status === 401 || accountResponse.error?.code === "190";
+      const errorCode = responseErrorCode(accountResponse.status, accountResponse.error, false);
       return {
         ...result,
-        state: authenticationFailure ? "BLOCKED" : "ERROR",
+        state: stateForError(errorCode),
         checks: { ...result.checks, authentication: "FAIL", accountAccess: "FAIL" },
-        errorCode: authenticationFailure ? "AUTHENTICATION_ERROR" : "META_API_ERROR",
+        errorCode,
         errorMessageSafe: accountResponse.error?.message ?? "Meta account access failed safely.",
       };
     }
@@ -286,10 +342,23 @@ export class MetaInstagramConnectivityValidator {
       };
     }
 
+    const accountType = account.account_type?.toUpperCase();
+    const accountCompatibility = compatibilityStatus(accountType);
+    if (accountCompatibility === "FAIL") {
+      return {
+        ...result,
+        state: "BLOCKED",
+        checks: { ...result.checks, authentication: "PASS", accountAccess: "PASS", accountIdMatch: "PASS", accountCompatibility },
+        account,
+        errorCode: "ACCOUNT_NOT_COMPATIBLE",
+        errorMessageSafe: "Meta returned an account type that is not compatible with Instagram publishing.",
+      };
+    }
+
     const authenticated: InstagramConnectivityResult = {
       ...result,
       state: "ACCOUNT_VERIFIED",
-      checks: { ...result.checks, authentication: "PASS", accountAccess: "PASS", accountIdMatch: "PASS" },
+      checks: { ...result.checks, authentication: "PASS", accountAccess: "PASS", accountIdMatch: "PASS", accountCompatibility },
       account,
     };
 
@@ -299,21 +368,21 @@ export class MetaInstagramConnectivityValidator {
     } catch {
       return {
         ...authenticated,
-        state: "BLOCKED",
+        state: "ERROR",
         publishingCapability: "BLOCKED",
         checks: { ...authenticated.checks, publishingCapability: "BLOCKED" },
-        errorCode: "PERMISSION_ERROR",
-        errorMessageSafe: "Meta permission capability could not be validated safely.",
+        errorCode: "NETWORK_ERROR",
+        errorMessageSafe: "Meta permission network request failed safely.",
       };
     }
     if (!permissionsResponse.ok) {
-      const authenticationFailure = permissionsResponse.status === 401 || permissionsResponse.error?.code === "190";
+      const errorCode = responseErrorCode(permissionsResponse.status, permissionsResponse.error, true);
       return {
         ...authenticated,
-        state: authenticationFailure ? "BLOCKED" : "BLOCKED",
+        state: stateForError(errorCode),
         publishingCapability: "BLOCKED",
         checks: { ...authenticated.checks, publishingCapability: "BLOCKED" },
-        errorCode: authenticationFailure ? "AUTHENTICATION_ERROR" : "PERMISSION_ERROR",
+        errorCode,
         errorMessageSafe: permissionsResponse.error?.message ?? "Meta publishing permission validation failed safely.",
       };
     }
@@ -322,7 +391,7 @@ export class MetaInstagramConnectivityValidator {
     if (!requiredPermissionsGranted(permissionItems)) {
       return {
         ...authenticated,
-        state: "BLOCKED",
+        state: "LIMITED",
         publishingCapability: permissionItems.length > 0 ? "LIMITED" : "BLOCKED",
         checks: { ...authenticated.checks, publishingCapability: permissionItems.length > 0 ? "LIMITED" : "BLOCKED" },
         permissions: permissionItems,
@@ -330,6 +399,18 @@ export class MetaInstagramConnectivityValidator {
         errorMessageSafe: permissionItems.length > 0
           ? "Required Instagram publishing permissions were not fully granted."
           : "Meta returned no usable publishing permission evidence.",
+      };
+    }
+
+    if (authenticated.checks.accountCompatibility !== "PASS") {
+      return {
+        ...authenticated,
+        state: "LIMITED",
+        publishingCapability: "LIMITED",
+        readyForControlledTest: false,
+        errorCode: "ACCOUNT_NOT_COMPATIBLE",
+        errorMessageSafe: "Meta did not expose a professional account type for compatibility validation.",
+        permissions: permissionItems,
       };
     }
 
@@ -349,6 +430,7 @@ export function formatInstagramConnectivityResult(result: InstagramConnectivityR
   return [
     "Instagram API Connectivity",
     "---------------------------",
+    `Configuration: ${status(result.checks.configuration)}`,
     `Credentials: ${status(result.checks.credentials)}`,
     `Authentication: ${status(result.checks.authentication)}`,
     `Account access: ${status(result.checks.accountAccess)}`,

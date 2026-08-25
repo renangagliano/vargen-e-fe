@@ -26,6 +26,7 @@ INSTAGRAM_REQUIRE_APPROVAL=true
 - [CONTENT_STRATEGY.md](./CONTENT_STRATEGY.md) — estratégia editorial inicial.
 - [META_SETUP.md](./META_SETUP.md) — pré-requisitos oficiais e ações humanas.
 - [META_PUBLISHER.md](./META_PUBLISHER.md) — estados de capacidade, conectividade somente leitura e fronteira do publisher.
+- [META_CONNECTIVITY.md](./META_CONNECTIVITY.md) — validação oficial, workflow manual, erros seguros e rotação de token.
 - [MAESTRI_INTEGRATION.md](./MAESTRI_INTEGRATION.md) — capacidades Maestri comprovadas.
 - [REEL_FACTORY.md](./REEL_FACTORY.md) — desenho técnico da fábrica de Reels.
 - [OPERATIONS.md](./OPERATIONS.md) — operação, estados e dry-run.

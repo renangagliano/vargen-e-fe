@@ -100,6 +100,11 @@ esperado para uma configuração completamente validada é
 e não autorizam publicação. O token nunca aparece em URL, log, relatório ou
 artefato.
 
+O output também separa `Configuration` de `Credentials`. Conta profissional
+é aceita quando a API expõe `BUSINESS` ou `CREATOR`; tipo ausente é
+`LIMITED`. `TOKEN_EXPIRED`, `RATE_LIMITED`, `NETWORK_ERROR` e
+`META_API_ERROR` devem ser tratados conforme `META_CONNECTIVITY.md`.
+
 ## Lifecycle futuro de publicação
 
 ```text
