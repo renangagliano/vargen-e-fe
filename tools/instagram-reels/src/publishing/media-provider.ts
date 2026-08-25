@@ -1,6 +1,6 @@
 import type { TemporaryMediaPreparationInput, TemporaryMediaPreparationResult, TemporaryMediaValidationResult } from "./temporary-media-types.js";
 
-export type { TemporaryMediaPreparationInput, TemporaryMediaPreparationResult, TemporaryMediaValidationResult, TemporaryMediaState } from "./temporary-media-types.js";
+export type { TemporaryMediaPreparationInput, TemporaryMediaPreparationResult, TemporaryMediaValidationResult, TemporaryMediaState, TemporaryMediaProviderName } from "./temporary-media-types.js";
 
 export interface PublicationMediaProvider {
   getTemporaryPublicUrl(reelId: string): Promise<{ url: string; provider: string; checksumSha256?: string; expiresAt?: string }>;

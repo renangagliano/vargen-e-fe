@@ -64,6 +64,14 @@ production execution environment; local dry-run remains the default. See
 `AZURE_TEMP_MEDIA.md` for RBAC, TTL, validation, cleanup, and the manual
 preparation workflow. Temporary media preparation does not create a Meta
 container, call `media_publish`, or publish content.
+
+The reusable local-first alternative is `onedrive-personal`. It requires a
+delegated personal Microsoft account, validates `/me/drive` as
+`driveType=personal`, uploads only one frozen CONTENT_READY Reel below
+`VargenFe/InstagramTemp`, and validates the anonymous
+`@microsoft.graph.downloadUrl` as the exact MP4. See
+`ONEDRIVE_TEMP_MEDIA.md`. A sharing web page is not a media URL, and no
+provider is allowed to call Meta during media preparation.
 # Fase 7 — governança antes da publicação
 
 Antes de qualquer futura fila de publicação, o cockpit exige aprovação

@@ -7,6 +7,7 @@ import { evaluateContentReadiness } from "../review/readiness.js";
 import { resolveReviewFile } from "../review/files.js";
 import { freezePilotSnapshot, validatePilotSnapshot } from "../publishing/pilot.js";
 import { AzureBlobTemporaryMediaProvider } from "../publishing/azure-temporary-media.js";
+import { OneDrivePersonalTemporaryMediaProvider } from "../publishing/onedrive-personal-temporary-media.js";
 
 function option(args: string[], name: string): string | undefined {
   const prefix = `--${name}=`;
@@ -23,7 +24,7 @@ async function writeReport(config: MediaConfig, report: Record<string, unknown>)
   await fs.writeFile(htmlPath, `<!doctype html><meta charset="utf-8"><title>Instagram Temporary Media</title><pre>${escaped}</pre>`, "utf8");
 }
 
-async function runDryRun(reelId: string, config: MediaConfig): Promise<Record<string, unknown>> {
+async function runDryRun(reelId: string, config: MediaConfig, requestedProvider = "dry-run"): Promise<Record<string, unknown>> {
   const snapshot = await freezePilotSnapshot(reelId, "temporary-media-dry-run", config);
   const readiness = await evaluateContentReadiness(reelId, config);
   if (readiness.status !== "CONTENT_READY") throw new Error(`CONTENT_READY_REQUIRED:${readiness.reasons.join(",")}`);
@@ -37,13 +38,14 @@ async function runDryRun(reelId: string, config: MediaConfig): Promise<Record<st
   return {
     generated_at: new Date().toISOString(),
     reel_id: reelId,
-    provider: "DRY_RUN",
+    provider: requestedProvider === "onedrive-personal" ? "onedrive-personal" : "DRY_RUN",
+    requested_provider: requestedProvider,
     content_ready: readiness.status,
     local_media: "PASS",
     checksum: "PASS",
     derived_checksum: before,
     blob_upload: "NO",
-    azure_mutation: "NO",
+    storage_mutation: "NO",
     temporary_url_created: "NO",
     meta_calls: "NO",
     status: "DRY_RUN_VALIDATED",
@@ -58,7 +60,7 @@ function printReport(report: Record<string, unknown>): void {
   console.log(`CONTENT_READY: ${String(report.content_ready ?? "NOT_RUN")}`);
   console.log(`Local media: ${String(report.local_media ?? "NOT_RUN")}`);
   console.log(`Checksum: ${String(report.checksum ?? "NOT_RUN")}`);
-  console.log(`Azure mutation: ${String(report.azure_mutation ?? "UNKNOWN")}`);
+  console.log(`Storage mutation: ${String(report.storage_mutation ?? report.azure_mutation ?? "UNKNOWN")}`);
   console.log(`Temporary URL created: ${String(report.temporary_url_created ?? "UNKNOWN")}`);
   console.log(`Meta calls: ${String(report.meta_calls ?? "UNKNOWN")}`);
   console.log(`Status: ${String(report.status ?? "UNKNOWN")}`);
@@ -80,8 +82,9 @@ export async function runTemporaryMediaCommand(command: string | undefined, args
   }
 
   if (command === "instagram:media-cleanup") {
-    if (option(args, "provider") !== "azure") throw new Error("AZURE_PROVIDER_REQUIRED");
-    const provider = new AzureBlobTemporaryMediaProvider(config);
+    const providerMode = option(args, "provider");
+    const provider = providerMode === "onedrive-personal" ? new OneDrivePersonalTemporaryMediaProvider(config) : providerMode === "azure" ? new AzureBlobTemporaryMediaProvider(config) : null;
+    if (!provider) throw new Error("TEMPORARY_MEDIA_PROVIDER_REQUIRED");
     if (args.includes("--expired")) {
       console.log(`Cleaned temporary blobs: ${await provider.cleanupExpiredMedia()}`);
     } else {
@@ -94,18 +97,18 @@ export async function runTemporaryMediaCommand(command: string | undefined, args
 
   const providerMode = option(args, "provider") ?? (args.includes("--dry-run") ? "dry-run" : "azure");
   if (args.includes("--dry-run") || providerMode === "dry-run") {
-    const report = await runDryRun(reelId as string, config);
+    const report = await runDryRun(reelId as string, config, providerMode);
     await writeReport(config, report);
     printReport(report);
     return true;
   }
-  if (providerMode !== "azure") throw new Error("TEMPORARY_MEDIA_PROVIDER_INVALID");
   const snapshot = await freezePilotSnapshot(reelId as string, "temporary-media-operator", config);
   const readiness = await evaluateContentReadiness(reelId as string, config);
   if (readiness.status !== "CONTENT_READY") throw new Error(`CONTENT_READY_REQUIRED:${readiness.reasons.join(",")}`);
-  const provider = new AzureBlobTemporaryMediaProvider(config);
+  const provider = providerMode === "onedrive-personal" ? new OneDrivePersonalTemporaryMediaProvider(config) : providerMode === "azure" ? new AzureBlobTemporaryMediaProvider(config) : null;
+  if (!provider) throw new Error("TEMPORARY_MEDIA_PROVIDER_INVALID");
   const prepared = await provider.prepareTemporaryMedia({ reelId: snapshot.reel_id, publicationKey: snapshot.publication_key, derivedReelRelativePath: snapshot.derived_reel_relative_path, derivedChecksum: snapshot.derived_reel_checksum, editorialVersion: snapshot.editorial_version });
-  const report = { generated_at: new Date().toISOString(), reel_id: prepared.reelId, song: snapshot.song, collection: snapshot.collection, provider: prepared.provider, blob_name: prepared.blobName, blob_size: prepared.blobSize, derived_checksum: prepared.derivedChecksum, expires_at: prepared.expiresAt, validation: prepared.validation, safe_url: prepared.safeUrl, cleanup_status: prepared.cleanupStatus, status: prepared.state, meta_calls: "NO" };
+  const report = { generated_at: new Date().toISOString(), reel_id: prepared.reelId, song: snapshot.song, collection: snapshot.collection, provider: prepared.provider, item_path: prepared.itemPath, blob_name: prepared.blobName, drive_id: prepared.driveId, item_id: prepared.itemId, blob_size: prepared.blobSize, derived_checksum: prepared.derivedChecksum, expires_at: prepared.expiresAt, validation: prepared.validation, safe_url: prepared.safeUrl, cleanup_status: prepared.cleanupStatus, status: prepared.state, meta_calls: "NO" };
   await writeReport(config, report);
   printReport(report);
   return true;

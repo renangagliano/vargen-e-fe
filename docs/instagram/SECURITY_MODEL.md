@@ -87,6 +87,19 @@ keys and client secrets are not stored by the application. SAS permissions are
 read-only, HTTPS-only, blob-scoped, and limited to 15–120 minutes. Full signed
 URLs never enter SQLite, audit metadata, logs, or reports. Cleanup is explicit
 and prefix-scoped; local masters and Reels are not deleted.
+
+## Personal OneDrive temporary media
+
+Personal OneDrive is a separate provider boundary, not an extension of Azure
+or a work-tenant identity. The adapter requires delegated `Files.ReadWrite`,
+checks Graph `/me/drive` for `driveType=personal`, and rejects business or
+document-library drives before mutation. Graph access tokens and pre-
+authenticated download URLs are runtime-only values. The latter is fetched
+without an Authorization header and is accepted only when HTTPS, trusted
+redirects, video MIME, size, MP4 signature and SHA-256 all match. The
+temporary item is isolated under `VargenFe/InstagramTemp`; source media is
+never copied to OneDrive. Cleanup deletes the item and revokes a fallback
+anonymous permission when possible. This provider has no Meta API path.
 # Fase 7 — fronteira local
 
 O cockpit vincula somente a `127.0.0.1` por padrão, serve apenas derivados sob

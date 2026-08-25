@@ -1,5 +1,20 @@
 # Troubleshooting das Fases 1–6
 
+## Personal OneDrive temporary media
+
+- `PERSONAL_MICROSOFT_ACCOUNT_REQUIRED`: configure the approved delegated
+  personal Graph token adapter; Azure CLI or a work account is not accepted.
+- `PERSONAL_ONEDRIVE_IDENTITY_NOT_CONFIRMED`: Graph returned a business or
+  document-library drive. Stop and sign in to the personal OneDrive account.
+- `ONEDRIVE_ITEM_COLLISION`: the deterministic temporary path already contains
+  different content. Do not overwrite it manually; inspect and clean only the
+  tracked temporary item.
+- `TEMPORARY_MEDIA_VALIDATION_FAILED:*`: inspect the safe validation code.
+  HTML, login pages, wrong MIME, untrusted redirects, size mismatch and
+  checksum mismatch are all fail-closed conditions.
+- A `1drv.ms` sharing page is not a valid Instagram `video_url`. The provider
+  accepts only a documented direct download response containing the MP4.
+
 ## Não há MP4
 
 Sintoma: busca por `.mp4`, `.mov`, `.m4v` e `.webm` não encontrou arquivos no workspace pesquisado.

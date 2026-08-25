@@ -58,6 +58,14 @@ inspeção. Nenhum desses comandos agenda ou publica.
 
 O default é `dry-run`. A Phase 5 persiste controle, aprovação e simulações, mas não publica nem chama Meta.
 
+## OneDrive pessoal temporário
+
+Use `--provider=onedrive-personal` only after a personal delegated Graph
+adapter has been explicitly configured. The first command must be dry-run.
+The provider rejects work/business drives, never logs tokens or full download
+URLs, validates the anonymous MP4, and keeps the temporary item only until
+cleanup or the publication pilot completes.
+
 ## Section 9 — revisão e prontidão de conteúdo
 
 O fluxo operacional é `FAST_PATH` → `STANDARD_REVIEW`, somente para os 78

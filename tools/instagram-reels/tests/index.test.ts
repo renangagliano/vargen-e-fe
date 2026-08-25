@@ -19,3 +19,4 @@ import "./section8.test.js";
 import "./section9.test.js";
 import "./pilot.test.js";
 import "./azure-media.test.js";
+import "./onedrive-media.test.js";
