@@ -17,3 +17,4 @@ import "./ai-review.test.js";
 import "./intelligence.test.js";
 import "./section8.test.js";
 import "./section9.test.js";
+import "./pilot.test.js";

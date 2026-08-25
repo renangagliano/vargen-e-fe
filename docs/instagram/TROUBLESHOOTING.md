@@ -120,3 +120,10 @@ Ação: preservar estado e `creation_id`/`publication_id`, classificar erro, apl
   tente confirmar direitos por configuração.
 - `CONTENT_READY` bloqueado: execute `review:readiness` para ver os gates sem
   alterar aprovação, direitos ou publicação.
+## One-Reel pilot
+
+- `AWAITING_HUMAN_CONTENT_READY`: complete explicit Bible, editorial, and rights review; do not bypass the readiness gate.
+- `TEMPORARY_MEDIA_PROVIDER_REQUIRED`: configure an approved, time-limited public HTTPS provider for one file. Do not use GitHub Pages, raw GitHub URLs, localhost, or the OneDrive directory.
+- `MEDIA_URL_INVALID`: verify anonymous HTTPS retrieval, `video/mp4`, no authentication redirect, and safe expiration/revocation behavior.
+- `CONTAINER_PROCESSING_ERROR` or `CONTAINER_TIMEOUT`: do not retry blindly; confirm the frozen snapshot and remote state before any new attempt.
+- `DUPLICATE_PUBLICATION_PREVENTED`: reconcile the durable publication key and Meta read-back before taking action.

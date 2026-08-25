@@ -204,3 +204,6 @@ resolution path for a calibration sample. To apply a suggestion, use the
 explicit cockpit action or `npm run editorial:knowledge-apply -- <reel-id>
 --by=<operator> --fields=<comma-separated-fields>`. Applying content creates
 a new editorial version and requires human review again.
+## Controlled pilot operations
+
+Use `npm run instagram:pilot -- --dry-run` to inspect the current eligible pilot state without contacting Meta. The real one-Reel workflow is manual-only and is blocked until a Reel is genuinely `CONTENT_READY` and an approved temporary HTTPS media provider is configured. See `SECTION_10_2_ONE_REEL_PILOT.md` for snapshot, polling, idempotency, and failure procedures.

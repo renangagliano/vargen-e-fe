@@ -1,0 +1,47 @@
+name: Instagram One Reel Pilot
+
+on:
+  workflow_dispatch:
+    inputs:
+      reel_id:
+        description: "Exactly one CONTENT_READY Reel ID"
+        required: true
+        type: string
+      confirmation:
+        description: "Type I_CONFIRM_ONE_REEL_PUBLICATION"
+        required: true
+        type: string
+
+jobs:
+  pilot:
+    if: ${{ inputs.confirmation == 'I_CONFIRM_ONE_REEL_PUBLICATION' }}
+    runs-on: ubuntu-latest
+    environment: instagram-production
+    permissions:
+      contents: read
+    env:
+      INSTAGRAM_ACCESS_TOKEN: ${{ secrets.INSTAGRAM_ACCESS_TOKEN }}
+      META_APP_SECRET: ${{ secrets.META_APP_SECRET }}
+      INSTAGRAM_ACCOUNT_ID: ${{ vars.INSTAGRAM_ACCOUNT_ID }}
+      META_APP_ID: ${{ vars.META_APP_ID }}
+      INSTAGRAM_PUBLISH_MODE: ${{ vars.INSTAGRAM_PUBLISH_MODE }}
+      INSTAGRAM_REQUIRE_APPROVAL: ${{ vars.INSTAGRAM_REQUIRE_APPROVAL }}
+      INSTAGRAM_TIMEZONE: ${{ vars.INSTAGRAM_TIMEZONE }}
+      INSTAGRAM_PILOT_REAL: "true"
+    steps:
+      - name: Check out selected branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Run exactly one approved pilot
+        env:
+          PILOT_REEL_ID: ${{ inputs.reel_id }}
+          PILOT_CONFIRMATION: ${{ inputs.confirmation }}
+        run: npm run instagram:pilot -- --reel="$PILOT_REEL_ID" --confirm="$PILOT_CONFIRMATION" --by="github-actions-operator"

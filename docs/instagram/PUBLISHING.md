@@ -62,3 +62,6 @@ editorial, direitos confirmados e referências bíblicas verificadas. `APPROVED`
 `META_CONNECTIVITY_VALIDATION_REQUIRED` até o workflow somente leitura provar
 a conta configurada e as permissões de publicação. Nenhuma rota do cockpit
 chama a API Meta.
+## Section 10.2 one-Reel pilot
+
+The controlled pilot is documented in [SECTION_10_2_ONE_REEL_PILOT.md](./SECTION_10_2_ONE_REEL_PILOT.md). It is the only path allowed to exercise the official write API, and it requires one explicit Reel ID, `CONTENT_READY`, a protected approval environment, and the exact confirmation `I_CONFIRM_ONE_REEL_PUBLICATION`. Dry-run and automated tests cannot create a Meta container or call `media_publish`.

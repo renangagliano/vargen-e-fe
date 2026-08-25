@@ -1,5 +1,5 @@
 export interface PublicationMediaProvider {
-  getTemporaryPublicUrl(reelId: string): Promise<{ url: string; provider: string }>;
+  getTemporaryPublicUrl(reelId: string): Promise<{ url: string; provider: string; checksumSha256?: string; expiresAt?: string }>;
   revokeTemporaryPublicUrl(reelId: string, url: string): Promise<void>;
 }
 
