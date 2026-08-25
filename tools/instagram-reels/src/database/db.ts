@@ -526,7 +526,7 @@ export function updatePublicationJob(db: DatabaseSync, jobId: string, input: { s
 }
 
 export function appendAuditEvent(db: DatabaseSync, input: { eventId: string; entityType: string; entityId: string; eventType: string; actor: string; metadataJsonSafe: string }): void {
-  db.prepare("INSERT INTO publication_audit_events (event_id, entity_type, entity_id, event_type, actor, timestamp, metadata_json_safe) VALUES (?, ?, ?, ?, ?, ?, ?)").run(input.eventId, input.entityType, input.entityId, input.eventType, input.actor, now(), input.metadataJsonSafe);
+  db.prepare("INSERT OR IGNORE INTO publication_audit_events (event_id, entity_type, entity_id, event_type, actor, timestamp, metadata_json_safe) VALUES (?, ?, ?, ?, ?, ?, ?)").run(input.eventId, input.entityType, input.entityId, input.eventType, input.actor, now(), input.metadataJsonSafe);
 }
 
 export function auditEvents(db: DatabaseSync, entityId?: string): SqlRow[] {

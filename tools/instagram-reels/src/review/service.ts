@@ -5,7 +5,8 @@ import { curationRows, derivedReelById, inspectAsset, latestCuration, latestEdit
 import { loadSongCatalog } from "../matching/catalog.js";
 import { approveEditorial, rejectEditorial, requestEditorialChanges } from "../publishing/approval.js";
 import { editEditorialPackage, type EditorialEdit } from "../publishing/editorial-edit.js";
-import type { AiBibleSuggestion, AiEditorialSuggestion, AiReviewResult, BiblicalResolutionEvidence, CurationQualityTier, EditorialCalibration, EditorialPackage, EditorialReviewStatus, PortfolioStatus } from "../shared/types.js";
+import type { AiBibleSuggestion, AiEditorialSuggestion, AiReviewResult, BiblicalResolutionEvidence, CurationQualityTier, EditorialCalibration, EditorialPackage, EditorialReviewStatus, PortfolioStatus, KnowledgeBibleResolution, KnowledgeEditorialSuggestion, Section8EditorialCalibration, KnowledgeEditorialContext } from "../shared/types.js";
+import { loadKnowledgeBase, knowledgeContext } from "../intelligence/knowledge-base.js";
 import { bibleReferenceStatus } from "./bible.js";
 import { evaluateContentReadiness } from "./readiness.js";
 
@@ -49,6 +50,10 @@ export type ReviewItem = {
   ai_editorial_suggestion?: AiEditorialSuggestion | null;
   editorial_calibration?: EditorialCalibration | null;
   bible_resolution?: BiblicalResolutionEvidence | null;
+  knowledge_context?: KnowledgeEditorialContext | null;
+  knowledge_bible_resolution?: KnowledgeBibleResolution | null;
+  knowledge_editorial_suggestion?: KnowledgeEditorialSuggestion | null;
+  section8_calibration?: Section8EditorialCalibration | null;
 };
 
 type Row = Record<string, unknown>;
@@ -82,6 +87,19 @@ function latestAi(db: ReturnType<typeof openDatabase>, reelId: string): { review
     bibleResolution = { resolution_id: stringValue(resolutionRow.resolution_id), song_slug: stringValue(resolutionRow.song_slug), reel_id: stringValue(resolutionRow.reel_id), suggested_reference: resolutionRow.suggested_reference ? stringValue(resolutionRow.suggested_reference) : null, resolution_type: stringValue(resolutionRow.resolution_type) as BiblicalResolutionEvidence["resolution_type"], confidence: stringValue(resolutionRow.confidence) as BiblicalResolutionEvidence["confidence"], evidence_source_record_ids: ids, evidence_excerpt_safe: stringValue(resolutionRow.evidence_excerpt_safe), reasoning_summary: stringValue(resolutionRow.reasoning_summary), status: stringValue(resolutionRow.status) as BiblicalResolutionEvidence["status"], sources: sourceRows.map((source) => ({ source_record_id: stringValue(source.source_record_id), source_type: stringValue(source.source_type), source_location: stringValue(source.source_location), is_authoritative: Boolean(source.is_authoritative), source_title: source.source_title ? stringValue(source.source_title) : null })) };
   }
   return { review, bible, editorial, calibration, bibleResolution };
+}
+
+function latestSection8(db: ReturnType<typeof openDatabase>, reelId: string): { bible: KnowledgeBibleResolution | null; editorial: KnowledgeEditorialSuggestion | null; calibration: Section8EditorialCalibration | null } {
+  const stringValue = (value: unknown, fallback = "") => value === null || value === undefined ? fallback : String(value);
+  const numberValue = (value: unknown, fallback = 0) => { const parsed = Number(value); return Number.isFinite(parsed) ? parsed : fallback; };
+  const bibleRow = db.prepare("SELECT * FROM knowledge_bible_resolutions WHERE reel_id = ? ORDER BY updated_at DESC LIMIT 1").get(reelId) as Row | undefined;
+  const editorialRow = db.prepare("SELECT * FROM knowledge_editorial_suggestions WHERE reel_id = ? ORDER BY updated_at DESC LIMIT 1").get(reelId) as Row | undefined;
+  const calibrationRow = db.prepare("SELECT * FROM section8_editorial_calibrations WHERE reel_id = ? ORDER BY updated_at DESC LIMIT 1").get(reelId) as Row | undefined;
+  const parseJson = <T>(value: unknown, fallback: T): T => { try { return JSON.parse(stringValue(value)) as T; } catch { return fallback; } };
+  const bible: KnowledgeBibleResolution | null = bibleRow ? { resolution_id: stringValue(bibleRow.resolution_id), reel_id: stringValue(bibleRow.reel_id), song_slug: stringValue(bibleRow.song_slug), resolver_version: stringValue(bibleRow.resolver_version), suggested_reference: bibleRow.suggested_reference ? stringValue(bibleRow.suggested_reference) : null, book: bibleRow.book ? stringValue(bibleRow.book) : null, chapter: bibleRow.chapter === null || bibleRow.chapter === undefined ? null : numberValue(bibleRow.chapter), verse_start: bibleRow.verse_start === null || bibleRow.verse_start === undefined ? null : numberValue(bibleRow.verse_start), verse_end: bibleRow.verse_end === null || bibleRow.verse_end === undefined ? null : numberValue(bibleRow.verse_end), classification: stringValue(bibleRow.classification) as KnowledgeBibleResolution["classification"], confidence_level: stringValue(bibleRow.confidence_level) as KnowledgeBibleResolution["confidence_level"], confidence_score: numberValue(bibleRow.confidence_score), evidence_level: stringValue(bibleRow.evidence_level), knowledge_confidence: stringValue(bibleRow.knowledge_confidence), verification_status: stringValue(bibleRow.verification_status), biblical_story: stringValue(bibleRow.biblical_story), core_message: stringValue(bibleRow.core_message), provenance: parseJson(bibleRow.provenance_json, {}), evidence_sources: parseJson(bibleRow.evidence_sources_json, []), legacy_reference: bibleRow.legacy_reference ? stringValue(bibleRow.legacy_reference) : null, human_verified_reference: bibleRow.human_verified_reference ? stringValue(bibleRow.human_verified_reference) : null, conflict_reason: bibleRow.conflict_reason ? stringValue(bibleRow.conflict_reason) : null, reasoning_summary: stringValue(bibleRow.reasoning_summary) } : null;
+  const editorial: KnowledgeEditorialSuggestion | null = editorialRow ? { suggestion_id: stringValue(editorialRow.suggestion_id), reel_id: stringValue(editorialRow.reel_id), song_slug: stringValue(editorialRow.song_slug), suggestion_version: stringValue(editorialRow.suggestion_version), base_editorial_version: numberValue(editorialRow.base_editorial_version), suggested_package: parseJson(editorialRow.package_json, {}), changed_fields: parseJson(editorialRow.changed_fields_json, []), source_context: parseJson(editorialRow.source_context_json, {}), reasoning_summary: stringValue(editorialRow.reasoning_summary), status: stringValue(editorialRow.status) as KnowledgeEditorialSuggestion["status"] } : null;
+  const calibration: Section8EditorialCalibration | null = calibrationRow ? { reel_id: stringValue(calibrationRow.reel_id), song_slug: stringValue(calibrationRow.song_slug), calibration_version: stringValue(calibrationRow.calibration_version), old_overall_score: calibrationRow.old_overall_score === null || calibrationRow.old_overall_score === undefined ? null : numberValue(calibrationRow.old_overall_score), old_editorial_quality_score: calibrationRow.old_editorial_quality_score === null || calibrationRow.old_editorial_quality_score === undefined ? null : numberValue(calibrationRow.old_editorial_quality_score), structural_compliance: numberValue(calibrationRow.structural_compliance), specificity_score: numberValue(calibrationRow.specificity_score), biblical_alignment_score: numberValue(calibrationRow.biblical_alignment_score), song_context_alignment_score: numberValue(calibrationRow.song_context_alignment_score), distinctiveness_score: numberValue(calibrationRow.distinctiveness_score), brand_voice_score: numberValue(calibrationRow.brand_voice_score), narrative_value_score: numberValue(calibrationRow.narrative_value_score), cta_quality_score: numberValue(calibrationRow.cta_quality_score), retention_potential_score: numberValue(calibrationRow.retention_potential_score), duplication_penalty: numberValue(calibrationRow.duplication_penalty), editorial_quality_score: numberValue(calibrationRow.editorial_quality_score), generic_language_level: stringValue(calibrationRow.generic_language_level) as Section8EditorialCalibration["generic_language_level"], generic_phrases: parseJson(calibrationRow.generic_phrases_json, []), duplicate_risk: stringValue(calibrationRow.duplicate_risk) as Section8EditorialCalibration["duplicate_risk"], related_reel_ids: parseJson(calibrationRow.related_reel_ids_json, []), bible_classification: stringValue(calibrationRow.bible_classification) as Section8EditorialCalibration["bible_classification"], review_queue: stringValue(calibrationRow.review_queue) as Section8EditorialCalibration["review_queue"], review_priority_score: numberValue(calibrationRow.review_priority_score), review_priority_rank: calibrationRow.review_priority_rank === null || calibrationRow.review_priority_rank === undefined ? null : numberValue(calibrationRow.review_priority_rank), reasoning_summary: stringValue(calibrationRow.reasoning_summary), knowledge_context_hash: stringValue(calibrationRow.knowledge_context_hash) } : null;
+  return { bible, editorial, calibration };
 }
 
 export function queuePredicate(queue: ReviewQueue, portfolioStatus: PortfolioStatus, rank: number): boolean {
@@ -119,6 +137,7 @@ function generatedRelative(root: string | null, value: string | null | undefined
 
 export async function listReviewItems(queue: ReviewQueue = "primary", filters: ReviewFilters = {}, config: MediaConfig): Promise<ReviewItem[]> {
   const catalog = await loadSongCatalog(config.repoRoot);
+  const knowledge = await loadKnowledgeBase(config);
   const catalogBySlug = new Map(catalog.map((song) => [song.slug, song]));
   const db = openDatabase(config);
   try {
@@ -135,6 +154,7 @@ export async function listReviewItems(queue: ReviewQueue = "primary", filters: R
       const bible = bibleReferenceStatus(db, curation.reel_id);
       const candidate = db.prepare("SELECT start_time_ms, end_time_ms, score FROM reel_candidates WHERE candidate_id = ?").get(curation.candidate_id) as Row | undefined;
       const ai = latestAi(db, curation.reel_id);
+      const section8 = latestSection8(db, curation.reel_id);
       if (queue === "fast-path" && ai.calibration?.fast_path_status !== "FAST_PATH") continue;
       if (queue === "evidence-needed" && ai.calibration?.evidence_needed_status !== "EVIDENCE_NEEDED") continue;
       const item: ReviewItem = {
@@ -163,6 +183,10 @@ export async function listReviewItems(queue: ReviewQueue = "primary", filters: R
         ai_editorial_suggestion: ai.editorial,
         editorial_calibration: ai.calibration,
         bible_resolution: ai.bibleResolution,
+        knowledge_context: knowledgeContext(knowledge.bySlug.get(song?.slug ?? stringValue(asset.song_slug))) as KnowledgeEditorialContext | null,
+        knowledge_bible_resolution: section8.bible,
+        knowledge_editorial_suggestion: section8.editorial,
+        section8_calibration: section8.calibration,
       };
       items.push(item);
     }
@@ -211,6 +235,16 @@ export async function reviewProgress(config: MediaConfig): Promise<Record<string
     calibration_fast_path: countBy((item) => item.editorial_calibration?.fast_path_status === "FAST_PATH"),
     calibration_evidence_needed: countBy((item) => item.editorial_calibration?.evidence_needed_status === "EVIDENCE_NEEDED"),
     calibration_average_score: (() => { const values = items.map((item) => item.editorial_calibration?.overall_score).filter((value): value is number => typeof value === "number"); return values.length ? Math.round(values.reduce((sum, value) => sum + value, 0) / values.length * 100) / 100 : null; })(),
+    section8_processed: countBy((item) => Boolean(item.section8_calibration)),
+    section8_fast_path: countBy((item) => item.section8_calibration?.review_queue === "FAST_PATH"),
+    section8_standard_review: countBy((item) => item.section8_calibration?.review_queue === "STANDARD_REVIEW"),
+    section8_editorial_changes_required: countBy((item) => item.section8_calibration?.review_queue === "EDITORIAL_CHANGES_REQUIRED"),
+    section8_bible_verification_required: countBy((item) => item.section8_calibration?.review_queue === "BIBLE_VERIFICATION_REQUIRED"),
+    section8_conflict_review: countBy((item) => item.section8_calibration?.review_queue === "CONFLICT_REVIEW"),
+    section8_generic_low: countBy((item) => item.section8_calibration?.generic_language_level === "GENERIC_LOW"),
+    section8_generic_medium: countBy((item) => item.section8_calibration?.generic_language_level === "GENERIC_MEDIUM"),
+    section8_generic_high: countBy((item) => item.section8_calibration?.generic_language_level === "GENERIC_HIGH"),
+    section8_average_quality: (() => { const values = items.map((item) => item.section8_calibration?.editorial_quality_score).filter((value): value is number => typeof value === "number"); return values.length ? Math.round(values.reduce((sum, value) => sum + value, 0) / values.length * 100) / 100 : null; })(),
   };
 }
 

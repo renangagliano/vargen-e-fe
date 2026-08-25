@@ -245,6 +245,104 @@ export type AiBibleConfidence = "HIGH" | "MEDIUM" | "LOW";
 export type AiBibleSuggestionStatus = "AI_SUGGESTED" | "HUMAN_VERIFIED" | "REJECTED" | "CONFLICT" | "INSUFFICIENT_EVIDENCE";
 export type AiEditorialSuggestionStatus = "PROPOSED" | "APPLIED" | "DISMISSED";
 
+export type KnowledgeBibleClassification = "HUMAN_VERIFIED" | "KNOWLEDGE_CORROBORATED_HIGH" | "KNOWLEDGE_INFERRED_MEDIUM" | "KNOWLEDGE_REVIEW_REQUIRED" | "INSUFFICIENT_EVIDENCE" | "CONFLICT";
+export type KnowledgeEditorialSuggestionStatus = "PROPOSED" | "APPLIED" | "DISMISSED";
+export type Section8GenericLanguage = "GENERIC_LOW" | "GENERIC_MEDIUM" | "GENERIC_HIGH";
+export type Section8ReviewQueue = "FAST_PATH" | "STANDARD_REVIEW" | "EDITORIAL_CHANGES_REQUIRED" | "BIBLE_VERIFICATION_REQUIRED" | "CONFLICT_REVIEW";
+
+export type KnowledgeBibleResolution = {
+  resolution_id: string;
+  reel_id: string;
+  song_slug: string;
+  resolver_version: string;
+  suggested_reference: string | null;
+  book: string | null;
+  chapter: number | null;
+  verse_start: number | null;
+  verse_end: number | null;
+  classification: KnowledgeBibleClassification;
+  confidence_level: AiBibleConfidence;
+  confidence_score: number;
+  evidence_level: string;
+  knowledge_confidence: string;
+  verification_status: string;
+  biblical_story: string;
+  core_message: string;
+  provenance: Record<string, unknown>;
+  evidence_sources: string[];
+  legacy_reference: string | null;
+  human_verified_reference: string | null;
+  conflict_reason: string | null;
+  reasoning_summary: string;
+};
+
+export type KnowledgeEditorialSuggestion = {
+  suggestion_id: string;
+  reel_id: string;
+  song_slug: string;
+  suggestion_version: string;
+  base_editorial_version: number;
+  suggested_package: Partial<EditorialPackage>;
+  changed_fields: string[];
+  source_context: Record<string, unknown>;
+  reasoning_summary: string;
+  status: KnowledgeEditorialSuggestionStatus;
+};
+
+export type Section8EditorialCalibration = {
+  reel_id: string;
+  song_slug: string;
+  calibration_version: string;
+  old_overall_score: number | null;
+  old_editorial_quality_score: number | null;
+  structural_compliance: number;
+  specificity_score: number;
+  biblical_alignment_score: number;
+  song_context_alignment_score: number;
+  distinctiveness_score: number;
+  brand_voice_score: number;
+  narrative_value_score: number;
+  cta_quality_score: number;
+  retention_potential_score: number;
+  duplication_penalty: number;
+  editorial_quality_score: number;
+  generic_language_level: Section8GenericLanguage;
+  generic_phrases: string[];
+  duplicate_risk: AiDuplicateRisk;
+  related_reel_ids: string[];
+  bible_classification: KnowledgeBibleClassification;
+  review_queue: Section8ReviewQueue;
+  review_priority_score: number;
+  review_priority_rank: number | null;
+  reasoning_summary: string;
+  knowledge_context_hash: string;
+};
+
+export type KnowledgeEditorialContext = {
+  song_id: string;
+  slug: string;
+  title: string;
+  collection: string;
+  liturgical_season: string;
+  liturgical_year: string;
+  core_message: string;
+  summary: string;
+  primary_theme: string;
+  secondary_themes: string[];
+  primary_bible_reference: string;
+  secondary_bible_references: string[];
+  biblical_story: string;
+  biblical_characters: string[];
+  liturgical_context: string;
+  calendar_context: string;
+  editorial_keywords: string[];
+  historical_context: string;
+  evidence_level: string;
+  confidence: string;
+  verification_status: string;
+  provenance: Record<string, unknown>;
+};
+
 export type BiblicalResolutionType = "SUGGESTED_EXPLICIT" | "SUGGESTED_CORROBORATED" | "SUGGESTED_NARRATIVE" | "HUMAN_VERIFIED" | "INSUFFICIENT" | "CONFLICT";
 export type BiblicalResolutionConfidence = "HIGH" | "MEDIUM" | "LOW";
 export type BiblicalResolutionStatus = "AI_SUGGESTED" | "HUMAN_VERIFIED" | "REJECTED" | "CONFLICT" | "INSUFFICIENT_EVIDENCE";

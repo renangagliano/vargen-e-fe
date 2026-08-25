@@ -149,3 +149,17 @@ snapshot validado do catálogo mestre local. A resolução é centralizada por
 slug e pode ser verificada com `npm run knowledge-base:test`. A integração
 apresenta contexto público da canção e mantém evidência, confiança,
 verificação e proveniência disponíveis somente para governança interna.
+# Section 8 operations
+
+Use `npm run editorial:knowledge-calibrate` to process a diverse 10-song
+PRIMARY calibration sample. Review its report under the configured Reels
+root before running `npm run editorial:knowledge-run` for all 78 PRIMARY
+candidates. Section 8 writes versioned suggestions and queues only; it does
+not approve, verify, confirm rights, schedule or publish content.
+
+`npm run editorial:knowledge-report` regenerates the Section 8 report and
+`npm run bible:knowledge-resolve` runs the same conservative Knowledge Base
+resolution path for a calibration sample. To apply a suggestion, use the
+explicit cockpit action or `npm run editorial:knowledge-apply -- <reel-id>
+--by=<operator> --fields=<comma-separated-fields>`. Applying content creates
+a new editorial version and requires human review again.
