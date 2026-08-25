@@ -44,3 +44,10 @@ NOT_PUBLISHED -> READY_FOR_PUBLISHING -> SCHEDULED -> QUEUED -> PUBLISHING
 ```
 
 Dry-run outcomes are separate from real `PUBLISHED` state.
+# Fase 7 — governança antes da publicação
+
+Antes de qualquer futura fila de publicação, o cockpit exige aprovação
+editorial, direitos confirmados e referências bíblicas verificadas. `APPROVED`
+é independente de `CONTENT_READY`; Meta continua bloqueada por
+`META_BUSINESS_VERIFICATION_REQUIRED`. Nenhuma rota do cockpit chama a API
+Meta.

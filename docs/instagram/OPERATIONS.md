@@ -122,3 +122,9 @@ canary passou antes da geração dos 78 assets.
 ## Backup e retenção
 
 As fontes originais ficam fora do alcance de limpeza automática. Derivados, logs e snapshots devem ter política de retenção definida antes do worker de produção.
+# Fase 7 — operação do cockpit
+
+O fluxo operacional local está documentado em `REVIEW_COCKPIT.md`. Gere o
+relatório primário com `npm run review:report`; os arquivos gerados ficam em
+OneDrive e não entram no Git. Não confirme direitos em lote sem um manifesto
+e a confirmação explícita do operador.

@@ -87,3 +87,14 @@ Ação: armazenar indisponível/NULL e impedir taxas derivadas com denominador a
 ## Falha de publicação
 
 Ação: preservar estado e `creation_id`/`publication_id`, classificar erro, aplicar retry somente se seguro e nunca repetir publicação sem idempotência.
+# Fase 7 — troubleshooting
+
+- `REVIEW_COCKPIT_MUST_BIND_LOCALHOST`: mantenha `VARGEN_REVIEW_HOST=127.0.0.1`.
+- `REVIEW_FILE_OUTSIDE_OUTPUT_ROOT`: o preview recebeu um caminho que não é
+  derivado de `VARGEN_REELS_OUTPUT_ROOT`.
+- `BIBLE_REFERENCE_FORMAT_INVALID`: a validação é estrutural; confirme o
+  formato católico em português antes de salvar.
+- `RIGHTS_CONFIRMATION_REQUIRED`: use a declaração explícita do comando e não
+  tente confirmar direitos por configuração.
+- `CONTENT_READY` bloqueado: execute `review:readiness` para ver os gates sem
+  alterar aprovação, direitos ou publicação.

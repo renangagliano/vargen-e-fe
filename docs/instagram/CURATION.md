@@ -76,3 +76,9 @@ candidatos: 111 ACTIVE, 123 HOLD e 0 REJECTED. Há 45 músicas com um ativo,
 caiu aproximadamente 52% sem destruir os derivados em espera.
 
 Referências bíblicas: 3 VERIFIED, 231 MISSING, 0 inferidas e 0 em conflito.
+# Fase 7 — revisão humana
+
+A saída da curadoria é consumida pelo cockpit local em filas separadas:
+`PRIMARY` (78), `SECONDARY` (33) e `HOLD` (123). A decisão humana não altera
+nem remove os MP4s físicos. Consulte `REVIEW_COCKPIT.md` para o fluxo de
+aprovação, Bíblia, direitos e `CONTENT_READY`.

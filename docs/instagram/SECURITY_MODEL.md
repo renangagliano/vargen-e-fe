@@ -56,3 +56,9 @@ Na Phase 5, ações locais exigem `--by` e nota. A confirmação de direitos e a
 ## Logs e incidentes
 
 Logs estruturados devem registrar stage, status, duração, error code e retry count, sem conteúdo sensível. Erros de token, permissão ou direitos devem interromper a fronteira Meta e pedir ação humana.
+# Fase 7 — fronteira local
+
+O cockpit vincula somente a `127.0.0.1` por padrão, serve apenas derivados sob
+`VARGEN_REELS_OUTPUT_ROOT` e rejeita traversal, symlinks e extensões não
+permitidas. Operações de estado exigem ator/nota; confirmação de direitos exige
+uma declaração exata. O cockpit não expõe mestres, segredos ou Meta.
