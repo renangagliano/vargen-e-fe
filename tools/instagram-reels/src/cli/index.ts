@@ -13,6 +13,7 @@ import { runIntelligenceCommand } from "./intelligence.js";
 import { runKnowledgeCommand } from "./knowledge.js";
 import { runInstagramConnectivityCommand } from "./connectivity.js";
 import { runPilotCommand } from "./pilot.js";
+import { runTemporaryMediaCommand } from "./temporary-media.js";
 
 function filterArgument(args: string[]): string | undefined {
   const value = args.find((arg) => arg.startsWith("--"));
@@ -23,6 +24,7 @@ async function main(): Promise<void> {
   const [, , command, ...args] = process.argv;
   const config = loadConfig();
   if (await runInstagramConnectivityCommand(command)) return;
+  if (await runTemporaryMediaCommand(command, args, config)) return;
   if (await runPilotCommand(command, args, config)) return;
   if (await runAiReviewCommand(command, args)) return;
   if (await runKnowledgeCommand(command, args)) return;

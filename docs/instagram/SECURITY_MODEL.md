@@ -76,6 +76,17 @@ limitadas a detalhes seguros, com token-like values mascarados.
 ## Logs e incidentes
 
 Logs estruturados devem registrar stage, status, duração, error code e retry count, sem conteúdo sensível. Erros de token, permissão ou direitos devem interromper a fronteira Meta e pedir ação humana.
+
+## Azure temporary media
+
+Azure Blob Storage is private by default. The Section 10.3 provider checks
+container privacy, resolves the upload only from trusted Reel metadata, and
+uses a deterministic one-file blob name. It uses GitHub OIDC/
+`DefaultAzureCredential` and user-delegation SAS where configured; account
+keys and client secrets are not stored by the application. SAS permissions are
+read-only, HTTPS-only, blob-scoped, and limited to 15–120 minutes. Full signed
+URLs never enter SQLite, audit metadata, logs, or reports. Cleanup is explicit
+and prefix-scoped; local masters and Reels are not deleted.
 # Fase 7 — fronteira local
 
 O cockpit vincula somente a `127.0.0.1` por padrão, serve apenas derivados sob

@@ -127,3 +127,23 @@ Ação: preservar estado e `creation_id`/`publication_id`, classificar erro, apl
 - `MEDIA_URL_INVALID`: verify anonymous HTTPS retrieval, `video/mp4`, no authentication redirect, and safe expiration/revocation behavior.
 - `CONTAINER_PROCESSING_ERROR` or `CONTAINER_TIMEOUT`: do not retry blindly; confirm the frozen snapshot and remote state before any new attempt.
 - `DUPLICATE_PUBLICATION_PREVENTED`: reconcile the durable publication key and Meta read-back before taking action.
+
+## Azure temporary media
+
+- `AZURE_STORAGE_ACCOUNT_REQUIRED` or `AZURE_STORAGE_*_INVALID`: configure the
+  GitHub Environment variables without adding credentials to source.
+- `AZURE_CONTAINER_MUST_BE_PRIVATE`: disable anonymous container/blob access;
+  do not weaken the storage firewall just to make the entire library public.
+- `TEMPORARY_MEDIA_VALIDATION_FAILED:AZURE_HOST_REQUIRED`: verify the configured
+  account endpoint and do not use redirects or proxy domains.
+- `TEMPORARY_MEDIA_VALIDATION_FAILED:SAS_READ_ONLY_REQUIRED`: the SAS must have
+  only `sp=r`; regenerate it through the provider.
+- `TEMPORARY_MEDIA_VALIDATION_FAILED:BLOB_SIZE_MISMATCH`: stop and re-check the
+  frozen Reel checksum and blob properties; do not overwrite a collision.
+- `SNAPSHOT_INVALIDATED`: the local Reel changed after the snapshot. Recreate a
+  governed snapshot and do not upload the old content.
+- `AZURE_STORAGE_NETWORK_ACCESS_BLOCKED`: preserve private-container security
+  and resolve Azure network policy; do not make unrelated blobs public.
+- `TEMPORARY_MEDIA_PROVIDER_REQUIRED`: Section 10.2 cannot proceed until the
+  provider is configured and its URL is validated. No fallback to GitHub Pages,
+  raw GitHub, localhost, or the OneDrive directory is allowed.

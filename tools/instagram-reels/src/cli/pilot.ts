@@ -4,6 +4,7 @@ import { loadConfig, type MediaConfig } from "../config/index.js";
 import { runtimeEnvironmentValue } from "../config/automation.js";
 import { evaluateContentReadiness } from "../review/readiness.js";
 import { BlockedPublicationMediaProvider } from "../publishing/media-provider.js";
+import { AzureBlobTemporaryMediaProvider } from "../publishing/azure-temporary-media.js";
 import { MetaPilotApi } from "../publishing/meta-pilot-api.js";
 import { executeFrozenPilot, freezePilotSnapshot, PILOT_CONFIRMATION, runPilotDryRun, type PilotExecutionResult, type PilotSelection } from "../publishing/pilot.js";
 
@@ -11,6 +12,12 @@ function option(args: string[], name: string): string | undefined {
   const prefix = `--${name}=`;
   const found = args.find((arg) => arg.startsWith(prefix));
   return found?.slice(prefix.length) || undefined;
+}
+
+function configuredMediaProvider(config: MediaConfig) {
+  return runtimeEnvironmentValue("INSTAGRAM_TEMP_MEDIA_PROVIDER") === "azure"
+    ? new AzureBlobTemporaryMediaProvider(config)
+    : new BlockedPublicationMediaProvider();
 }
 
 async function writeReport(config: MediaConfig, selection: PilotSelection, result?: PilotExecutionResult): Promise<void> {
@@ -65,7 +72,7 @@ export async function runPilotCommand(command: string | undefined, args: string[
   const version = runtimeEnvironmentValue("META_GRAPH_API_VERSION") ?? "v22.0";
   if (!token || !accountId) throw new Error("INSTAGRAM_API_CONFIGURATION_REQUIRED");
   const api = new MetaPilotApi({ accessToken: token, accountId, graphApiVersion: version });
-  const result = await executeFrozenPilot({ config, snapshot, readiness, actor, dryRun: false, api, mediaProvider: new BlockedPublicationMediaProvider() });
+  const result = await executeFrozenPilot({ config, snapshot, readiness, actor, dryRun: false, api, mediaProvider: configuredMediaProvider(config) });
   const selection: PilotSelection = { snapshot, status: "SELECTED", candidates_considered: 1 };
   await writeReport(config, selection, result);
   printResult(selection, result);

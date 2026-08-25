@@ -529,6 +529,68 @@ export function appendAuditEvent(db: DatabaseSync, input: { eventId: string; ent
   db.prepare("INSERT OR IGNORE INTO publication_audit_events (event_id, entity_type, entity_id, event_type, actor, timestamp, metadata_json_safe) VALUES (?, ?, ?, ?, ?, ?, ?)").run(input.eventId, input.entityType, input.entityId, input.eventType, input.actor, now(), input.metadataJsonSafe);
 }
 
+export type TemporaryMediaRecord = {
+  temporary_media_id: string;
+  reel_id: string;
+  publication_key: string;
+  provider: string;
+  blob_container: string;
+  blob_name: string;
+  blob_size: number;
+  derived_checksum: string;
+  prepared_at: string;
+  expires_at: string;
+  status: string;
+  cleanup_status: string;
+  last_error_safe: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export function temporaryMediaByReel(db: DatabaseSync, reelId: string): TemporaryMediaRecord | undefined {
+  return db.prepare("SELECT * FROM temporary_media WHERE reel_id = ? ORDER BY updated_at DESC LIMIT 1").get(reelId) as TemporaryMediaRecord | undefined;
+}
+
+export function temporaryMediaByIdentity(db: DatabaseSync, provider: string, publicationKey: string, checksum: string): TemporaryMediaRecord | undefined {
+  return db.prepare("SELECT * FROM temporary_media WHERE provider = ? AND publication_key = ? AND derived_checksum = ? LIMIT 1").get(provider, publicationKey, checksum) as TemporaryMediaRecord | undefined;
+}
+
+export function upsertTemporaryMedia(db: DatabaseSync, input: Omit<TemporaryMediaRecord, "created_at" | "updated_at">): TemporaryMediaRecord {
+  const timestamp = now();
+  db.prepare(`
+    INSERT INTO temporary_media (
+      temporary_media_id, reel_id, publication_key, provider, blob_container,
+      blob_name, blob_size, derived_checksum, prepared_at, expires_at, status,
+      cleanup_status, last_error_safe, created_at, updated_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ON CONFLICT(provider, publication_key, derived_checksum) DO UPDATE SET
+      reel_id = excluded.reel_id,
+      blob_container = excluded.blob_container,
+      blob_name = excluded.blob_name,
+      blob_size = excluded.blob_size,
+      prepared_at = excluded.prepared_at,
+      expires_at = excluded.expires_at,
+      status = excluded.status,
+      cleanup_status = excluded.cleanup_status,
+      last_error_safe = excluded.last_error_safe,
+      updated_at = excluded.updated_at
+  `).run(
+    input.temporary_media_id, input.reel_id, input.publication_key, input.provider,
+    input.blob_container, input.blob_name, input.blob_size, input.derived_checksum,
+    input.prepared_at, input.expires_at, input.status, input.cleanup_status,
+    input.last_error_safe, timestamp, timestamp,
+  );
+  return db.prepare("SELECT * FROM temporary_media WHERE provider = ? AND publication_key = ? AND derived_checksum = ? LIMIT 1").get(input.provider, input.publication_key, input.derived_checksum) as TemporaryMediaRecord;
+}
+
+export function updateTemporaryMediaStatus(db: DatabaseSync, temporaryMediaId: string, status: string, cleanupStatus: string, errorSafe: string | null = null): void {
+  db.prepare("UPDATE temporary_media SET status = ?, cleanup_status = ?, last_error_safe = ?, updated_at = ? WHERE temporary_media_id = ?").run(status, cleanupStatus, errorSafe, now(), temporaryMediaId);
+}
+
+export function expiredTemporaryMedia(db: DatabaseSync, provider: string, prefix: string, nowIso: string): TemporaryMediaRecord[] {
+  return db.prepare("SELECT * FROM temporary_media WHERE provider = ? AND blob_name LIKE ? AND status IN ('VALIDATED', 'SAS_CREATED', 'UPLOADED_PRIVATE', 'EXPIRED') AND expires_at <= ? ORDER BY expires_at").all(provider, `${prefix}/%`, nowIso) as TemporaryMediaRecord[];
+}
+
 export function auditEvents(db: DatabaseSync, entityId?: string): SqlRow[] {
   return entityId ? db.prepare("SELECT * FROM publication_audit_events WHERE entity_id = ? ORDER BY timestamp").all(entityId) as SqlRow[] : db.prepare("SELECT * FROM publication_audit_events ORDER BY timestamp").all() as SqlRow[];
 }

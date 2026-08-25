@@ -207,3 +207,18 @@ a new editorial version and requires human review again.
 ## Controlled pilot operations
 
 Use `npm run instagram:pilot -- --dry-run` to inspect the current eligible pilot state without contacting Meta. The real one-Reel workflow is manual-only and is blocked until a Reel is genuinely `CONTENT_READY` and an approved temporary HTTPS media provider is configured. See `SECTION_10_2_ONE_REEL_PILOT.md` for snapshot, polling, idempotency, and failure procedures.
+
+## Section 10.3 — Azure temporary media
+
+Run the local preparation dry-run first:
+
+```text
+npm run instagram:media-prepare -- --reel=reel-80bc5fa99371b5d7b91b00cf --dry-run
+```
+
+For an explicitly configured Azure environment, use the manual
+`Instagram Temporary Media Prepare` workflow with exactly one Reel and
+`provider=azure`. The workflow uses GitHub OIDC and the private
+`instagram-publish-temp` container. Never put SAS URLs or storage credentials
+in reports. Inspect state with `instagram:media-status`; cleanup requires an
+explicit `instagram:media-cleanup` command. No step calls Meta.

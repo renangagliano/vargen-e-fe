@@ -54,6 +54,16 @@ NOT_PUBLISHED -> READY_FOR_PUBLISHING -> SCHEDULED -> QUEUED -> PUBLISHING
 ```
 
 Dry-run outcomes are separate from real `PUBLISHED` state.
+
+## Section 10.3 temporary media
+
+The approved temporary-media implementation is Azure Blob Storage with a
+private container and a blob-scoped, HTTPS-only, read-only user-delegation
+SAS. Use `INSTAGRAM_TEMP_MEDIA_PROVIDER=azure` only in an explicitly configured
+production execution environment; local dry-run remains the default. See
+`AZURE_TEMP_MEDIA.md` for RBAC, TTL, validation, cleanup, and the manual
+preparation workflow. Temporary media preparation does not create a Meta
+container, call `media_publish`, or publish content.
 # Fase 7 — governança antes da publicação
 
 Antes de qualquer futura fila de publicação, o cockpit exige aprovação

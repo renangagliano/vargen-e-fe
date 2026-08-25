@@ -26,6 +26,11 @@ export type MediaConfig = {
   reviewerName: string | null;
   reviewHost: string;
   reviewPort: number;
+  azureStorageAccountName: string | null;
+  azureStorageContainerName: string;
+  azureStorageSasTtlMinutes: number;
+  azureStorageBlobPrefix: string;
+  azureStorageEndpointSuffix: string;
 };
 
 function configuredPath(value: string | undefined, fallback: string): { value: string; configured: boolean } {
@@ -91,6 +96,11 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env, repoRoot = proc
     reviewerName: effectiveEnv.VARGEN_REVIEWER_NAME?.trim() || null,
     reviewHost: effectiveEnv.VARGEN_REVIEW_HOST?.trim() || "127.0.0.1",
     reviewPort: numeric("VARGEN_REVIEW_PORT", 4177),
+    azureStorageAccountName: effectiveEnv.AZURE_STORAGE_ACCOUNT_NAME?.trim() || null,
+    azureStorageContainerName: effectiveEnv.AZURE_STORAGE_CONTAINER_NAME?.trim() || "instagram-publish-temp",
+    azureStorageSasTtlMinutes: numeric("AZURE_STORAGE_SAS_TTL_MINUTES", 60),
+    azureStorageBlobPrefix: effectiveEnv.AZURE_STORAGE_BLOB_PREFIX?.trim() || "instagram-pilot",
+    azureStorageEndpointSuffix: effectiveEnv.AZURE_STORAGE_ENDPOINT_SUFFIX?.trim() || "core.windows.net",
   };
 }
 

@@ -17,6 +17,9 @@
     "media:verify": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js verify",
     "instagram:connectivity": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js instagram:connectivity",
     "instagram:pilot": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js instagram:pilot",
+    "instagram:media-prepare": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js instagram:media-prepare",
+    "instagram:media-status": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js instagram:media-status",
+    "instagram:media-cleanup": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js instagram:media-cleanup",
     "reel:analyze": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js reel:analyze",
     "reel:candidates": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js reel:candidates",
     "reel:generate": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js reel:generate",
@@ -84,6 +87,8 @@
     "knowledge-base:test": "node --test tests/knowledge-base.test.mjs"
   },
   "dependencies": {
+    "@azure/identity": "^4.13.2",
+    "@azure/storage-blob": "^12.33.0",
     "next": "latest",
     "react": "latest",
     "react-dom": "latest"
