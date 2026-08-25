@@ -234,6 +234,25 @@ export type EditorialPackage = {
   review_note?: string | null;
 };
 
+export type BibleSourceType = "CATALOG_METADATA" | "SONG_METADATA" | "LYRICS_METADATA" | "PROJECT_DOCUMENTATION" | "HUMAN_ENTERED" | "OTHER_VERIFIED_LOCAL_SOURCE";
+export type BibleVerificationStatus = "VERIFIED" | "REVIEW_REQUIRED" | "MISSING" | "CONFLICT";
+export type ContentReadinessStatus = "CONTENT_READY" | "NOT_READY";
+
+export type BibleReferenceSource = {
+  bible_reference_id: string;
+  reel_id: string;
+  editorial_version: number | null;
+  reference: string;
+  source_type: BibleSourceType;
+  source_location: string;
+  verification_status: BibleVerificationStatus;
+  verified_by: string | null;
+  verified_at: string | null;
+  note: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
 export type PublicationMode = "dry-run" | "approval" | "full-auto";
 export type PublicationStatus = "NOT_PUBLISHED" | "NOT_ELIGIBLE" | "READY_FOR_PUBLISHING" | "SCHEDULED" | "QUEUED" | "PUBLISHING" | "PROCESSING_REMOTE" | "PUBLISHED" | "PUBLISH_FAILED" | "BLOCKED_EXTERNAL" | "CANCELLED" | "DRY_RUN_VALIDATED" | "DRY_RUN_BLOCKED";
 export type FailureClass = "TRANSIENT" | "PERMANENT" | "AUTHENTICATION" | "RATE_LIMIT" | "VALIDATION" | "EXTERNAL_BLOCKER";

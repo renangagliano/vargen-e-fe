@@ -8,6 +8,7 @@ import { assertFileInsideRoot } from "../security/paths.js";
 import type { EligibilityResult } from "../shared/types.js";
 import { publicationKey } from "./jobs.js";
 import { loadSongCatalog } from "../matching/catalog.js";
+import { bibleReferenceStatus } from "../review/bible.js";
 
 async function passSourceIntegrity(config: ReturnType<typeof loadConfig>, db: ReturnType<typeof openDatabase>, reel: Record<string, unknown>): Promise<boolean> {
   if (!config.mediaRoot || !reel.source_asset_id || !reel.source_checksum_before || reel.source_checksum_before !== reel.source_checksum_after) return false;
@@ -51,8 +52,9 @@ export async function evaluateEligibility(reelId: string, options: { at?: string
     if (gates.cover_exists === "FAIL") reasons.push("COVER_MISSING");
     gates.required_editorial_fields = Boolean(editorial?.selected_hook && editorial.caption && editorial.cta && editorial.hashtags.length >= 5 && editorial.editorial_title) ? "PASS" : "FAIL";
     if (gates.required_editorial_fields === "FAIL") reasons.push("EDITORIAL_FIELDS_INCOMPLETE");
-    gates.bible_reference_valid = editorial?.bible_reference ? "PASS" : "FAIL";
-    if (gates.bible_reference_valid === "FAIL") reasons.push("BIBLE_REFERENCE_MISSING");
+    const bible = bibleReferenceStatus(db, reelId);
+    gates.bible_reference_valid = bible.status === "VERIFIED" && Boolean(bible.reference) ? "PASS" : "BLOCKED";
+    if (gates.bible_reference_valid !== "PASS") reasons.push(`BIBLE_REFERENCE_${bible.status}`);
     const automation = loadAutomationConfig();
     const plannedAt = options.at ?? new Date().toISOString();
     const plannedDate = new Date(plannedAt);

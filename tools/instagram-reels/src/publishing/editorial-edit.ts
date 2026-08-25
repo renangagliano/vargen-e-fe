@@ -10,10 +10,15 @@ import { assertPathInside } from "../security/paths.js";
 import { audit } from "./audit.js";
 
 export type EditorialEdit = {
+  editorial_title?: string;
   caption?: string;
   selected_hook?: string;
   cta?: string;
   hashtags?: string[];
+  content_pillar?: string;
+  secondary_pillar?: string | null;
+  bible_reference?: string;
+  bible_reference_review_required?: boolean;
   cover_text?: string;
 };
 

@@ -23,8 +23,11 @@ export function openDatabase(config: MediaConfig): DatabaseSync {
   fs.mkdirSync(config.pipelineStateRoot, { recursive: true });
   const db = new DatabaseSync(databasePath(config));
   db.exec("PRAGMA foreign_keys = ON;");
-  const migrationPath = path.join(config.toolRoot, "migrations", "001_initial.sql");
-  db.exec(fs.readFileSync(migrationPath, "utf8"));
+  db.exec("PRAGMA busy_timeout = 5000;");
+  const migrationRoot = path.join(config.toolRoot, "migrations");
+  for (const migrationName of fs.readdirSync(migrationRoot).filter((name) => name.endsWith(".sql")).sort()) {
+    db.exec(fs.readFileSync(path.join(migrationRoot, migrationName), "utf8"));
+  }
   ensureColumn(db, "derived_reels", "rights_confirmed_by", "TEXT");
   ensureColumn(db, "derived_reels", "rights_confirmed_at", "TEXT");
   ensureColumn(db, "derived_reels", "rights_confirmation_note", "TEXT");

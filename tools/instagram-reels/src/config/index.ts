@@ -23,6 +23,9 @@ export type MediaConfig = {
   analysisVersion: string;
   catalogRenderVersion: string;
   editorialVersion: string;
+  reviewerName: string | null;
+  reviewHost: string;
+  reviewPort: number;
 };
 
 function configuredPath(value: string | undefined, fallback: string): { value: string; configured: boolean } {
@@ -85,6 +88,9 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env, repoRoot = proc
     analysisVersion: effectiveEnv.VARGEN_ANALYSIS_VERSION?.trim() || "phase6-audio-heuristic-v1",
     catalogRenderVersion: effectiveEnv.VARGEN_CATALOG_RENDER_VERSION?.trim() || "phase6-catalog-render-v1",
     editorialVersion: effectiveEnv.VARGEN_CATALOG_EDITORIAL_VERSION?.trim() || "phase6-editorial-v1",
+    reviewerName: effectiveEnv.VARGEN_REVIEWER_NAME?.trim() || null,
+    reviewHost: effectiveEnv.VARGEN_REVIEW_HOST?.trim() || "127.0.0.1",
+    reviewPort: numeric("VARGEN_REVIEW_PORT", 4177),
   };
 }
 
