@@ -37,6 +37,7 @@ export type OneDriveAnonymousResponse = {
   headers: Headers;
   url: string;
   body?: Uint8Array;
+  bodyStream?: AsyncIterable<Uint8Array>;
   location?: string;
 };
 
@@ -45,6 +46,7 @@ export type OneDriveAnonymousFetcher = (url: string, options?: { range?: string 
 export type OneDrivePersonalGraphClient = {
   getDrive(): Promise<OneDriveDrive>;
   getItemByPath(itemPath: string): Promise<OneDriveDriveItem | null>;
+  listChildren?(folderPath: string): Promise<OneDriveDriveItem[]>;
   ensureFolder(folderPath: string): Promise<OneDriveDriveItem>;
   uploadSmallFile(itemPath: string, localPath: string): Promise<OneDriveDriveItem>;
   getItemById(itemId: string): Promise<OneDriveDriveItem>;
@@ -85,7 +87,7 @@ function redactedUrl(value: string): string { return sanitizeMediaUrl(value); }
 
 function isTrustedDeliveryHost(hostname: string): boolean {
   const host = hostname.toLowerCase().replace(/\.$/, "");
-  return host === "1drv.ms" || host === "onedrive.com" || host.endsWith(".onedrive.com") || host === "live.com" || host.endsWith(".live.com") || host === "1drv.com" || host.endsWith(".1drv.com");
+  return host === "1drv.ms" || host === "onedrive.com" || host.endsWith(".onedrive.com") || host === "live.com" || host.endsWith(".live.com") || host === "1drv.com" || host.endsWith(".1drv.com") || host === "microsoftpersonalcontent.com" || host.endsWith(".microsoftpersonalcontent.com");
 }
 
 function isRedirect(status: number): boolean { return [301, 302, 303, 307, 308].includes(status); }
@@ -105,31 +107,84 @@ function looksLikeMp4(body: Uint8Array | undefined): boolean {
 
 async function defaultAnonymousFetcher(url: string, options: { range?: string } = {}): Promise<OneDriveAnonymousResponse> {
   const response = await fetch(url, { method: "GET", redirect: "manual", headers: options.range ? { Range: options.range } : {} });
-  const body = response.status >= 200 && response.status < 300 ? new Uint8Array(await response.arrayBuffer()) : undefined;
-  return { status: response.status, headers: response.headers, url, body, location: response.headers.get("location") ?? undefined };
+  const bodyStream = response.status >= 200 && response.status < 300 && response.body ? response.body as unknown as AsyncIterable<Uint8Array> : undefined;
+  return { status: response.status, headers: response.headers, url, bodyStream, location: response.headers.get("location") ?? undefined };
 }
 
-async function followAnonymousUrl(url: string, fetcher: OneDriveAnonymousFetcher, range?: string): Promise<{ response: OneDriveAnonymousResponse; hosts: string[]; error?: "UNTRUSTED_REDIRECT" | "REDIRECT_NOT_ALLOWED" }> {
+type DownloadTrace = {
+  response: OneDriveAnonymousResponse;
+  hosts: string[];
+  statuses: number[];
+  error?: "UNTRUSTED_REDIRECT" | "REDIRECT_NOT_ALLOWED" | "NETWORK_ERROR";
+};
+
+async function followAnonymousUrl(url: string, fetcher: OneDriveAnonymousFetcher, range?: string): Promise<DownloadTrace> {
   let current = url;
   const hosts: string[] = [];
+  const statuses: number[] = [];
   for (let hop = 0; hop <= MAX_REDIRECTS; hop += 1) {
     const parsed = new URL(current);
-    if (parsed.protocol !== "https:" || !isTrustedDeliveryHost(parsed.hostname)) return { response: { status: 0, headers: new Headers(), url: current }, hosts, error: "UNTRUSTED_REDIRECT" };
+    if (parsed.protocol !== "https:" || !isTrustedDeliveryHost(parsed.hostname)) return { response: { status: 0, headers: new Headers(), url: current }, hosts, statuses, error: "UNTRUSTED_REDIRECT" };
     hosts.push(parsed.hostname);
-    const response = await fetcher(current, range ? { range } : {});
-    if (!isRedirect(response.status)) return { response, hosts };
+    let response: OneDriveAnonymousResponse;
+    try {
+      response = await fetcher(current, range ? { range } : {});
+    } catch {
+      return { response: { status: 0, headers: new Headers(), url: current }, hosts, statuses, error: "NETWORK_ERROR" };
+    }
+    statuses.push(response.status);
+    if (!isRedirect(response.status)) return { response, hosts, statuses };
     const location = response.location ?? response.headers.get("location") ?? undefined;
-    if (!location) return { response, hosts, error: "REDIRECT_NOT_ALLOWED" };
-    if (hop === MAX_REDIRECTS) return { response, hosts, error: "REDIRECT_NOT_ALLOWED" };
+    if (!location) return { response, hosts, statuses, error: "REDIRECT_NOT_ALLOWED" };
+    if (hop === MAX_REDIRECTS) return { response, hosts, statuses, error: "REDIRECT_NOT_ALLOWED" };
     current = new URL(location, current).toString();
   }
-  return { response: { status: 0, headers: new Headers(), url: current }, hosts, error: "REDIRECT_NOT_ALLOWED" };
+  return { response: { status: 0, headers: new Headers(), url: current }, hosts, statuses, error: "REDIRECT_NOT_ALLOWED" };
+}
+
+type BodyInspection = { length: number; firstBytes: Uint8Array; kind: "BINARY" | "HTML" | "JSON" | "EMPTY" | "UNKNOWN"; checksum?: string };
+
+async function inspectBody(response: OneDriveAnonymousResponse, hash = false): Promise<BodyInspection> {
+  const digest = hash ? crypto.createHash("sha256") : undefined;
+  const first = new Uint8Array(16);
+  let firstLength = 0;
+  let length = 0;
+  const consume = (chunk: Uint8Array): void => {
+    if (chunk.byteLength === 0) return;
+    const take = Math.min(first.byteLength - firstLength, chunk.byteLength);
+    if (take > 0) first.set(chunk.slice(0, take), firstLength);
+    firstLength += take;
+    length += chunk.byteLength;
+    digest?.update(chunk);
+  };
+  if (response.body) consume(response.body);
+  else if (response.bodyStream) for await (const chunk of response.bodyStream) consume(chunk);
+  const firstBytes = first.slice(0, firstLength);
+  const type = contentType(response.headers);
+  const text = new TextDecoder().decode(firstBytes).trimStart().toLowerCase();
+  const kind = type === "text/html" || type === "application/xhtml+xml" || text.startsWith("<html") || text.startsWith("<!doctype html") ? "HTML" : type === "application/json" || text.startsWith("{") || text.startsWith("[") ? "JSON" : length === 0 ? "EMPTY" : looksLikeMp4(firstBytes) || type === "video/mp4" || type === "application/mp4" || type === "application/octet-stream" ? "BINARY" : "UNKNOWN";
+  return { length, firstBytes, kind, ...(digest ? { checksum: digest.digest("hex").toUpperCase() } : {}) };
+}
+
+function contentRangeTotal(headers: Headers): number | null {
+  const value = headers.get("content-range")?.trim();
+  const match = value?.match(/^bytes\s+\d+-\d+\/(\d+|\*)$/i);
+  return match && match[1] !== "*" ? Number(match[1]) : null;
+}
+
+function diagnostics(range: DownloadTrace, full: DownloadTrace, body: BodyInspection | undefined, type: string | null, size: number | null, contentRange: string | null): NonNullable<TemporaryMediaValidationResult["diagnostics"]> {
+  const allStatuses = [...range.statuses, ...full.statuses];
+  const allHosts = [...range.hosts, ...full.hosts];
+  const final = full.response.status ? full.response : range.response;
+  return { initialMethod: "GET", initialStatus: range.statuses[0] ?? full.statuses[0] ?? null, redirectStatuses: allStatuses.filter(isRedirect), redirectHosts: allHosts, finalStatus: final.status || null, finalHostname: (() => { try { return new URL(final.url).hostname; } catch { return null; } })(), contentType: type, contentLength: size, contentRange, acceptRanges: final.headers.get("accept-ranges"), bodyKind: body?.kind ?? "UNKNOWN", authorizationHeaderSent: false };
 }
 
 export async function validateOneDriveAnonymousDownload(input: {
   url: string;
   expectedSize: number;
   expectedChecksum: string;
+  expectedMimeType?: string | null;
+  expectedFileName?: string;
   now: Date;
   fetcher: OneDriveAnonymousFetcher;
   expiresAt: string;
@@ -140,20 +195,31 @@ export async function validateOneDriveAnonymousDownload(input: {
   if (parsed.protocol !== "https:" || !isTrustedDeliveryHost(parsed.hostname)) return { ok: false, code: "PUBLIC_URL_REQUIRED", safeUrl, contentType: null, contentLength: null, expectedSize: input.expectedSize, expiresAt: input.expiresAt, rangeSupport: "UNKNOWN" };
 
   const rangeResult = await followAnonymousUrl(input.url, input.fetcher, "bytes=0-1023");
-  const rangeSupport = rangeResult.error ? "UNKNOWN" : rangeResult.response.status === 206 ? "SUPPORTED" : rangeResult.response.status === 200 ? "NOT_SUPPORTED" : "UNKNOWN";
   const result = await followAnonymousUrl(input.url, input.fetcher);
   const type = contentType(result.response.headers);
-  const size = contentLength(result.response.headers, result.response.body);
-  const common = { safeUrl, contentType: type, contentLength: size, expectedSize: input.expectedSize, expiresAt: input.expiresAt, rangeSupport, redirectChain: result.hosts } as const;
-  if (result.error === "UNTRUSTED_REDIRECT") return { ok: false, code: "UNTRUSTED_REDIRECT", ...common };
-  if (result.error) return { ok: false, code: "REDIRECT_NOT_ALLOWED", ...common };
-  if (result.response.status !== 200 && result.response.status !== 206) return { ok: false, code: "HTTP_ERROR", ...common };
-  if (type === "text/html" || type === "text/plain") return { ok: false, code: "LOGIN_PAGE_REJECTED", ...common };
-  if (!type || !["video/mp4", "application/mp4"].includes(type)) return { ok: false, code: "CONTENT_TYPE_INVALID", ...common };
-  if (size === null || size <= 0 || size !== input.expectedSize) return { ok: false, code: "CONTENT_LENGTH_MISMATCH", ...common };
-  if (!looksLikeMp4(result.response.body)) return { ok: false, code: "CONTENT_TYPE_INVALID", ...common };
-  const checksum = crypto.createHash("sha256").update(Buffer.from(result.response.body ?? new Uint8Array())).digest("hex").toUpperCase();
-  if (checksum !== input.expectedChecksum.toUpperCase()) return { ok: false, code: "CHECKSUM_MISMATCH", checksumSha256: checksum, ...common };
+  const rangeBody = rangeResult.response.status >= 200 && rangeResult.response.status < 300 ? await inspectBody(rangeResult.response) : undefined;
+  const rangeTotal = rangeResult.response.status === 206 ? contentRangeTotal(rangeResult.response.headers) : null;
+  const rangeSupport = rangeResult.error ? "UNKNOWN" : rangeResult.response.status === 206 && rangeTotal !== null ? "SUPPORTED" : rangeResult.response.status === 200 ? "NOT_SUPPORTED" : "UNKNOWN";
+  const body = result.response.status >= 200 && result.response.status < 300 ? await inspectBody(result.response, true) : undefined;
+  const size = contentLength(result.response.headers) ?? (result.response.status === 206 ? contentRangeTotal(result.response.headers) : body?.length ?? null);
+  const common = { safeUrl, contentType: type, contentLength: size, expectedSize: input.expectedSize, expiresAt: input.expiresAt, rangeSupport, redirectChain: result.hosts, diagnostics: diagnostics(rangeResult, result, body ?? rangeBody, type, size, result.response.headers.get("content-range")) } as const;
+  if (rangeResult.error === "UNTRUSTED_REDIRECT" || result.error === "UNTRUSTED_REDIRECT") return { ok: false, code: "ONEDRIVE_DOWNLOAD_REDIRECT_UNTRUSTED", ...common };
+  if (rangeResult.error === "NETWORK_ERROR" || result.error === "NETWORK_ERROR") return { ok: false, code: "ONEDRIVE_DOWNLOAD_NETWORK_ERROR", ...common };
+  if (rangeResult.error || result.error) return { ok: false, code: "REDIRECT_NOT_ALLOWED", ...common };
+  if (![200, 206].includes(rangeResult.response.status) || ![200, 206].includes(result.response.status)) {
+    const status = result.response.status || rangeResult.response.status;
+    return { ok: false, code: status === 401 || status === 403 ? "ONEDRIVE_DOWNLOAD_URL_EXPIRED" : "ONEDRIVE_DOWNLOAD_HTTP_STATUS", ...common };
+  }
+  if (body?.kind === "HTML" || body?.kind === "JSON") return { ok: false, code: "ONEDRIVE_DOWNLOAD_HTML_RESPONSE", ...common };
+  if (rangeResult.response.status === 206 && (rangeTotal === null || rangeTotal !== input.expectedSize)) return { ok: false, code: "ONEDRIVE_DOWNLOAD_SIZE_MISMATCH", ...common };
+  const expectedMime = input.expectedMimeType?.toLowerCase() ?? "";
+  const fileLooksMp4 = input.expectedFileName?.toLowerCase().endsWith(".mp4") || expectedMime === "video/mp4";
+  if (!type || (!["video/mp4", "application/mp4"].includes(type) && !(type === "application/octet-stream" && fileLooksMp4 && body?.kind === "BINARY"))) return { ok: false, code: "CONTENT_TYPE_INVALID", ...common };
+  const remoteSize = result.response.status === 206 ? contentRangeTotal(result.response.headers) : contentLength(result.response.headers) ?? body?.length ?? null;
+  if (remoteSize === null || remoteSize <= 0 || remoteSize !== input.expectedSize) return { ok: false, code: "ONEDRIVE_DOWNLOAD_SIZE_MISMATCH", ...common };
+  if (!body || body.kind !== "BINARY" || !looksLikeMp4(body.firstBytes)) return { ok: false, code: "ONEDRIVE_DOWNLOAD_HTML_RESPONSE", ...common };
+  const checksum = body.checksum ?? "";
+  if (checksum !== input.expectedChecksum.toUpperCase()) return { ok: false, code: "ONEDRIVE_DOWNLOAD_CHECKSUM_MISMATCH", checksumSha256: checksum, ...common };
   return { ok: true, code: "PASS", checksumSha256: checksum, ...common };
 }
 
@@ -180,11 +246,17 @@ export function createOneDrivePersonalGraphClient(tokenProvider: PersonalGraphTo
     return graphJson(response);
   };
   const itemRoute = (itemPath: string): string => `/me/drive/root:/${itemPath.split("/").map(encodeURIComponent).join("/")}:`;
-  const itemSelect = "?$select=id,name,size,file,parentReference,webUrl,@microsoft.graph.downloadUrl";
+  // Graph documents this annotation with `?select=...`; using `$select` here
+  // returns metadata successfully but silently omits downloadUrl.
+  const itemSelect = "?select=id,name,size,file,parentReference,webUrl,@microsoft.graph.downloadUrl";
   return {
     async getDrive() { return await request("GET", "/me/drive?$select=id,driveType,owner") as unknown as OneDriveDrive; },
     async getItemByPath(itemPath) {
       try { return itemFromJson(await request("GET", `${itemRoute(itemPath)}${itemSelect}`)); } catch (error) { if (isNotFound(error)) return null; throw error; }
+    },
+    async listChildren(folderPath) {
+      const value = await request("GET", `${itemRoute(folderPath)}/children${itemSelect}`);
+      return Array.isArray(value.value) ? value.value.filter((item): item is Record<string, unknown> => Boolean(item && typeof item === "object")).map(itemFromJson) : [];
     },
     async ensureFolder(folderPath) {
       const segments = folderPath.split("/");
@@ -252,7 +324,7 @@ export class OneDrivePersonalTemporaryMediaProvider implements TemporaryMediaPro
 
   public async validateTemporaryMedia(result: TemporaryMediaPreparationResult): Promise<TemporaryMediaValidationResult> {
     if (result.provider !== ONEDRIVE_PERSONAL_TEMPORARY_MEDIA_PROVIDER || !result.url) throw new Error("ONEDRIVE_PERSONAL_REQUIRED");
-    return validateOneDriveAnonymousDownload({ url: result.url, expectedSize: result.blobSize, expectedChecksum: result.derivedChecksum, now: this.now(), fetcher: this.fetcher, expiresAt: result.expiresAt });
+    return validateOneDriveAnonymousDownload({ url: result.url, expectedSize: result.blobSize, expectedChecksum: result.derivedChecksum, expectedMimeType: "video/mp4", expectedFileName: result.blobName, now: this.now(), fetcher: this.fetcher, expiresAt: result.expiresAt });
   }
 
   public async prepareTemporaryMedia(input: TemporaryMediaPreparationInput): Promise<TemporaryMediaPreparationResult> {
@@ -282,7 +354,13 @@ export class OneDrivePersonalTemporaryMediaProvider implements TemporaryMediaPro
         item = await graph.uploadSmallFile(itemPath, output.absolutePath);
         auditTemporary(db, "TEMP_MEDIA_UPLOADED", temporaryMediaId, input.reelId, { item_path: itemPath, item_id: item.id, blob_size: initialStats.size });
       }
-      item = await graph.getItemById(item.id);
+      try {
+        item = await graph.getItemById(item.id);
+      } catch (error) {
+        if (!isNotFound(error)) throw error;
+        item = await graph.getItemByPath(itemPath);
+        if (!item) throw new Error("ONEDRIVE_GRAPH_ITEM_NOT_FOUND");
+      }
       const directUrl = item["@microsoft.graph.downloadUrl"];
       let url = directUrl;
       let permissionId: string | undefined;
@@ -299,7 +377,7 @@ export class OneDrivePersonalTemporaryMediaProvider implements TemporaryMediaPro
       if (afterChecksum !== input.derivedChecksum) throw new Error("SNAPSHOT_INVALIDATED");
       if (!validation.ok) {
         upsertTemporaryMedia(db, { temporary_media_id: temporaryMediaId, reel_id: input.reelId, publication_key: input.publicationKey, provider: ONEDRIVE_PERSONAL_TEMPORARY_MEDIA_PROVIDER, blob_container: drive.id, blob_name: itemPath, blob_size: initialStats.size, derived_checksum: input.derivedChecksum, prepared_at: preparedAt, expires_at: expiresAt, status: "FAILED", cleanup_status: "PENDING", last_error_safe: validation.code, drive_id: drive.id, item_id: item.id, item_path: itemPath, permission_id: permissionId ?? null });
-        auditTemporary(db, "TEMP_MEDIA_FAILED", temporaryMediaId, input.reelId, { code: validation.code });
+        auditTemporary(db, "TEMP_MEDIA_FAILED", temporaryMediaId, input.reelId, { code: validation.code, validation: { content_type: validation.contentType, content_length: validation.contentLength, expected_size: validation.expectedSize, range_support: validation.rangeSupport ?? "UNKNOWN", redirect_chain: validation.redirectChain ?? [], diagnostics: validation.diagnostics ?? null } });
         throw new Error(`TEMPORARY_MEDIA_VALIDATION_FAILED:${validation.code}`);
       }
       upsertTemporaryMedia(db, { temporary_media_id: temporaryMediaId, reel_id: input.reelId, publication_key: input.publicationKey, provider: ONEDRIVE_PERSONAL_TEMPORARY_MEDIA_PROVIDER, blob_container: drive.id, blob_name: itemPath, blob_size: initialStats.size, derived_checksum: input.derivedChecksum, prepared_at: preparedAt, expires_at: expiresAt, status: "VALIDATED", cleanup_status: "NOT_REQUESTED", last_error_safe: null, drive_id: drive.id, item_id: item.id, item_path: itemPath, permission_id: permissionId ?? null });

@@ -4,7 +4,7 @@ import path from "node:path";
 import test from "node:test";
 import { fixture } from "./review.test.js";
 import { openDatabase, temporaryMediaByReel } from "../src/database/db.js";
-import { OneDrivePersonalTemporaryMediaProvider, validateOneDriveAnonymousDownload, type OneDriveDriveItem, type OneDrivePersonalGraphClient } from "../src/publishing/onedrive-personal-temporary-media.js";
+import { OneDrivePersonalTemporaryMediaProvider, createOneDrivePersonalGraphClient, validateOneDriveAnonymousDownload, type OneDriveDriveItem, type OneDrivePersonalGraphClient } from "../src/publishing/onedrive-personal-temporary-media.js";
 import { sha256File } from "../src/media/checksum.js";
 import type { MediaConfig } from "../src/config/index.js";
 
@@ -39,9 +39,9 @@ function fakeGraph(): { graph: OneDrivePersonalGraphClient; uploads: number; del
 function fetcherFor(body: Buffer, contentType = "video/mp4") {
   return async (url: string, options?: { range?: string }) => ({
     status: options?.range ? 206 : 200,
-    headers: new Headers({ "content-type": contentType, "content-length": String(body.byteLength) }),
+    headers: new Headers({ "content-type": contentType, "content-length": String(options?.range ? Math.min(1024, body.byteLength) : body.byteLength), ...(options?.range ? { "content-range": `bytes 0-${Math.min(1023, body.byteLength - 1)}/${body.byteLength}`, "accept-ranges": "bytes" } : {}) }),
     url,
-    body: new Uint8Array(body),
+    body: new Uint8Array(options?.range ? body.subarray(0, 1024) : body),
   });
 }
 
@@ -98,13 +98,81 @@ test("OneDrive provider uploads exactly one deterministic MP4, validates anonymo
 test("anonymous OneDrive validation rejects HTML, wrong MIME, checksum mismatch, and untrusted redirects", async () => {
   const body = validMp4();
   const checksum = await import("node:crypto").then(({ createHash }) => createHash("sha256").update(body).digest("hex"));
-  const base = { url: "https://public.dm.files.1drv.com/file", expectedSize: body.byteLength, expectedChecksum: checksum, now: new Date("2026-08-25T12:00:00.000Z"), expiresAt: "2026-08-25T13:00:00.000Z" };
+  const base = { url: "https://public.dm.files.1drv.com/file", expectedSize: body.byteLength, expectedChecksum: checksum, expectedMimeType: "video/mp4", expectedFileName: "pilot.mp4", now: new Date("2026-08-25T12:00:00.000Z"), expiresAt: "2026-08-25T13:00:00.000Z" };
   const html = await validateOneDriveAnonymousDownload({ ...base, fetcher: fetcherFor(Buffer.from("<html>login</html>"), "text/html") });
-  assert.equal(html.code, "LOGIN_PAGE_REJECTED");
+  assert.equal(html.code, "ONEDRIVE_DOWNLOAD_HTML_RESPONSE");
   const wrongType = await validateOneDriveAnonymousDownload({ ...base, fetcher: fetcherFor(body, "application/octet-stream") });
-  assert.equal(wrongType.code, "CONTENT_TYPE_INVALID");
+  assert.equal(wrongType.code, "PASS");
+  const invalidType = await validateOneDriveAnonymousDownload({ ...base, fetcher: fetcherFor(body, "text/plain") });
+  assert.equal(invalidType.code, "CONTENT_TYPE_INVALID");
   const mismatch = await validateOneDriveAnonymousDownload({ ...base, expectedChecksum: "0".repeat(64), fetcher: fetcherFor(body) });
-  assert.equal(mismatch.code, "CHECKSUM_MISMATCH");
+  assert.equal(mismatch.code, "ONEDRIVE_DOWNLOAD_CHECKSUM_MISMATCH");
   const redirect = await validateOneDriveAnonymousDownload({ ...base, fetcher: async (url) => ({ status: 302, headers: new Headers({ location: "https://evil.example/file" }), url, location: "https://evil.example/file" }) });
-  assert.equal(redirect.code, "UNTRUSTED_REDIRECT");
+  assert.equal(redirect.code, "ONEDRIVE_DOWNLOAD_REDIRECT_UNTRUSTED");
+});
+
+test("anonymous validation follows trusted Microsoft redirects and never sends authorization", async () => {
+  const body = validMp4();
+  const checksum = await import("node:crypto").then(({ createHash }) => createHash("sha256").update(body).digest("hex"));
+  const calls: Array<{ url: string; range?: string }> = [];
+  const fetcher = async (url: string, options?: { range?: string }) => {
+    calls.push({ url, range: options?.range });
+    if (url === "https://public.dm.files.1drv.com/file") return { status: 302, headers: new Headers({ location: "https://download.files.1drv.com/pilot" }), url, location: "https://download.files.1drv.com/pilot" };
+    return fetcherFor(body)(url, options);
+  };
+  const result = await validateOneDriveAnonymousDownload({ url: "https://public.dm.files.1drv.com/file", expectedSize: body.byteLength, expectedChecksum: checksum, expectedMimeType: "video/mp4", expectedFileName: "pilot.mp4", now: new Date(), expiresAt: new Date(Date.now() + 3_600_000).toISOString(), fetcher });
+  assert.equal(result.code, "PASS");
+  assert.equal(result.diagnostics?.initialMethod, "GET");
+  assert.equal(result.diagnostics?.authorizationHeaderSent, false);
+  assert.deepEqual(result.diagnostics?.redirectStatuses, [302, 302]);
+  assert.deepEqual(result.diagnostics?.redirectHosts, ["public.dm.files.1drv.com", "download.files.1drv.com", "public.dm.files.1drv.com", "download.files.1drv.com"]);
+  assert.equal(result.safeUrl, "https://public.dm.files.1drv.com/file");
+  assert.equal(calls.every((call) => !call.url.includes("?")), true);
+});
+
+test("range validation accepts a server that ignores Range and returns 200", async () => {
+  const body = validMp4();
+  const checksum = await import("node:crypto").then(({ createHash }) => createHash("sha256").update(body).digest("hex"));
+  const result = await validateOneDriveAnonymousDownload({ url: "https://public.dm.files.1drv.com/file", expectedSize: body.byteLength, expectedChecksum: checksum, expectedMimeType: "video/mp4", expectedFileName: "pilot.mp4", now: new Date(), expiresAt: new Date(Date.now() + 3_600_000).toISOString(), fetcher: async (url, options) => ({ ...await fetcherFor(body)(url), headers: new Headers({ "content-type": "video/mp4", "content-length": String(body.byteLength), ...(options?.range ? { "accept-ranges": "none" } : {}) }) }) });
+  assert.equal(result.code, "PASS");
+  assert.equal(result.rangeSupport, "NOT_SUPPORTED");
+  assert.equal(result.contentLength, body.byteLength);
+});
+
+test("range Content-Length is treated as partial while Content-Range supplies total size", async () => {
+  const body = validMp4();
+  const checksum = await import("node:crypto").then(({ createHash }) => createHash("sha256").update(body).digest("hex"));
+  const result = await validateOneDriveAnonymousDownload({ url: "https://public.dm.files.1drv.com/file", expectedSize: body.byteLength, expectedChecksum: checksum, expectedMimeType: "video/mp4", expectedFileName: "pilot.mp4", now: new Date(), expiresAt: new Date(Date.now() + 3_600_000).toISOString(), fetcher: fetcherFor(body) });
+  assert.equal(result.code, "PASS");
+  assert.equal(result.rangeSupport, "SUPPORTED");
+  assert.equal(result.diagnostics?.contentLength, body.byteLength);
+  assert.equal(result.diagnostics?.contentRange, null);
+});
+
+test("expired download URLs produce an actionable result without retrying upload", async () => {
+  const body = validMp4();
+  const checksum = await import("node:crypto").then(({ createHash }) => createHash("sha256").update(body).digest("hex"));
+  const calls: string[] = [];
+  const result = await validateOneDriveAnonymousDownload({ url: "https://public.dm.files.1drv.com/file", expectedSize: body.byteLength, expectedChecksum: checksum, expectedMimeType: "video/mp4", expectedFileName: "pilot.mp4", now: new Date(), expiresAt: new Date(Date.now() - 1_000).toISOString(), fetcher: async (url) => { calls.push(url); return { status: 403, headers: new Headers({ "content-type": "text/html" }), url }; } });
+  assert.equal(result.code, "ONEDRIVE_DOWNLOAD_URL_EXPIRED");
+  assert.equal(calls.length, 2);
+});
+
+test("Graph metadata selects the documented downloadUrl annotation", async () => {
+  const originalFetch = globalThis.fetch;
+  const requests: string[] = [];
+  globalThis.fetch = (async (input) => {
+    const url = String(input);
+    requests.push(url);
+    return new Response(JSON.stringify({ id: "item-1", name: "pilot.mp4", size: 12, file: { mimeType: "video/mp4" }, "@microsoft.graph.downloadUrl": "https://public.dm.files.1drv.com/file?token=redacted" }), { status: 200, headers: { "content-type": "application/json" } });
+  }) as typeof fetch;
+  try {
+    const graph = createOneDrivePersonalGraphClient({ getAccessToken: async () => "x".repeat(32) });
+    const item = await graph.getItemById("item-1");
+    assert.equal(typeof item["@microsoft.graph.downloadUrl"], "string");
+    assert.equal(requests[0].includes("?select=id,name,size,file,parentReference,webUrl,@microsoft.graph.downloadUrl"), true);
+    assert.equal(requests[0].includes("?$select="), false);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
 });
