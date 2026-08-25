@@ -141,3 +141,11 @@ externo é intencional. Referências bíblicas sem evidência local ficam como
 ## Phase 7.2 local intelligence
 
 Use `npm run ai-review:phase72` for the ten-song calibration sample and run the `--full` form only after the sample is discriminative. `npm run biblical:registry` and `npm run biblical:resolve` rebuild the source and evidence reports. These operations are read-only with respect to master media and cannot approve content, verify Scripture, confirm rights, schedule or publish.
+
+## Phase 7.3 Knowledge Base
+
+O site usa `src/data/knowledge-base/vargen-fe-knowledge-base-master.json` como
+snapshot validado do catálogo mestre local. A resolução é centralizada por
+slug e pode ser verificada com `npm run knowledge-base:test`. A integração
+apresenta contexto público da canção e mantém evidência, confiança,
+verificação e proveniência disponíveis somente para governança interna.

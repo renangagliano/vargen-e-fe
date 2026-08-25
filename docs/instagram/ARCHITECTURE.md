@@ -6,12 +6,22 @@
 Next.js App Router
   -> Server Components / páginas estáticas
   -> src/data/songs.ts + src/data/seasons.ts
+  -> src/data/knowledge-base (snapshot JSON validado + resolver por slug)
   -> public/audio + public/brand
   -> export out/
   -> GitHub Pages + domínio vargenefe.com.br
 ```
 
 Não existe um processo server-side capaz de receber jobs, manter estados, processar vídeo, guardar tokens ou consultar a Meta.
+
+## Knowledge Base da Phase 7.3
+
+O site consome o snapshot validado do catálogo mestre em
+`src/data/knowledge-base/vargen-fe-knowledge-base-master.json`. O resolver
+central relaciona os 79 registros ao catálogo existente pelo `slug`; páginas e
+componentes não duplicam os registros. A interface pública apresenta apenas
+contexto editorial útil e suprime campos opcionais vazios. Os campos de
+proveniência e governança permanecem internos para revisão futura.
 
 ## Fundação de mídia implementada na Fase 2
 
@@ -28,7 +38,10 @@ Foi criada uma camada local em `tools/instagram-reels` com:
 - matching contra `src/data/songs.ts` sem duplicar o catálogo;
 - CLI `doctor`, `scan`, `list`, `inspect` e `verify`.
 
-O scan real ainda não foi executado porque o root OneDrive local não está configurado. A camada não gera Reels.
+O scan real, a geração dos derivados e os workflows de revisão foram
+executados nas fases posteriores contra o root OneDrive configurado. Essa
+camada continua separada do site e não executa FFmpeg nem publica conteúdo a
+partir do navegador.
 
 ## Reels e publicação automática futura
 

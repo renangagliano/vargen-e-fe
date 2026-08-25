@@ -65,7 +65,8 @@
     ,"biblical:resolve": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js biblical:resolve"
     ,"editorial:calibrate": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js editorial:calibrate"
     ,"editorial:report": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js editorial:report"
-    ,"ai-review:phase72": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js ai-review:phase72"
+    ,"ai-review:phase72": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js ai-review:phase72",
+    "knowledge-base:test": "node --test tests/knowledge-base.test.mjs"
   },
   "dependencies": {
     "next": "latest",

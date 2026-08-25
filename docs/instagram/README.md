@@ -2,7 +2,7 @@
 
 ## Status
 
-**Fase 2 — fundação de mídia implementada, scan real bloqueado por configuração local.** A documentação de descoberta foi complementada com CLI, SQLite, segurança de paths, checksum e matching. Nenhum Reel foi gerado, nenhum conteúdo foi publicado e nenhum token Meta foi solicitado.
+**Section 7 — Phase 7.3 implementada.** A Knowledge Base mestre foi integrada ao site estático com validação, resolução por slug, contexto público de música e busca enriquecida. O catálogo de mídia e os workflows de revisão continuam separados do site; nenhum conteúdo foi publicado e nenhum token Meta foi solicitado.
 
 Branch de trabalho: `feature/instagram-reels-growth-engine`
 
@@ -31,9 +31,11 @@ INSTAGRAM_REQUIRE_APPROVAL=true
 - [ANALYTICS.md](./ANALYTICS.md) — modelo de métricas e aprendizado.
 - [TROUBLESHOOTING.md](./TROUBLESHOOTING.md) — bloqueios e diagnóstico.
 - [MEDIA_FOUNDATION.md](./MEDIA_FOUNDATION.md) — operação da fundação local de mídia.
+- [KNOWLEDGE_BASE.md](./KNOWLEDGE_BASE.md) — fonte, tipos, resolução e integração da Knowledge Base da Phase 7.3.
 
-## Gate da Fase 2
+## Gate da Section 7
 
-O scan real está **bloqueado porque `VARGEN_MEDIA_ROOT` não está configurado e não foi encontrada a pasta local sincronizada do OneDrive nesta máquina**. FFmpeg/FFprobe também continuam ausentes. A próxima fase só deve começar depois que um diretório de mídia for disponibilizado e as ferramentas forem instaladas ou fornecidas por um componente existente autorizado.
-
-Mesmo após o desbloqueio, o piloto deve processar apenas uma música, gerar três candidatos reais, validar os arquivos e parar para revisão humana.
+A Phase 7.3 está integrada e validada para as 79 músicas. A governança
+editorial, a confirmação de direitos e a publicação Meta continuam sendo
+ações explícitas dos workflows locais; a Knowledge Base não aprova conteúdo,
+confirma direitos ou publica.

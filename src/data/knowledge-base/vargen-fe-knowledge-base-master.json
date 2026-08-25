@@ -1,0 +1,2791 @@
+{
+  "schema_version": "1.0",
+  "generated_at": "2026-08-25",
+  "purpose": "Vargen & Fé / Phase 7.3 Knowledge Base master catalog",
+  "policy": {
+    "no_empty_catalog_records": true,
+    "inference_allowed": true,
+    "uncertain_items_flagged": true
+  },
+  "record_count": 79,
+  "songs": [
+    {
+      "song_id": "song-001",
+      "slug": "7-dias-com-deus-fe-forca-e-superacao-domingo-tudo-esta-completo",
+      "title": "Domingo - Tudo esta completo",
+      "collection": "7 Dias com Deus  Fé, Força e Superação",
+      "liturgical_season": "7-dias",
+      "liturgical_year": "C",
+      "core_message": "Conclusão da criação e repouso do sétimo dia",
+      "summary": "Domingo - Tudo esta completo: Conclusão da criação e repouso do sétimo dia.",
+      "primary_theme": "criação",
+      "secondary_themes": [],
+      "primary_bible_reference": "Gênesis 2,1-3",
+      "secondary_bible_references": [],
+      "biblical_story": "Conclusão da criação e repouso do sétimo dia",
+      "biblical_characters": [],
+      "liturgical_context": "7 Dias com Deus  Fé, Força e Superação",
+      "calendar_context": "7 Dias com Deus  Fé, Força e Superação",
+      "editorial_keywords": [
+        "7 Dias com Deus  Fé, Força e Superação",
+        "criação",
+        "Domingo - Tudo esta completo"
+      ],
+      "historical_context": "",
+      "evidence_level": "CORROBORATED",
+      "confidence": "HIGH",
+      "verification_status": "READY_FOR_EDITORIAL_REVIEW",
+      "provenance": {
+        "catalog_source": "songs.ts",
+        "curation_source": "catalog-curation.json",
+        "reference_method": "title/pericope semantic matching; conservative chapter/range selection",
+        "source_asset_video_id": "jgAIViHiKIc"
+      }
+    },
+    {
+      "song_id": "song-002",
+      "slug": "7-dias-com-deus-fe-forca-e-superacao-quarta-feira-a-terra-voltara-a-florescer",
+      "title": "Quarta-feira - A terra voltara a florescer",
+      "collection": "7 Dias com Deus  Fé, Força e Superação",
+      "liturgical_season": "7-dias",
+      "liturgical_year": "C",
+      "core_message": "A terra produz vegetação segundo a palavra de Deus",
+      "summary": "Quarta-feira - A terra voltara a florescer: A terra produz vegetação segundo a palavra de Deus.",
+      "primary_theme": "discipulado",
+      "secondary_themes": [
+        "esperança"
+      ],
+      "primary_bible_reference": "Gênesis 1,11-13",
+      "secondary_bible_references": [],
+      "biblical_story": "A terra produz vegetação segundo a palavra de Deus",
+      "biblical_characters": [],
+      "liturgical_context": "7 Dias com Deus  Fé, Força e Superação",
+      "calendar_context": "7 Dias com Deus  Fé, Força e Superação",
+      "editorial_keywords": [
+        "7 Dias com Deus  Fé, Força e Superação",
+        "discipulado",
+        "esperança",
+        "Quarta-feira - A terra voltara a florescer"
+      ],
+      "historical_context": "",
+      "evidence_level": "CORROBORATED",
+      "confidence": "HIGH",
+      "verification_status": "READY_FOR_EDITORIAL_REVIEW",
+      "provenance": {
+        "catalog_source": "songs.ts",
+        "curation_source": "catalog-curation.json",
+        "reference_method": "title/pericope semantic matching; conservative chapter/range selection",
+        "source_asset_video_id": "mHOnHmnuh4U"
+      }
+    },
+    {
+      "song_id": "song-003",
+      "slug": "7-dias-com-deus-fe-forca-e-superacao-quinta-feira-luzes-para-o-caminho",
+      "title": "Quinta-feira - Luzes para o caminho",
+      "collection": "7 Dias com Deus  Fé, Força e Superação",
+      "liturgical_season": "7-dias",
+      "liturgical_year": "C",
+      "core_message": "Criação dos luzeiros para governar dia e noite",
+      "summary": "Quinta-feira - Luzes para o caminho: Criação dos luzeiros para governar dia e noite.",
+      "primary_theme": "luz",
+      "secondary_themes": [
+        "criação"
+      ],
+      "primary_bible_reference": "Gênesis 1,14-19",
+      "secondary_bible_references": [],
+      "biblical_story": "Criação dos luzeiros para governar dia e noite",
+      "biblical_characters": [],
+      "liturgical_context": "7 Dias com Deus  Fé, Força e Superação",
+      "calendar_context": "7 Dias com Deus  Fé, Força e Superação",
+      "editorial_keywords": [
+        "7 Dias com Deus  Fé, Força e Superação",
+        "luz",
+        "criação",
+        "Quinta-feira - Luzes para o caminho"
+      ],
+      "historical_context": "",
+      "evidence_level": "CORROBORATED",
+      "confidence": "HIGH",
+      "verification_status": "READY_FOR_EDITORIAL_REVIEW",
+      "provenance": {
+        "catalog_source": "songs.ts",
+        "curation_source": "catalog-curation.json",
+        "reference_method": "title/pericope semantic matching; conservative chapter/range selection",
+        "source_asset_video_id": "S6Soi3yVWAA"
+      }
+    },
+    {
+      "song_id": "song-004",
+      "slug": "7-dias-com-deus-fe-forca-e-superacao-sabado-a-sua-imagem",
+      "title": "Sabado - A sua imagem",
+      "collection": "7 Dias com Deus  Fé, Força e Superação",
+      "liturgical_season": "7-dias",
+      "liturgical_year": "C",
+      "core_message": "Criação da humanidade à imagem e semelhança de Deus",
+      "summary": "Sabado - A sua imagem: Criação da humanidade à imagem e semelhança de Deus.",
+      "primary_theme": "criação",
+      "secondary_themes": [],
+      "primary_bible_reference": "Gênesis 1,26-31",
+      "secondary_bible_references": [],
+      "biblical_story": "Criação da humanidade à imagem e semelhança de Deus",
+      "biblical_characters": [],
+      "liturgical_context": "7 Dias com Deus  Fé, Força e Superação",
+      "calendar_context": "7 Dias com Deus  Fé, Força e Superação",
+      "editorial_keywords": [
+        "7 Dias com Deus  Fé, Força e Superação",
+        "criação",
+        "Sabado - A sua imagem"
+      ],
+      "historical_context": "",
+      "evidence_level": "CORROBORATED",
+      "confidence": "HIGH",
+      "verification_status": "READY_FOR_EDITORIAL_REVIEW",
+      "provenance": {
+        "catalog_source": "songs.ts",
+        "curation_source": "catalog-curation.json",
+        "reference_method": "title/pericope semantic matching; conservative chapter/range selection",
+        "source_asset_video_id": "AqzQkdLv9sM"
+      }
+    },
+    {
+      "song_id": "song-005",
+      "slug": "7-dias-com-deus-fe-forca-e-superacao-segunda-feira-que-haja-luz",
+      "title": "Segunda-feira - Que haja luz",
+      "collection": "7 Dias com Deus  Fé, Força e Superação",
+      "liturgical_season": "7-dias",
+      "liturgical_year": "C",
+      "core_message": "Deus cria a luz",
+      "summary": "Segunda-feira - Que haja luz: Deus cria a luz.",
+      "primary_theme": "luz",
+      "secondary_themes": [],
+      "primary_bible_reference": "Gênesis 1,1-5",
+      "secondary_bible_references": [],
+      "biblical_story": "Deus cria a luz",
+      "biblical_characters": [],
+      "liturgical_context": "7 Dias com Deus  Fé, Força e Superação",
+      "calendar_context": "7 Dias com Deus  Fé, Força e Superação",
+      "editorial_keywords": [
+        "7 Dias com Deus  Fé, Força e Superação",
+        "luz",
+        "Segunda-feira - Que haja luz"
+      ],
+      "historical_context": "",
+      "evidence_level": "CORROBORATED",
+      "confidence": "HIGH",
+      "verification_status": "READY_FOR_EDITORIAL_REVIEW",
+      "provenance": {
+        "catalog_source": "songs.ts",
+        "curation_source": "catalog-curation.json",
+        "reference_method": "title/pericope semantic matching; conservative chapter/range selection",
+        "source_asset_video_id": "A5edaH75D64"
+      }
+    },
+    {
+      "song_id": "song-006",
+      "slug": "7-dias-com-deus-fe-forca-e-superacao-sexta-feira-feitos-para-ir-alem",
+      "title": "Sexta-feira - Feitos para ir alem",
+      "collection": "7 Dias com Deus  Fé, Força e Superação",
+      "liturgical_season": "7-dias",
+      "liturgical_year": "C",
+      "core_message": "Criação dos seres vivos e missão confiada à humanidade",
+      "summary": "Sexta-feira - Feitos para ir alem: Criação dos seres vivos e missão confiada à humanidade.",
+      "primary_theme": "missão",
+      "secondary_themes": [
+        "criação"
+      ],
+      "primary_bible_reference": "Gênesis 1,24-31",
+      "secondary_bible_references": [],
+      "biblical_story": "Criação dos seres vivos e missão confiada à humanidade",
+      "biblical_characters": [],
+      "liturgical_context": "7 Dias com Deus  Fé, Força e Superação",
+      "calendar_context": "7 Dias com Deus  Fé, Força e Superação",
+      "editorial_keywords": [
+        "7 Dias com Deus  Fé, Força e Superação",
+        "missão",
+        "criação",
+        "Sexta-feira - Feitos para ir alem"
+      ],
+      "historical_context": "",
+      "evidence_level": "CORROBORATED",
+      "confidence": "HIGH",
+      "verification_status": "READY_FOR_EDITORIAL_REVIEW",
+      "provenance": {
+        "catalog_source": "songs.ts",
+        "curation_source": "catalog-curation.json",
+        "reference_method": "title/pericope semantic matching; conservative chapter/range selection",
+        "source_asset_video_id": "FdD7_tkgxwk"
+      }
+    },
+    {
+      "song_id": "song-007",
+      "slug": "7-dias-com-deus-fe-forca-e-superacao-terca-feira-entre-o-ceu-e-as-aguas",
+      "title": "Terca-feira - Entre o ceu e as aguas",
+      "collection": "7 Dias com Deus  Fé, Força e Superação",
+      "liturgical_season": "7-dias",
+      "liturgical_year": "C",
+      "core_message": "Separação das águas e formação do firmamento",
+      "summary": "Terca-feira - Entre o ceu e as aguas: Separação das águas e formação do firmamento.",
+      "primary_theme": "discipulado",
+      "secondary_themes": [
+        "esperança"
+      ],
+      "primary_bible_reference": "Gênesis 1,6-10",
+      "secondary_bible_references": [],
+      "biblical_story": "Separação das águas e formação do firmamento",
+      "biblical_characters": [],
+      "liturgical_context": "7 Dias com Deus  Fé, Força e Superação",
+      "calendar_context": "7 Dias com Deus  Fé, Força e Superação",
+      "editorial_keywords": [
+        "7 Dias com Deus  Fé, Força e Superação",
+        "discipulado",
+        "esperança",
+        "Terca-feira - Entre o ceu e as aguas"
+      ],
+      "historical_context": "",
+      "evidence_level": "CORROBORATED",
+      "confidence": "HIGH",
+      "verification_status": "READY_FOR_EDITORIAL_REVIEW",
+      "provenance": {
+        "catalog_source": "songs.ts",
+        "curation_source": "catalog-curation.json",
+        "reference_method": "title/pericope semantic matching; conservative chapter/range selection",
+        "source_asset_video_id": "_T_g9ElI0Cg"
+      }
+    },
+    {
+      "song_id": "song-008",
+      "slug": "advento-alegria-que-liberta",
+      "title": "Alegria que Liberta",
+      "collection": "Advento",
+      "liturgical_season": "advento",
+      "liturgical_year": "C",
+      "core_message": "João Batista anuncia conversão e a vinda daquele que é maior",
+      "summary": "Alegria que Liberta: João Batista anuncia conversão e a vinda daquele que é maior.",
+      "primary_theme": "discipulado",
+      "secondary_themes": [
+        "esperança"
+      ],
+      "primary_bible_reference": "Lucas 3,10-18",
+      "secondary_bible_references": [],
+      "biblical_story": "João Batista anuncia conversão e a vinda daquele que é maior",
+      "biblical_characters": [],
+      "liturgical_context": "Advento",
+      "calendar_context": "Advento",
+      "editorial_keywords": [
+        "Advento",
+        "discipulado",
+        "esperança",
+        "Alegria que Liberta"
+      ],
+      "historical_context": "",
+      "evidence_level": "CORROBORATED",
+      "confidence": "HIGH",
+      "verification_status": "READY_FOR_EDITORIAL_REVIEW",
+      "provenance": {
+        "catalog_source": "songs.ts",
+        "curation_source": "catalog-curation.json",
+        "reference_method": "title/pericope semantic matching; conservative chapter/range selection",
+        "source_asset_video_id": "Cms1utfbzes"
+      }
+    },
+    {
+      "song_id": "song-009",
+      "slug": "advento-vigilancia",
+      "title": "Vigilância",
+      "collection": "Advento",
+      "liturgical_season": "advento",
+      "liturgical_year": "C",
+      "core_message": "Jesus chama os discípulos à vigilância e esperança",
+      "summary": "Vigilância: Jesus chama os discípulos à vigilância e esperança.",
+      "primary_theme": "discipulado",
+      "secondary_themes": [
+        "esperança"
+      ],
+      "primary_bible_reference": "Lucas 21,25-28.34-36",
+      "secondary_bible_references": [],
+      "biblical_story": "Jesus chama os discípulos à vigilância e esperança",
+      "biblical_characters": [],
+      "liturgical_context": "Advento",
+      "calendar_context": "Advento",
+      "editorial_keywords": [
+        "Advento",
+        "discipulado",
+        "esperança",
+        "Vigilância"
+      ],
+      "historical_context": "",
+      "evidence_level": "CORROBORATED",
+      "confidence": "HIGH",
+      "verification_status": "READY_FOR_EDITORIAL_REVIEW",
+      "provenance": {
+        "catalog_source": "songs.ts",
+        "curation_source": "catalog-curation.json",
+        "reference_method": "title/pericope semantic matching; conservative chapter/range selection",
+        "source_asset_video_id": "52F3ysbRwjM"
+      }
+    },
+    {
+      "song_id": "song-010",
+      "slug": "advento-voz-no-deserto",
+      "title": "Voz no Deserto",
+      "collection": "Advento",
+      "liturgical_season": "advento",
+      "liturgical_year": "C",
+      "core_message": "João Batista prepara o caminho do Senhor",
+      "summary": "Voz no Deserto: João Batista prepara o caminho do Senhor.",
+      "primary_theme": "discipulado",
+      "secondary_themes": [
+        "esperança"
+      ],
+      "primary_bible_reference": "Lucas 3,1-6",
+      "secondary_bible_references": [],
+      "biblical_story": "João Batista prepara o caminho do Senhor",
+      "biblical_characters": [],
+      "liturgical_context": "Advento",
+      "calendar_context": "Advento",
+      "editorial_keywords": [
+        "Advento",
+        "discipulado",
+        "esperança",
+        "Voz no Deserto"
+      ],
+      "historical_context": "",
+      "evidence_level": "CORROBORATED",
+      "confidence": "HIGH",
+      "verification_status": "READY_FOR_EDITORIAL_REVIEW",
+      "provenance": {
+        "catalog_source": "songs.ts",
+        "curation_source": "catalog-curation.json",
+        "reference_method": "title/pericope semantic matching; conservative chapter/range selection",
+        "source_asset_video_id": "sQnp_TwuFbc"
+      }
+    },
+    {
+      "song_id": "song-011",
+      "slug": "anunciacao-deus-conosco",
+      "title": "Deus Conosco",
+      "collection": "Anunciação",
+      "liturgical_season": "anunciacao",
+      "liturgical_year": "C",
+      "core_message": "Anunciação do Senhor a Maria",
+      "summary": "Deus Conosco: Anunciação do Senhor a Maria.",
+      "primary_theme": "discipulado",
+      "secondary_themes": [
+        "esperança"
+      ],
+      "primary_bible_reference": "Lucas 1,26-38",
+      "secondary_bible_references": [],
+      "biblical_story": "Anunciação do Senhor a Maria",
+      "biblical_characters": [],
+      "liturgical_context": "Anunciação",
+      "calendar_context": "Anunciação",
+      "editorial_keywords": [
+        "Anunciação",
+        "discipulado",
+        "esperança",
+        "Deus Conosco"
+      ],
+      "historical_context": "",
+      "evidence_level": "CORROBORATED",
+      "confidence": "HIGH",
+      "verification_status": "READY_FOR_EDITORIAL_REVIEW",
+      "provenance": {
+        "catalog_source": "songs.ts",
+        "curation_source": "catalog-curation.json",
+        "reference_method": "title/pericope semantic matching; conservative chapter/range selection",
+        "source_asset_video_id": "37jILc6zKdo"
+      }
+    },
+    {
+      "song_id": "song-012",
+      "slug": "anunciacao-sob-o-mesmo-teto-sagrada-familia",
+      "title": "Sob o Mesmo Teto — Sagrada Família",
+      "collection": "Anunciação",
+      "liturgical_season": "anunciacao",
+      "liturgical_year": "C",
+      "core_message": "Jesus no templo e retorno à vida familiar em Nazaré",
+      "summary": "Sob o Mesmo Teto — Sagrada Família: Jesus no templo e retorno à vida familiar em Nazaré.",
+      "primary_theme": "discipulado",
+      "secondary_themes": [
+        "esperança"
+      ],
+      "primary_bible_reference": "Lucas 2,41-52",
+      "secondary_bible_references": [],
+      "biblical_story": "Jesus no templo e retorno à vida familiar em Nazaré",
+      "biblical_characters": [],
+      "liturgical_context": "Anunciação",
+      "calendar_context": "Anunciação",
+      "editorial_keywords": [
+        "Anunciação",
+        "discipulado",
+        "esperança",
+        "Sob o Mesmo Teto — Sagrada Família"
+      ],
+      "historical_context": "",
+      "evidence_level": "CORROBORATED",
+      "confidence": "HIGH",
+      "verification_status": "READY_FOR_EDITORIAL_REVIEW",
+      "provenance": {
+        "catalog_source": "songs.ts",
+        "curation_source": "catalog-curation.json",
+        "reference_method": "title/pericope semantic matching; conservative chapter/range selection",
+        "source_asset_video_id": null
+      }
+    },
+    {
+      "song_id": "song-013",
+      "slug": "domingo-da-pascoa-a-minha-paz-vos-dou",
+      "title": "A Minha Paz Vos Dou",
+      "collection": "Domingo da Páscoa",
+      "liturgical_season": "pascoa",
+      "liturgical_year": "C",
+      "core_message": "Jesus promete o Espírito Santo e oferece sua paz",
+      "summary": "A Minha Paz Vos Dou: Jesus promete o Espírito Santo e oferece sua paz.",
+      "primary_theme": "paz",
+      "secondary_themes": [],
+      "primary_bible_reference": "João 14,23-29",
+      "secondary_bible_references": [],
+      "biblical_story": "Jesus promete o Espírito Santo e oferece sua paz",
+      "biblical_characters": [],
+      "liturgical_context": "Domingo da Páscoa",
+      "calendar_context": "Domingo da Páscoa",
+      "editorial_keywords": [
+        "Domingo da Páscoa",
+        "paz",
+        "A Minha Paz Vos Dou"
+      ],
+      "historical_context": "",
+      "evidence_level": "CORROBORATED",
+      "confidence": "HIGH",
+      "verification_status": "READY_FOR_EDITORIAL_REVIEW",
+      "provenance": {
+        "catalog_source": "songs.ts",
+        "curation_source": "catalog-curation.json",
+        "reference_method": "title/pericope semantic matching; conservative chapter/range selection",
+        "source_asset_video_id": "vJIad9pC9qA"
+      }
+    },
+    {
+      "song_id": "song-014",
+      "slug": "domingo-da-pascoa-como-eu-vos-amei",
+      "title": "Como Eu Vos Amei",
+      "collection": "Domingo da Páscoa",
+      "liturgical_season": "pascoa",
+      "liturgical_year": "C",
+      "core_message": "Mandamento novo do amor",
+      "summary": "Como Eu Vos Amei: Mandamento novo do amor.",
+      "primary_theme": "amor",
+      "secondary_themes": [],
+      "primary_bible_reference": "João 13,31-35",
+      "secondary_bible_references": [],
+      "biblical_story": "Mandamento novo do amor",
+      "biblical_characters": [],
+      "liturgical_context": "Domingo da Páscoa",
+      "calendar_context": "Domingo da Páscoa",
+      "editorial_keywords": [
+        "Domingo da Páscoa",
+        "amor",
+        "Como Eu Vos Amei"
+      ],
+      "historical_context": "",
+      "evidence_level": "CORROBORATED",
+      "confidence": "HIGH",
+      "verification_status": "READY_FOR_EDITORIAL_REVIEW",
+      "provenance": {
+        "catalog_source": "songs.ts",
+        "curation_source": "catalog-curation.json",
+        "reference_method": "title/pericope semantic matching; conservative chapter/range selection",
+        "source_asset_video_id": "cyDyA6thL0A"
+      }
+    },
+    {
+      "song_id": "song-015",
+      "slug": "domingo-da-pascoa-meu-senhor-e-meu-deus",
+      "title": "Meu Senhor e Meu Deus",
+      "collection": "Domingo da Páscoa",
+      "liturgical_season": "pascoa",
+      "liturgical_year": "C",
+      "core_message": "Tomé encontra o Ressuscitado e professa a fé",
+      "summary": "Meu Senhor e Meu Deus: Tomé encontra o Ressuscitado e professa a fé.",
+      "primary_theme": "fé",
+      "secondary_themes": [],
+      "primary_bible_reference": "João 20,24-29",
+      "secondary_bible_references": [],
+      "biblical_story": "Tomé encontra o Ressuscitado e professa a fé",
+      "biblical_characters": [],
+      "liturgical_context": "Domingo da Páscoa",
+      "calendar_context": "Domingo da Páscoa",
+      "editorial_keywords": [
+        "Domingo da Páscoa",
+        "fé",
+        "Meu Senhor e Meu Deus"
+      ],
+      "historical_context": "",
+      "evidence_level": "CORROBORATED",
+      "confidence": "HIGH",
+      "verification_status": "READY_FOR_EDITORIAL_REVIEW",
+      "provenance": {
+        "catalog_source": "songs.ts",
+        "curation_source": "catalog-curation.json",
+        "reference_method": "title/pericope semantic matching; conservative chapter/range selection",
+        "source_asset_video_id": "x52OnBZQyLk"
+      }
+    },
+    {
+      "song_id": "song-016",
+      "slug": "domingo-da-pascoa-ninguem-vai-me-arrancar-de-tuas-maos",
+      "title": "Ninguém Vai Me Arrancar de Tuas Mãos",
+      "collection": "Domingo da Páscoa",
+      "liturgical_season": "pascoa",
+      "liturgical_year": "C",
+      "core_message": "Jesus, Bom Pastor, guarda suas ovelhas",
+      "summary": "Ninguém Vai Me Arrancar de Tuas Mãos: Jesus, Bom Pastor, guarda suas ovelhas.",
+      "primary_theme": "discipulado",
+      "secondary_themes": [
+        "esperança"
+      ],
+      "primary_bible_reference": "João 10,27-30",
+      "secondary_bible_references": [],
+      "biblical_story": "Jesus, Bom Pastor, guarda suas ovelhas",
+      "biblical_characters": [],
+      "liturgical_context": "Domingo da Páscoa",
+      "calendar_context": "Domingo da Páscoa",
+      "editorial_keywords": [
+        "Domingo da Páscoa",
+        "discipulado",
+        "esperança",
+        "Ninguém Vai Me Arrancar de Tuas Mãos"
+      ],
+      "historical_context": "",
+      "evidence_level": "CORROBORATED",
+      "confidence": "HIGH",
+      "verification_status": "READY_FOR_EDITORIAL_REVIEW",
+      "provenance": {
+        "catalog_source": "songs.ts",
+        "curation_source": "catalog-curation.json",
+        "reference_method": "title/pericope semantic matching; conservative chapter/range selection",
+        "source_asset_video_id": "EFb_oAzvu9s"
+      }
+    },
+    {
+      "song_id": "song-017",
+      "slug": "domingo-da-pascoa-que-todos-sejam-um",
+      "title": "Que Todos Sejam Um",
+      "collection": "Domingo da Páscoa",
+      "liturgical_season": "pascoa",
+      "liturgical_year": "C",
+      "core_message": "Oração de Jesus pela unidade dos discípulos",
+      "summary": "Que Todos Sejam Um: Oração de Jesus pela unidade dos discípulos.",
+      "primary_theme": "oração",
+      "secondary_themes": [],
+      "primary_bible_reference": "João 17,20-26",
+      "secondary_bible_references": [],
+      "biblical_story": "Oração de Jesus pela unidade dos discípulos",
+      "biblical_characters": [],
+      "liturgical_context": "Domingo da Páscoa",
+      "calendar_context": "Domingo da Páscoa",
+      "editorial_keywords": [
+        "Domingo da Páscoa",
+        "oração",
+        "Que Todos Sejam Um"
+      ],
+      "historical_context": "",
+      "evidence_level": "CORROBORATED",
+      "confidence": "HIGH",
+      "verification_status": "READY_FOR_EDITORIAL_REVIEW",
+      "provenance": {
+        "catalog_source": "songs.ts",
+        "curation_source": "catalog-curation.json",
+        "reference_method": "title/pericope semantic matching; conservative chapter/range selection",
+        "source_asset_video_id": "Nn9SEZLVA3I"
+      }
+    },
+    {
+      "song_id": "song-018",
+      "slug": "domingo-da-pascoa-tu-me-amas",
+      "title": "Tu Me Amas",
+      "collection": "Domingo da Páscoa",
+      "liturgical_season": "pascoa",
+      "liturgical_year": "C",
+      "core_message": "Jesus pergunta três vezes a Pedro se ele o ama",
+      "summary": "Tu Me Amas: Jesus pergunta três vezes a Pedro se ele o ama.",
+      "primary_theme": "discipulado",
+      "secondary_themes": [
+        "esperança"
+      ],
+      "primary_bible_reference": "João 21,15-19",
+      "secondary_bible_references": [],
+      "biblical_story": "Jesus pergunta três vezes a Pedro se ele o ama",
+      "biblical_characters": [],
+      "liturgical_context": "Domingo da Páscoa",
+      "calendar_context": "Domingo da Páscoa",
+      "editorial_keywords": [
+        "Domingo da Páscoa",
+        "discipulado",
+        "esperança",
+        "Tu Me Amas"
+      ],
+      "historical_context": "",
+      "evidence_level": "CORROBORATED",
+      "confidence": "HIGH",
+      "verification_status": "READY_FOR_EDITORIAL_REVIEW",
+      "provenance": {
+        "catalog_source": "songs.ts",
+        "curation_source": "catalog-curation.json",
+        "reference_method": "title/pericope semantic matching; conservative chapter/range selection",
+        "source_asset_video_id": "zhIqxz6oIjo"
+      }
+    },
+    {
+      "song_id": "song-019",
+      "slug": "domingo-da-pascoa-viu-e-acreditou",
+      "title": "Viu e Acreditou",
+      "collection": "Domingo da Páscoa",
+      "liturgical_season": "pascoa",
+      "liturgical_year": "C",
+      "core_message": "Pedro e o discípulo amado encontram o túmulo vazio",
+      "summary": "Viu e Acreditou: Pedro e o discípulo amado encontram o túmulo vazio.",
+      "primary_theme": "discipulado",
+      "secondary_themes": [
+        "esperança"
+      ],
+      "primary_bible_reference": "João 20,1-9",
+      "secondary_bible_references": [],
+      "biblical_story": "Pedro e o discípulo amado encontram o túmulo vazio",
+      "biblical_characters": [],
+      "liturgical_context": "Domingo da Páscoa",
+      "calendar_context": "Domingo da Páscoa",
+      "editorial_keywords": [
+        "Domingo da Páscoa",
+        "discipulado",
+        "esperança",
+        "Viu e Acreditou"
+      ],
+      "historical_context": "",
+      "evidence_level": "CORROBORATED",
+      "confidence": "HIGH",
+      "verification_status": "READY_FOR_EDITORIAL_REVIEW",
+      "provenance": {
+        "catalog_source": "songs.ts",
+        "curation_source": "catalog-curation.json",
+        "reference_method": "title/pericope semantic matching; conservative chapter/range selection",
+        "source_asset_video_id": "Wa7gB0JBziA"
+      }
+    },
+    {
+      "song_id": "song-020",
+      "slug": "domingo-de-ramos-e-da-paixao-em-tuas-maos",
+      "title": "Em Tuas Mãos",
+      "collection": "Domingo de Ramos e da Paixão",
+      "liturgical_season": "semana-santa",
+      "liturgical_year": "C",
+      "core_message": "Jesus entrega seu espírito ao Pai na cruz",
+      "summary": "Em Tuas Mãos: Jesus entrega seu espírito ao Pai na cruz.",
+      "primary_theme": "discipulado",
+      "secondary_themes": [
+        "esperança"
+      ],
+      "primary_bible_reference": "Lucas 23,44-49",
+      "secondary_bible_references": [],
+      "biblical_story": "Jesus entrega seu espírito ao Pai na cruz",
+      "biblical_characters": [],
+      "liturgical_context": "Domingo de Ramos e da Paixão",
+      "calendar_context": "Domingo de Ramos e da Paixão",
+      "editorial_keywords": [
+        "Domingo de Ramos e da Paixão",
+        "discipulado",
+        "esperança",
+        "Em Tuas Mãos"
+      ],
+      "historical_context": "",
+      "evidence_level": "CORROBORATED",
+      "confidence": "HIGH",
+      "verification_status": "READY_FOR_EDITORIAL_REVIEW",
+      "provenance": {
+        "catalog_source": "songs.ts",
+        "curation_source": "catalog-curation.json",
+        "reference_method": "title/pericope semantic matching; conservative chapter/range selection",
+        "source_asset_video_id": "sYUMYwCoBNE"
+      }
+    },
+    {
+      "song_id": "song-021",
+      "slug": "quaresma-deixa-a-ainda-este-ano",
+      "title": "Deixa-a Ainda Este Ano",
+      "collection": "Quaresma",
+      "liturgical_season": "quaresma",
+      "liturgical_year": "C",
+      "core_message": "Parábola da figueira estéril e chamado à conversão",
+      "summary": "Deixa-a Ainda Este Ano: Parábola da figueira estéril e chamado à conversão.",
+      "primary_theme": "discipulado",
+      "secondary_themes": [
+        "esperança"
+      ],
+      "primary_bible_reference": "Lucas 13,1-9",
+      "secondary_bible_references": [],
+      "biblical_story": "Parábola da figueira estéril e chamado à conversão",
+      "biblical_characters": [],
+      "liturgical_context": "Quaresma",
+      "calendar_context": "Quaresma",
+      "editorial_keywords": [
+        "Quaresma",
+        "discipulado",
+        "esperança",
+        "Deixa-a Ainda Este Ano"
+      ],
+      "historical_context": "",
+      "evidence_level": "CORROBORATED",
+      "confidence": "HIGH",
+      "verification_status": "READY_FOR_EDITORIAL_REVIEW",
+      "provenance": {
+        "catalog_source": "songs.ts",
+        "curation_source": "catalog-curation.json",
+        "reference_method": "title/pericope semantic matching; conservative chapter/range selection",
+        "source_asset_video_id": "ea9ftq1765A"
+      }
+    },
+    {
+      "song_id": "song-022",
+      "slug": "quaresma-escutai-o",
+      "title": "Escutai-O",
+      "collection": "Quaresma",
+      "liturgical_season": "quaresma",
+      "liturgical_year": "C",
+      "core_message": "Transfiguração de Jesus",
+      "summary": "Escutai-O: Transfiguração de Jesus.",
+      "primary_theme": "discipulado",
+      "secondary_themes": [
+        "esperança"
+      ],
+      "primary_bible_reference": "Lucas 9,28-36",
+      "secondary_bible_references": [],
+      "biblical_story": "Transfiguração de Jesus",
+      "biblical_characters": [],
+      "liturgical_context": "Quaresma",
+      "calendar_context": "Quaresma",
+      "editorial_keywords": [
+        "Quaresma",
+        "discipulado",
+        "esperança",
+        "Escutai-O"
+      ],
+      "historical_context": "",
+      "evidence_level": "CORROBORATED",
+      "confidence": "HIGH",
+      "verification_status": "READY_FOR_EDITORIAL_REVIEW",
+      "provenance": {
+        "catalog_source": "songs.ts",
+        "curation_source": "catalog-curation.json",
+        "reference_method": "title/pericope semantic matching; conservative chapter/range selection",
+        "source_asset_video_id": "uh2Gg7JeM9Y"
+      }
+    },
+    {
+      "song_id": "song-023",
+      "slug": "quaresma-esta-escrito",
+      "title": "Está Escrito",
+      "collection": "Quaresma",
+      "liturgical_season": "quaresma",
+      "liturgical_year": "C",
+      "core_message": "Tentação de Jesus no deserto",
+      "summary": "Está Escrito: Tentação de Jesus no deserto.",
+      "primary_theme": "discipulado",
+      "secondary_themes": [
+        "esperança"
+      ],
+      "primary_bible_reference": "Lucas 4,1-13",
+      "secondary_bible_references": [],
+      "biblical_story": "Tentação de Jesus no deserto",
+      "biblical_characters": [],
+      "liturgical_context": "Quaresma",
+      "calendar_context": "Quaresma",
+      "editorial_keywords": [
+        "Quaresma",
+        "discipulado",
+        "esperança",
+        "Está Escrito"
+      ],
+      "historical_context": "",
+      "evidence_level": "CORROBORATED",
+      "confidence": "HIGH",
+      "verification_status": "READY_FOR_EDITORIAL_REVIEW",
+      "provenance": {
+        "catalog_source": "songs.ts",
+        "curation_source": "catalog-curation.json",
+        "reference_method": "title/pericope semantic matching; conservative chapter/range selection",
+        "source_asset_video_id": "GZHJTAWtUqI"
+      }
+    },
+    {
+      "song_id": "song-024",
+      "slug": "quaresma-eu-tambem-nao-te-condeno",
+      "title": "Eu Também Não Te Condeno",
+      "collection": "Quaresma",
+      "liturgical_season": "quaresma",
+      "liturgical_year": "C",
+      "core_message": "Jesus e a mulher acusada de adultério",
+      "summary": "Eu Também Não Te Condeno: Jesus e a mulher acusada de adultério.",
+      "primary_theme": "discipulado",
+      "secondary_themes": [
+        "esperança"
+      ],
+      "primary_bible_reference": "João 8,1-11",
+      "secondary_bible_references": [],
+      "biblical_story": "Jesus e a mulher acusada de adultério",
+      "biblical_characters": [],
+      "liturgical_context": "Quaresma",
+      "calendar_context": "Quaresma",
+      "editorial_keywords": [
+        "Quaresma",
+        "discipulado",
+        "esperança",
+        "Eu Também Não Te Condeno"
+      ],
+      "historical_context": "",
+      "evidence_level": "CORROBORATED",
+      "confidence": "HIGH",
+      "verification_status": "READY_FOR_EDITORIAL_REVIEW",
+      "provenance": {
+        "catalog_source": "songs.ts",
+        "curation_source": "catalog-curation.json",
+        "reference_method": "title/pericope semantic matching; conservative chapter/range selection",
+        "source_asset_video_id": "r7qMWg0qesA"
+      }
+    },
+    {
+      "song_id": "song-025",
+      "slug": "quaresma-quando-ainda-estava-longe",
+      "title": "Quando Ainda Estava Longe",
+      "collection": "Quaresma",
+      "liturgical_season": "quaresma",
+      "liturgical_year": "C",
+      "core_message": "Parábola do pai misericordioso e do filho que retorna",
+      "summary": "Quando Ainda Estava Longe: Parábola do pai misericordioso e do filho que retorna.",
+      "primary_theme": "misericórdia",
+      "secondary_themes": [],
+      "primary_bible_reference": "Lucas 15,1-3.11-32",
+      "secondary_bible_references": [],
+      "biblical_story": "Parábola do pai misericordioso e do filho que retorna",
+      "biblical_characters": [],
+      "liturgical_context": "Quaresma",
+      "calendar_context": "Quaresma",
+      "editorial_keywords": [
+        "Quaresma",
+        "misericórdia",
+        "Quando Ainda Estava Longe"
+      ],
+      "historical_context": "",
+      "evidence_level": "CORROBORATED",
+      "confidence": "HIGH",
+      "verification_status": "READY_FOR_EDITORIAL_REVIEW",
+      "provenance": {
+        "catalog_source": "songs.ts",
+        "curation_source": "catalog-curation.json",
+        "reference_method": "title/pericope semantic matching; conservative chapter/range selection",
+        "source_asset_video_id": "3OQiObdPoJU"
+      }
+    },
+    {
+      "song_id": "song-026",
+      "slug": "solenidades-eu-sou-a-ressurreicao-e-a-vida",
+      "title": "Eu Sou a Ressurreição e a Vida",
+      "collection": "Solenidades",
+      "liturgical_season": "solenidades",
+      "liturgical_year": "C",
+      "core_message": "Jesus revela a Marta que é a ressurreição e a vida",
+      "summary": "Eu Sou a Ressurreição e a Vida: Jesus revela a Marta que é a ressurreição e a vida.",
+      "primary_theme": "ressurreição",
+      "secondary_themes": [],
+      "primary_bible_reference": "João 11,17-27",
+      "secondary_bible_references": [],
+      "biblical_story": "Jesus revela a Marta que é a ressurreição e a vida",
+      "biblical_characters": [],
+      "liturgical_context": "Solenidades",
+      "calendar_context": "Solenidades",
+      "editorial_keywords": [
+        "Solenidades",
+        "ressurreição",
+        "Eu Sou a Ressurreição e a Vida"
+      ],
+      "historical_context": "",
+      "evidence_level": "CORROBORATED",
+      "confidence": "HIGH",
+      "verification_status": "READY_FOR_EDITORIAL_REVIEW",
+      "provenance": {
+        "catalog_source": "songs.ts",
+        "curation_source": "catalog-curation.json",
+        "reference_method": "title/pericope semantic matching; conservative chapter/range selection",
+        "source_asset_video_id": "IFWujghupbA"
+      }
+    },
+    {
+      "song_id": "song-027",
+      "slug": "solenidades-fazei-tudo-o-que-ele-vos-disser",
+      "title": "Fazei Tudo o Que Ele Vos Disser",
+      "collection": "Solenidades",
+      "liturgical_season": "solenidades",
+      "liturgical_year": "C",
+      "core_message": "Bodas de Caná",
+      "summary": "Fazei Tudo o Que Ele Vos Disser: Bodas de Caná.",
+      "primary_theme": "discipulado",
+      "secondary_themes": [
+        "esperança"
+      ],
+      "primary_bible_reference": "João 2,1-11",
+      "secondary_bible_references": [],
+      "biblical_story": "Bodas de Caná",
+      "biblical_characters": [],
+      "liturgical_context": "Solenidades",
+      "calendar_context": "Solenidades",
+      "editorial_keywords": [
+        "Solenidades",
+        "discipulado",
+        "esperança",
+        "Fazei Tudo o Que Ele Vos Disser"
+      ],
+      "historical_context": "",
+      "evidence_level": "CORROBORATED",
+      "confidence": "HIGH",
+      "verification_status": "READY_FOR_EDITORIAL_REVIEW",
+      "provenance": {
+        "catalog_source": "songs.ts",
+        "curation_source": "catalog-curation.json",
+        "reference_method": "title/pericope semantic matching; conservative chapter/range selection",
+        "source_asset_video_id": "3pU3ppm9OrA"
+      }
+    },
+    {
+      "song_id": "song-028",
+      "slug": "solenidades-guardei-a-fe",
+      "title": "Guardei a Fé",
+      "collection": "Solenidades",
+      "liturgical_season": "solenidades",
+      "liturgical_year": "C",
+      "core_message": "Paulo contempla o fim de sua missão e afirma ter guardado a fé",
+      "summary": "Guardei a Fé: Paulo contempla o fim de sua missão e afirma ter guardado a fé.",
+      "primary_theme": "fé",
+      "secondary_themes": [
+        "missão"
+      ],
+      "primary_bible_reference": "2 Timóteo 4,6-8.17-18",
+      "secondary_bible_references": [],
+      "biblical_story": "Paulo contempla o fim de sua missão e afirma ter guardado a fé",
+      "biblical_characters": [],
+      "liturgical_context": "Solenidades",
+      "calendar_context": "Solenidades",
+      "editorial_keywords": [
+        "Solenidades",
+        "fé",
+        "missão",
+        "Guardei a Fé"
+      ],
+      "historical_context": "",
+      "evidence_level": "CORROBORATED",
+      "confidence": "HIGH",
+      "verification_status": "READY_FOR_EDITORIAL_REVIEW",
+      "provenance": {
+        "catalog_source": "songs.ts",
+        "curation_source": "catalog-curation.json",
+        "reference_method": "title/pericope semantic matching; conservative chapter/range selection",
+        "source_asset_video_id": "EdYt5rUWxh0"
+      }
+    },
+    {
+      "song_id": "song-029",
+      "slug": "solenidades-minha-alma-engrandece-o-senhor",
+      "title": "Minha Alma Engrandece o Senhor",
+      "collection": "Solenidades",
+      "liturgical_season": "solenidades",
+      "liturgical_year": "C",
+      "core_message": "Visitação e Magnificat",
+      "summary": "Minha Alma Engrandece o Senhor: Visitação e Magnificat.",
+      "primary_theme": "discipulado",
+      "secondary_themes": [
+        "esperança"
+      ],
+      "primary_bible_reference": "Lucas 1,39-56",
+      "secondary_bible_references": [],
+      "biblical_story": "Visitação e Magnificat",
+      "biblical_characters": [],
+      "liturgical_context": "Solenidades",
+      "calendar_context": "Solenidades",
+      "editorial_keywords": [
+        "Solenidades",
+        "discipulado",
+        "esperança",
+        "Minha Alma Engrandece o Senhor"
+      ],
+      "historical_context": "",
+      "evidence_level": "CORROBORATED",
+      "confidence": "HIGH",
+      "verification_status": "READY_FOR_EDITORIAL_REVIEW",
+      "provenance": {
+        "catalog_source": "songs.ts",
+        "curation_source": "catalog-curation.json",
+        "reference_method": "title/pericope semantic matching; conservative chapter/range selection",
+        "source_asset_video_id": "Rav8VyTl1fY"
+      }
+    },
+    {
+      "song_id": "song-030",
+      "slug": "solenidades-sereis-minhas-testemunhas",
+      "title": "Sereis Minhas Testemunhas",
+      "collection": "Solenidades",
+      "liturgical_season": "solenidades",
+      "liturgical_year": "C",
+      "core_message": "Ascensão do Senhor e envio das testemunhas",
+      "summary": "Sereis Minhas Testemunhas: Ascensão do Senhor e envio das testemunhas.",
+      "primary_theme": "discipulado",
+      "secondary_themes": [
+        "esperança"
+      ],
+      "primary_bible_reference": "Atos 1,1-11",
+      "secondary_bible_references": [],
+      "biblical_story": "Ascensão do Senhor e envio das testemunhas",
+      "biblical_characters": [],
+      "liturgical_context": "Solenidades",
+      "calendar_context": "Solenidades",
+      "editorial_keywords": [
+        "Solenidades",
+        "discipulado",
+        "esperança",
+        "Sereis Minhas Testemunhas"
+      ],
+      "historical_context": "",
+      "evidence_level": "CORROBORATED",
+      "confidence": "HIGH",
+      "verification_status": "READY_FOR_EDITORIAL_REVIEW",
+      "provenance": {
+        "catalog_source": "songs.ts",
+        "curation_source": "catalog-curation.json",
+        "reference_method": "title/pericope semantic matching; conservative chapter/range selection",
+        "source_asset_video_id": "0vUWZXNhJS0"
+      }
+    },
+    {
+      "song_id": "song-031",
+      "slug": "solenidades-um-so-deus-de-amor",
+      "title": "Um Só Deus de Amor",
+      "collection": "Solenidades",
+      "liturgical_season": "solenidades",
+      "liturgical_year": "C",
+      "core_message": "Jesus revela a comunhão do Pai, do Filho e do Espírito",
+      "summary": "Um Só Deus de Amor: Jesus revela a comunhão do Pai, do Filho e do Espírito.",
+      "primary_theme": "amor",
+      "secondary_themes": [],
+      "primary_bible_reference": "João 16,12-15",
+      "secondary_bible_references": [],
+      "biblical_story": "Jesus revela a comunhão do Pai, do Filho e do Espírito",
+      "biblical_characters": [],
+      "liturgical_context": "Solenidades",
+      "calendar_context": "Solenidades",
+      "editorial_keywords": [
+        "Solenidades",
+        "amor",
+        "Um Só Deus de Amor"
+      ],
+      "historical_context": "",
+      "evidence_level": "CORROBORATED",
+      "confidence": "HIGH",
+      "verification_status": "READY_FOR_EDITORIAL_REVIEW",
+      "provenance": {
+        "catalog_source": "songs.ts",
+        "curation_source": "catalog-curation.json",
+        "reference_method": "title/pericope semantic matching; conservative chapter/range selection",
+        "source_asset_video_id": "9X0szfms-2Q"
+      }
+    },
+    {
+      "song_id": "song-032",
+      "slug": "tempo-comum-a-melhor-parte",
+      "title": "A Melhor Parte",
+      "collection": "Tempo Comum",
+      "liturgical_season": "tempo-comum",
+      "liturgical_year": "C",
+      "core_message": "Marta e Maria recebem Jesus",
+      "summary": "A Melhor Parte: Marta e Maria recebem Jesus.",
+      "primary_theme": "discipulado",
+      "secondary_themes": [
+        "esperança"
+      ],
+      "primary_bible_reference": "Lucas 10,38-42",
+      "secondary_bible_references": [],
+      "biblical_story": "Marta e Maria recebem Jesus",
+      "biblical_characters": [],
+      "liturgical_context": "Tempo Comum",
+      "calendar_context": "Tempo Comum",
+      "editorial_keywords": [
+        "Tempo Comum",
+        "discipulado",
+        "esperança",
+        "A Melhor Parte"
+      ],
+      "historical_context": "",
+      "evidence_level": "CORROBORATED",
+      "confidence": "HIGH",
+      "verification_status": "READY_FOR_EDITORIAL_REVIEW",
+      "provenance": {
+        "catalog_source": "songs.ts",
+        "curation_source": "catalog-curation.json",
+        "reference_method": "title/pericope semantic matching; conservative chapter/range selection",
+        "source_asset_video_id": "mksuLEVcZU0"
+      }
+    },
+    {
+      "song_id": "song-033",
+      "slug": "tempo-comum-a-messe-e-grande",
+      "title": "A Messe é Grande",
+      "collection": "Tempo Comum",
+      "liturgical_season": "tempo-comum",
+      "liturgical_year": "C",
+      "core_message": "Envio dos setenta e dois discípulos",
+      "summary": "A Messe é Grande: Envio dos setenta e dois discípulos.",
+      "primary_theme": "discipulado",
+      "secondary_themes": [
+        "esperança"
+      ],
+      "primary_bible_reference": "Lucas 10,1-12.17-20",
+      "secondary_bible_references": [],
+      "biblical_story": "Envio dos setenta e dois discípulos",
+      "biblical_characters": [],
+      "liturgical_context": "Tempo Comum",
+      "calendar_context": "Tempo Comum",
+      "editorial_keywords": [
+        "Tempo Comum",
+        "discipulado",
+        "esperança",
+        "A Messe é Grande"
+      ],
+      "historical_context": "",
+      "evidence_level": "CORROBORATED",
+      "confidence": "HIGH",
+      "verification_status": "READY_FOR_EDITORIAL_REVIEW",
+      "provenance": {
+        "catalog_source": "songs.ts",
+        "curation_source": "catalog-curation.json",
+        "reference_method": "title/pericope semantic matching; conservative chapter/range selection",
+        "source_asset_video_id": "DmJWKRvUk2Q"
+      }
+    },
+    {
+      "song_id": "song-034",
+      "slug": "tempo-comum-aumenta-a-nossa-fe",
+      "title": "Aumenta a Nossa Fé",
+      "collection": "Tempo Comum",
+      "liturgical_season": "tempo-comum",
+      "liturgical_year": "C",
+      "core_message": "Os apóstolos pedem a Jesus que aumente sua fé",
+      "summary": "Aumenta a Nossa Fé: Os apóstolos pedem a Jesus que aumente sua fé.",
+      "primary_theme": "fé",
+      "secondary_themes": [],
+      "primary_bible_reference": "Lucas 17,5-10",
+      "secondary_bible_references": [],
+      "biblical_story": "Os apóstolos pedem a Jesus que aumente sua fé",
+      "biblical_characters": [],
+      "liturgical_context": "Tempo Comum",
+      "calendar_context": "Tempo Comum",
+      "editorial_keywords": [
+        "Tempo Comum",
+        "fé",
+        "Aumenta a Nossa Fé"
+      ],
+      "historical_context": "",
+      "evidence_level": "CORROBORATED",
+      "confidence": "HIGH",
+      "verification_status": "READY_FOR_EDITORIAL_REVIEW",
+      "provenance": {
+        "catalog_source": "songs.ts",
+        "curation_source": "catalog-curation.json",
+        "reference_method": "title/pericope semantic matching; conservative chapter/range selection",
+        "source_asset_video_id": "OPW_0kZ76ok"
+      }
+    },
+    {
+      "song_id": "song-035",
+      "slug": "tempo-comum-basta-uma-palavra",
+      "title": "Basta Uma Palavra",
+      "collection": "Tempo Comum",
+      "liturgical_season": "tempo-comum",
+      "liturgical_year": "C",
+      "core_message": "Cura do servo do centurião",
+      "summary": "Basta Uma Palavra: Cura do servo do centurião.",
+      "primary_theme": "discipulado",
+      "secondary_themes": [
+        "esperança"
+      ],
+      "primary_bible_reference": "Lucas 7,1-10",
+      "secondary_bible_references": [],
+      "biblical_story": "Cura do servo do centurião",
+      "biblical_characters": [],
+      "liturgical_context": "Tempo Comum",
+      "calendar_context": "Tempo Comum",
+      "editorial_keywords": [
+        "Tempo Comum",
+        "discipulado",
+        "esperança",
+        "Basta Uma Palavra"
+      ],
+      "historical_context": "",
+      "evidence_level": "CORROBORATED",
+      "confidence": "HIGH",
+      "verification_status": "READY_FOR_EDITORIAL_REVIEW",
+      "provenance": {
+        "catalog_source": "songs.ts",
+        "curation_source": "catalog-curation.json",
+        "reference_method": "title/pericope semantic matching; conservative chapter/range selection",
+        "source_asset_video_id": "EMk1I5MWS5s"
+      }
+    },
+    {
+      "song_id": "song-036",
+      "slug": "tempo-comum-como-o-pai-e-misericordioso",
+      "title": "Como o Pai é Misericordioso",
+      "collection": "Tempo Comum",
+      "liturgical_season": "tempo-comum",
+      "liturgical_year": "C",
+      "core_message": "Jesus ensina o amor aos inimigos e a misericórdia",
+      "summary": "Como o Pai é Misericordioso: Jesus ensina o amor aos inimigos e a misericórdia.",
+      "primary_theme": "misericórdia",
+      "secondary_themes": [
+        "amor"
+      ],
+      "primary_bible_reference": "Lucas 6,27-38",
+      "secondary_bible_references": [],
+      "biblical_story": "Jesus ensina o amor aos inimigos e a misericórdia",
+      "biblical_characters": [],
+      "liturgical_context": "Tempo Comum",
+      "calendar_context": "Tempo Comum",
+      "editorial_keywords": [
+        "Tempo Comum",
+        "misericórdia",
+        "amor",
+        "Como o Pai é Misericordioso"
+      ],
+      "historical_context": "",
+      "evidence_level": "CORROBORATED",
+      "confidence": "HIGH",
+      "verification_status": "READY_FOR_EDITORIAL_REVIEW",
+      "provenance": {
+        "catalog_source": "songs.ts",
+        "curation_source": "catalog-curation.json",
+        "reference_method": "title/pericope semantic matching; conservative chapter/range selection",
+        "source_asset_video_id": "DA1t8o3FCqw"
+      }
+    },
+    {
+      "song_id": "song-037",
+      "slug": "tempo-comum-deus-dos-vivos",
+      "title": "Deus dos Vivos",
+      "collection": "Tempo Comum",
+      "liturgical_season": "tempo-comum",
+      "liturgical_year": "C",
+      "core_message": "Jesus responde aos saduceus sobre a ressurreição",
+      "summary": "Deus dos Vivos: Jesus responde aos saduceus sobre a ressurreição.",
+      "primary_theme": "ressurreição",
+      "secondary_themes": [],
+      "primary_bible_reference": "Lucas 20,27-38",
+      "secondary_bible_references": [],
+      "biblical_story": "Jesus responde aos saduceus sobre a ressurreição",
+      "biblical_characters": [],
+      "liturgical_context": "Tempo Comum",
+      "calendar_context": "Tempo Comum",
+      "editorial_keywords": [
+        "Tempo Comum",
+        "ressurreição",
+        "Deus dos Vivos"
+      ],
+      "historical_context": "",
+      "evidence_level": "CORROBORATED",
+      "confidence": "HIGH",
+      "verification_status": "READY_FOR_EDITORIAL_REVIEW",
+      "provenance": {
+        "catalog_source": "songs.ts",
+        "curation_source": "catalog-curation.json",
+        "reference_method": "title/pericope semantic matching; conservative chapter/range selection",
+        "source_asset_video_id": "p0GeROttA1Y"
+      }
+    },
+    {
+      "song_id": "song-038",
+      "slug": "tempo-comum-e-os-outros-nove-onde-estao",
+      "title": "E os Outros Nove, Onde Estão",
+      "collection": "Tempo Comum",
+      "liturgical_season": "tempo-comum",
+      "liturgical_year": "C",
+      "core_message": "Cura dos dez leprosos e gratidão do samaritano",
+      "summary": "E os Outros Nove, Onde Estão: Cura dos dez leprosos e gratidão do samaritano.",
+      "primary_theme": "discipulado",
+      "secondary_themes": [
+        "esperança"
+      ],
+      "primary_bible_reference": "Lucas 17,11-19",
+      "secondary_bible_references": [],
+      "biblical_story": "Cura dos dez leprosos e gratidão do samaritano",
+      "biblical_characters": [],
+      "liturgical_context": "Tempo Comum",
+      "calendar_context": "Tempo Comum",
+      "editorial_keywords": [
+        "Tempo Comum",
+        "discipulado",
+        "esperança",
+        "E os Outros Nove, Onde Estão"
+      ],
+      "historical_context": "",
+      "evidence_level": "CORROBORATED",
+      "confidence": "HIGH",
+      "verification_status": "READY_FOR_EDITORIAL_REVIEW",
+      "provenance": {
+        "catalog_source": "songs.ts",
+        "curation_source": "catalog-curation.json",
+        "reference_method": "title/pericope semantic matching; conservative chapter/range selection",
+        "source_asset_video_id": "TI5YEwZxfuQ"
+      }
+    },
+    {
+      "song_id": "song-039",
+      "slug": "tempo-comum-escolhe-o-ultimo-lugar",
+      "title": "Escolhe o Último Lugar",
+      "collection": "Tempo Comum",
+      "liturgical_season": "tempo-comum",
+      "liturgical_year": "C",
+      "core_message": "Jesus ensina humildade à mesa",
+      "summary": "Escolhe o Último Lugar: Jesus ensina humildade à mesa.",
+      "primary_theme": "discipulado",
+      "secondary_themes": [
+        "esperança"
+      ],
+      "primary_bible_reference": "Lucas 14,1.7-14",
+      "secondary_bible_references": [],
+      "biblical_story": "Jesus ensina humildade à mesa",
+      "biblical_characters": [],
+      "liturgical_context": "Tempo Comum",
+      "calendar_context": "Tempo Comum",
+      "editorial_keywords": [
+        "Tempo Comum",
+        "discipulado",
+        "esperança",
+        "Escolhe o Último Lugar"
+      ],
+      "historical_context": "",
+      "evidence_level": "CORROBORATED",
+      "confidence": "HIGH",
+      "verification_status": "READY_FOR_EDITORIAL_REVIEW",
+      "provenance": {
+        "catalog_source": "songs.ts",
+        "curation_source": "catalog-curation.json",
+        "reference_method": "title/pericope semantic matching; conservative chapter/range selection",
+        "source_asset_video_id": null
+      }
+    },
+    {
+      "song_id": "song-040",
+      "slug": "tempo-comum-estava-perdido-e-foi-encontrado",
+      "title": "Estava Perdido e Foi Encontrado",
+      "collection": "Tempo Comum",
+      "liturgical_season": "tempo-comum",
+      "liturgical_year": "C",
+      "core_message": "Parábolas da misericórdia e alegria pelo que foi reencontrado",
+      "summary": "Estava Perdido e Foi Encontrado: Parábolas da misericórdia e alegria pelo que foi reencontrado.",
+      "primary_theme": "misericórdia",
+      "secondary_themes": [],
+      "primary_bible_reference": "Lucas 15,1-32",
+      "secondary_bible_references": [],
+      "biblical_story": "Parábolas da misericórdia e alegria pelo que foi reencontrado",
+      "biblical_characters": [],
+      "liturgical_context": "Tempo Comum",
+      "calendar_context": "Tempo Comum",
+      "editorial_keywords": [
+        "Tempo Comum",
+        "misericórdia",
+        "Estava Perdido e Foi Encontrado"
+      ],
+      "historical_context": "",
+      "evidence_level": "CORROBORATED",
+      "confidence": "HIGH",
+      "verification_status": "READY_FOR_EDITORIAL_REVIEW",
+      "provenance": {
+        "catalog_source": "songs.ts",
+        "curation_source": "catalog-curation.json",
+        "reference_method": "title/pericope semantic matching; conservative chapter/range selection",
+        "source_asset_video_id": null
+      }
+    },
+    {
+      "song_id": "song-041",
+      "slug": "tempo-comum-hoje-a-salvacao-entrou-nesta-casa",
+      "title": "Hoje a Salvação Entrou Nesta Casa",
+      "collection": "Tempo Comum",
+      "liturgical_season": "tempo-comum",
+      "liturgical_year": "C",
+      "core_message": "Encontro de Jesus com Zaqueu",
+      "summary": "Hoje a Salvação Entrou Nesta Casa: Encontro de Jesus com Zaqueu.",
+      "primary_theme": "salvação",
+      "secondary_themes": [],
+      "primary_bible_reference": "Lucas 19,1-10",
+      "secondary_bible_references": [],
+      "biblical_story": "Encontro de Jesus com Zaqueu",
+      "biblical_characters": [],
+      "liturgical_context": "Tempo Comum",
+      "calendar_context": "Tempo Comum",
+      "editorial_keywords": [
+        "Tempo Comum",
+        "salvação",
+        "Hoje a Salvação Entrou Nesta Casa"
+      ],
+      "historical_context": "",
+      "evidence_level": "CORROBORATED",
+      "confidence": "HIGH",
+      "verification_status": "READY_FOR_EDITORIAL_REVIEW",
+      "provenance": {
+        "catalog_source": "songs.ts",
+        "curation_source": "catalog-curation.json",
+        "reference_method": "title/pericope semantic matching; conservative chapter/range selection",
+        "source_asset_video_id": null
+      }
+    },
+    {
+      "song_id": "song-042",
+      "slug": "tempo-comum-jovem-eu-te-ordeno-levanta-te",
+      "title": "Jovem, Eu Te Ordeno, Levanta-te!",
+      "collection": "Tempo Comum",
+      "liturgical_season": "tempo-comum",
+      "liturgical_year": "C",
+      "core_message": "Jesus ressuscita o filho da viúva de Naim",
+      "summary": "Jovem, Eu Te Ordeno, Levanta-te!: Jesus ressuscita o filho da viúva de Naim.",
+      "primary_theme": "discipulado",
+      "secondary_themes": [
+        "esperança"
+      ],
+      "primary_bible_reference": "Lucas 7,11-17",
+      "secondary_bible_references": [],
+      "biblical_story": "Jesus ressuscita o filho da viúva de Naim",
+      "biblical_characters": [],
+      "liturgical_context": "Tempo Comum",
+      "calendar_context": "Tempo Comum",
+      "editorial_keywords": [
+        "Tempo Comum",
+        "discipulado",
+        "esperança",
+        "Jovem, Eu Te Ordeno, Levanta-te!"
+      ],
+      "historical_context": "",
+      "evidence_level": "CORROBORATED",
+      "confidence": "HIGH",
+      "verification_status": "READY_FOR_EDITORIAL_REVIEW",
+      "provenance": {
+        "catalog_source": "songs.ts",
+        "curation_source": "catalog-curation.json",
+        "reference_method": "title/pericope semantic matching; conservative chapter/range selection",
+        "source_asset_video_id": null
+      }
+    },
+    {
+      "song_id": "song-043",
+      "slug": "tempo-comum-lampadas-acesas",
+      "title": "Lâmpadas Acesas",
+      "collection": "Tempo Comum",
+      "liturgical_season": "tempo-comum",
+      "liturgical_year": "C",
+      "core_message": "Chamado à prontidão e vigilância",
+      "summary": "Lâmpadas Acesas: Chamado à prontidão e vigilância.",
+      "primary_theme": "discipulado",
+      "secondary_themes": [
+        "esperança"
+      ],
+      "primary_bible_reference": "Lucas 12,35-40",
+      "secondary_bible_references": [],
+      "biblical_story": "Chamado à prontidão e vigilância",
+      "biblical_characters": [],
+      "liturgical_context": "Tempo Comum",
+      "calendar_context": "Tempo Comum",
+      "editorial_keywords": [
+        "Tempo Comum",
+        "discipulado",
+        "esperança",
+        "Lâmpadas Acesas"
+      ],
+      "historical_context": "",
+      "evidence_level": "CORROBORATED",
+      "confidence": "HIGH",
+      "verification_status": "READY_FOR_EDITORIAL_REVIEW",
+      "provenance": {
+        "catalog_source": "songs.ts",
+        "curation_source": "catalog-curation.json",
+        "reference_method": "title/pericope semantic matching; conservative chapter/range selection",
+        "source_asset_video_id": null
+      }
+    },
+    {
+      "song_id": "song-044",
+      "slug": "tempo-comum-lembra-te-de-mim-no-teu-reino",
+      "title": "Lembra-te de Mim no Teu Reino",
+      "collection": "Tempo Comum",
+      "liturgical_season": "tempo-comum",
+      "liturgical_year": "C",
+      "core_message": "O bom ladrão pede a Jesus que se lembre dele",
+      "summary": "Lembra-te de Mim no Teu Reino: O bom ladrão pede a Jesus que se lembre dele.",
+      "primary_theme": "discipulado",
+      "secondary_themes": [
+        "esperança"
+      ],
+      "primary_bible_reference": "Lucas 23,35-43",
+      "secondary_bible_references": [],
+      "biblical_story": "O bom ladrão pede a Jesus que se lembre dele",
+      "biblical_characters": [],
+      "liturgical_context": "Tempo Comum",
+      "calendar_context": "Tempo Comum",
+      "editorial_keywords": [
+        "Tempo Comum",
+        "discipulado",
+        "esperança",
+        "Lembra-te de Mim no Teu Reino"
+      ],
+      "historical_context": "",
+      "evidence_level": "CORROBORATED",
+      "confidence": "HIGH",
+      "verification_status": "READY_FOR_EDITORIAL_REVIEW",
+      "provenance": {
+        "catalog_source": "songs.ts",
+        "curation_source": "catalog-curation.json",
+        "reference_method": "title/pericope semantic matching; conservative chapter/range selection",
+        "source_asset_video_id": null
+      }
+    },
+    {
+      "song_id": "song-045",
+      "slug": "tempo-comum-maos-no-arado",
+      "title": "Mãos no Arado",
+      "collection": "Tempo Comum",
+      "liturgical_season": "tempo-comum",
+      "liturgical_year": "C",
+      "core_message": "Exigências do seguimento de Jesus",
+      "summary": "Mãos no Arado: Exigências do seguimento de Jesus.",
+      "primary_theme": "discipulado",
+      "secondary_themes": [
+        "esperança"
+      ],
+      "primary_bible_reference": "Lucas 9,57-62",
+      "secondary_bible_references": [],
+      "biblical_story": "Exigências do seguimento de Jesus",
+      "biblical_characters": [],
+      "liturgical_context": "Tempo Comum",
+      "calendar_context": "Tempo Comum",
+      "editorial_keywords": [
+        "Tempo Comum",
+        "discipulado",
+        "esperança",
+        "Mãos no Arado"
+      ],
+      "historical_context": "",
+      "evidence_level": "CORROBORATED",
+      "confidence": "HIGH",
+      "verification_status": "READY_FOR_EDITORIAL_REVIEW",
+      "provenance": {
+        "catalog_source": "songs.ts",
+        "curation_source": "catalog-curation.json",
+        "reference_method": "title/pericope semantic matching; conservative chapter/range selection",
+        "source_asset_video_id": null
+      }
+    },
+    {
+      "song_id": "song-046",
+      "slug": "tempo-comum-muito-amou-muito-foi-perdoado",
+      "title": "Muito Amou, Muito Foi Perdoado",
+      "collection": "Tempo Comum",
+      "liturgical_season": "tempo-comum",
+      "liturgical_year": "C",
+      "core_message": "A mulher pecadora unge os pés de Jesus",
+      "summary": "Muito Amou, Muito Foi Perdoado: A mulher pecadora unge os pés de Jesus.",
+      "primary_theme": "discipulado",
+      "secondary_themes": [
+        "esperança"
+      ],
+      "primary_bible_reference": "Lucas 7,36-50",
+      "secondary_bible_references": [],
+      "biblical_story": "A mulher pecadora unge os pés de Jesus",
+      "biblical_characters": [],
+      "liturgical_context": "Tempo Comum",
+      "calendar_context": "Tempo Comum",
+      "editorial_keywords": [
+        "Tempo Comum",
+        "discipulado",
+        "esperança",
+        "Muito Amou, Muito Foi Perdoado"
+      ],
+      "historical_context": "",
+      "evidence_level": "CORROBORATED",
+      "confidence": "HIGH",
+      "verification_status": "READY_FOR_EDITORIAL_REVIEW",
+      "provenance": {
+        "catalog_source": "songs.ts",
+        "curation_source": "catalog-curation.json",
+        "reference_method": "title/pericope semantic matching; conservative chapter/range selection",
+        "source_asset_video_id": null
+      }
+    },
+    {
+      "song_id": "song-047",
+      "slug": "tempo-comum-nao-podeis-servir-a-dois-senhores",
+      "title": "Não Podeis Servir a Dois Senhores",
+      "collection": "Tempo Comum",
+      "liturgical_season": "tempo-comum",
+      "liturgical_year": "C",
+      "core_message": "Jesus ensina sobre fidelidade e uso dos bens",
+      "summary": "Não Podeis Servir a Dois Senhores: Jesus ensina sobre fidelidade e uso dos bens.",
+      "primary_theme": "fidelidade",
+      "secondary_themes": [],
+      "primary_bible_reference": "Lucas 16,1-13",
+      "secondary_bible_references": [],
+      "biblical_story": "Jesus ensina sobre fidelidade e uso dos bens",
+      "biblical_characters": [],
+      "liturgical_context": "Tempo Comum",
+      "calendar_context": "Tempo Comum",
+      "editorial_keywords": [
+        "Tempo Comum",
+        "fidelidade",
+        "Não Podeis Servir a Dois Senhores"
+      ],
+      "historical_context": "",
+      "evidence_level": "CORROBORATED",
+      "confidence": "HIGH",
+      "verification_status": "READY_FOR_EDITORIAL_REVIEW",
+      "provenance": {
+        "catalog_source": "songs.ts",
+        "curation_source": "catalog-curation.json",
+        "reference_method": "title/pericope semantic matching; conservative chapter/range selection",
+        "source_asset_video_id": null
+      }
+    },
+    {
+      "song_id": "song-048",
+      "slug": "tempo-comum-o-ano-da-graca",
+      "title": "O Ano da Graça",
+      "collection": "Tempo Comum",
+      "liturgical_season": "tempo-comum",
+      "liturgical_year": "C",
+      "core_message": "Jesus proclama em Nazaré o ano da graça do Senhor",
+      "summary": "O Ano da Graça: Jesus proclama em Nazaré o ano da graça do Senhor.",
+      "primary_theme": "discipulado",
+      "secondary_themes": [
+        "esperança"
+      ],
+      "primary_bible_reference": "Lucas 4,14-21",
+      "secondary_bible_references": [],
+      "biblical_story": "Jesus proclama em Nazaré o ano da graça do Senhor",
+      "biblical_characters": [],
+      "liturgical_context": "Tempo Comum",
+      "calendar_context": "Tempo Comum",
+      "editorial_keywords": [
+        "Tempo Comum",
+        "discipulado",
+        "esperança",
+        "O Ano da Graça"
+      ],
+      "historical_context": "",
+      "evidence_level": "CORROBORATED",
+      "confidence": "HIGH",
+      "verification_status": "READY_FOR_EDITORIAL_REVIEW",
+      "provenance": {
+        "catalog_source": "songs.ts",
+        "curation_source": "catalog-curation.json",
+        "reference_method": "title/pericope semantic matching; conservative chapter/range selection",
+        "source_asset_video_id": null
+      }
+    },
+    {
+      "song_id": "song-049",
+      "slug": "tempo-comum-o-dom-maior",
+      "title": "O Dom Maior",
+      "collection": "Tempo Comum",
+      "liturgical_season": "tempo-comum",
+      "liturgical_year": "C",
+      "core_message": "Paulo apresenta o amor como o dom maior",
+      "summary": "O Dom Maior: Paulo apresenta o amor como o dom maior.",
+      "primary_theme": "amor",
+      "secondary_themes": [],
+      "primary_bible_reference": "1 Coríntios 13,1-13",
+      "secondary_bible_references": [],
+      "biblical_story": "Paulo apresenta o amor como o dom maior",
+      "biblical_characters": [],
+      "liturgical_context": "Tempo Comum",
+      "calendar_context": "Tempo Comum",
+      "editorial_keywords": [
+        "Tempo Comum",
+        "amor",
+        "O Dom Maior"
+      ],
+      "historical_context": "",
+      "evidence_level": "CORROBORATED",
+      "confidence": "HIGH",
+      "verification_status": "READY_FOR_EDITORIAL_REVIEW",
+      "provenance": {
+        "catalog_source": "songs.ts",
+        "curation_source": "catalog-curation.json",
+        "reference_method": "title/pericope semantic matching; conservative chapter/range selection",
+        "source_asset_video_id": null
+      }
+    },
+    {
+      "song_id": "song-050",
+      "slug": "tempo-comum-o-preco-de-te-seguir",
+      "title": "O Preço de Te Seguir",
+      "collection": "Tempo Comum",
+      "liturgical_season": "tempo-comum",
+      "liturgical_year": "C",
+      "core_message": "Jesus ensina a calcular o custo do discipulado",
+      "summary": "O Preço de Te Seguir: Jesus ensina a calcular o custo do discipulado.",
+      "primary_theme": "discipulado",
+      "secondary_themes": [
+        "esperança"
+      ],
+      "primary_bible_reference": "Lucas 14,25-33",
+      "secondary_bible_references": [],
+      "biblical_story": "Jesus ensina a calcular o custo do discipulado",
+      "biblical_characters": [],
+      "liturgical_context": "Tempo Comum",
+      "calendar_context": "Tempo Comum",
+      "editorial_keywords": [
+        "Tempo Comum",
+        "discipulado",
+        "esperança",
+        "O Preço de Te Seguir"
+      ],
+      "historical_context": "",
+      "evidence_level": "CORROBORATED",
+      "confidence": "HIGH",
+      "verification_status": "READY_FOR_EDITORIAL_REVIEW",
+      "provenance": {
+        "catalog_source": "songs.ts",
+        "curation_source": "catalog-curation.json",
+        "reference_method": "title/pericope semantic matching; conservative chapter/range selection",
+        "source_asset_video_id": null
+      }
+    },
+    {
+      "song_id": "song-051",
+      "slug": "tempo-comum-o-vinho-novo",
+      "title": "O Vinho Novo",
+      "collection": "Tempo Comum",
+      "liturgical_season": "tempo-comum",
+      "liturgical_year": "C",
+      "core_message": "Parábola do vinho novo e dos odres novos",
+      "summary": "O Vinho Novo: Parábola do vinho novo e dos odres novos.",
+      "primary_theme": "discipulado",
+      "secondary_themes": [
+        "esperança"
+      ],
+      "primary_bible_reference": "Lucas 5,33-39",
+      "secondary_bible_references": [],
+      "biblical_story": "Parábola do vinho novo e dos odres novos",
+      "biblical_characters": [],
+      "liturgical_context": "Tempo Comum",
+      "calendar_context": "Tempo Comum",
+      "editorial_keywords": [
+        "Tempo Comum",
+        "discipulado",
+        "esperança",
+        "O Vinho Novo"
+      ],
+      "historical_context": "",
+      "evidence_level": "CORROBORATED",
+      "confidence": "HIGH",
+      "verification_status": "READY_FOR_EDITORIAL_REVIEW",
+      "provenance": {
+        "catalog_source": "songs.ts",
+        "curation_source": "catalog-curation.json",
+        "reference_method": "title/pericope semantic matching; conservative chapter/range selection",
+        "source_asset_video_id": null
+      }
+    },
+    {
+      "song_id": "song-052",
+      "slug": "tempo-comum-onde-esta-tua-riqueza",
+      "title": "Onde Está Tua Riqueza",
+      "collection": "Tempo Comum",
+      "liturgical_season": "tempo-comum",
+      "liturgical_year": "C",
+      "core_message": "Parábola do rico insensato",
+      "summary": "Onde Está Tua Riqueza: Parábola do rico insensato.",
+      "primary_theme": "discipulado",
+      "secondary_themes": [
+        "esperança"
+      ],
+      "primary_bible_reference": "Lucas 12,13-21",
+      "secondary_bible_references": [],
+      "biblical_story": "Parábola do rico insensato",
+      "biblical_characters": [],
+      "liturgical_context": "Tempo Comum",
+      "calendar_context": "Tempo Comum",
+      "editorial_keywords": [
+        "Tempo Comum",
+        "discipulado",
+        "esperança",
+        "Onde Está Tua Riqueza"
+      ],
+      "historical_context": "",
+      "evidence_level": "CORROBORATED",
+      "confidence": "HIGH",
+      "verification_status": "READY_FOR_EDITORIAL_REVIEW",
+      "provenance": {
+        "catalog_source": "songs.ts",
+        "curation_source": "catalog-curation.json",
+        "reference_method": "title/pericope semantic matching; conservative chapter/range selection",
+        "source_asset_video_id": null
+      }
+    },
+    {
+      "song_id": "song-053",
+      "slug": "tempo-comum-pelos-frutos-conhecereis",
+      "title": "Pelos Frutos Conhecereis",
+      "collection": "Tempo Comum",
+      "liturgical_season": "tempo-comum",
+      "liturgical_year": "C",
+      "core_message": "A árvore é conhecida por seus frutos",
+      "summary": "Pelos Frutos Conhecereis: A árvore é conhecida por seus frutos.",
+      "primary_theme": "discipulado",
+      "secondary_themes": [
+        "esperança"
+      ],
+      "primary_bible_reference": "Lucas 6,43-45",
+      "secondary_bible_references": [],
+      "biblical_story": "A árvore é conhecida por seus frutos",
+      "biblical_characters": [],
+      "liturgical_context": "Tempo Comum",
+      "calendar_context": "Tempo Comum",
+      "editorial_keywords": [
+        "Tempo Comum",
+        "discipulado",
+        "esperança",
+        "Pelos Frutos Conhecereis"
+      ],
+      "historical_context": "",
+      "evidence_level": "CORROBORATED",
+      "confidence": "HIGH",
+      "verification_status": "READY_FOR_EDITORIAL_REVIEW",
+      "provenance": {
+        "catalog_source": "songs.ts",
+        "curation_source": "catalog-curation.json",
+        "reference_method": "title/pericope semantic matching; conservative chapter/range selection",
+        "source_asset_video_id": null
+      }
+    },
+    {
+      "song_id": "song-054",
+      "slug": "tempo-comum-rezar-sempre-nunca-desistir",
+      "title": "Rezar Sempre, Nunca Desistir",
+      "collection": "Tempo Comum",
+      "liturgical_season": "tempo-comum",
+      "liturgical_year": "C",
+      "core_message": "Parábola da viúva persistente",
+      "summary": "Rezar Sempre, Nunca Desistir: Parábola da viúva persistente.",
+      "primary_theme": "oração",
+      "secondary_themes": [],
+      "primary_bible_reference": "Lucas 18,1-8",
+      "secondary_bible_references": [],
+      "biblical_story": "Parábola da viúva persistente",
+      "biblical_characters": [],
+      "liturgical_context": "Tempo Comum",
+      "calendar_context": "Tempo Comum",
+      "editorial_keywords": [
+        "Tempo Comum",
+        "oração",
+        "Rezar Sempre, Nunca Desistir"
+      ],
+      "historical_context": "",
+      "evidence_level": "CORROBORATED",
+      "confidence": "HIGH",
+      "verification_status": "READY_FOR_EDITORIAL_REVIEW",
+      "provenance": {
+        "catalog_source": "songs.ts",
+        "curation_source": "catalog-curation.json",
+        "reference_method": "title/pericope semantic matching; conservative chapter/range selection",
+        "source_asset_video_id": null
+      }
+    },
+    {
+      "song_id": "song-055",
+      "slug": "tempo-comum-senhor-ensina-nos-a-rezar",
+      "title": "Senhor, Ensina-nos a Rezar",
+      "collection": "Tempo Comum",
+      "liturgical_season": "tempo-comum",
+      "liturgical_year": "C",
+      "core_message": "Jesus ensina o Pai-Nosso e a perseverança na oração",
+      "summary": "Senhor, Ensina-nos a Rezar: Jesus ensina o Pai-Nosso e a perseverança na oração.",
+      "primary_theme": "oração",
+      "secondary_themes": [
+        "perseverança"
+      ],
+      "primary_bible_reference": "Lucas 11,1-13",
+      "secondary_bible_references": [],
+      "biblical_story": "Jesus ensina o Pai-Nosso e a perseverança na oração",
+      "biblical_characters": [],
+      "liturgical_context": "Tempo Comum",
+      "calendar_context": "Tempo Comum",
+      "editorial_keywords": [
+        "Tempo Comum",
+        "oração",
+        "perseverança",
+        "Senhor, Ensina-nos a Rezar"
+      ],
+      "historical_context": "",
+      "evidence_level": "CORROBORATED",
+      "confidence": "HIGH",
+      "verification_status": "READY_FOR_EDITORIAL_REVIEW",
+      "provenance": {
+        "catalog_source": "songs.ts",
+        "curation_source": "catalog-curation.json",
+        "reference_method": "title/pericope semantic matching; conservative chapter/range selection",
+        "source_asset_video_id": null
+      }
+    },
+    {
+      "song_id": "song-056",
+      "slug": "tempo-comum-tem-piedade-de-mim",
+      "title": "Tem Piedade de Mim",
+      "collection": "Tempo Comum",
+      "liturgical_season": "tempo-comum",
+      "liturgical_year": "C",
+      "core_message": "Parábola do fariseu e do publicano",
+      "summary": "Tem Piedade de Mim: Parábola do fariseu e do publicano.",
+      "primary_theme": "discipulado",
+      "secondary_themes": [
+        "esperança"
+      ],
+      "primary_bible_reference": "Lucas 18,9-14",
+      "secondary_bible_references": [],
+      "biblical_story": "Parábola do fariseu e do publicano",
+      "biblical_characters": [],
+      "liturgical_context": "Tempo Comum",
+      "calendar_context": "Tempo Comum",
+      "editorial_keywords": [
+        "Tempo Comum",
+        "discipulado",
+        "esperança",
+        "Tem Piedade de Mim"
+      ],
+      "historical_context": "",
+      "evidence_level": "CORROBORATED",
+      "confidence": "HIGH",
+      "verification_status": "READY_FOR_EDITORIAL_REVIEW",
+      "provenance": {
+        "catalog_source": "songs.ts",
+        "curation_source": "catalog-curation.json",
+        "reference_method": "title/pericope semantic matching; conservative chapter/range selection",
+        "source_asset_video_id": null
+      }
+    },
+    {
+      "song_id": "song-057",
+      "slug": "tempo-comum-uncao-e-missao",
+      "title": "Unção e Missão",
+      "collection": "Tempo Comum",
+      "liturgical_season": "tempo-comum",
+      "liturgical_year": "C",
+      "core_message": "Jesus é ungido pelo Espírito e anuncia sua missão",
+      "summary": "Unção e Missão: Jesus é ungido pelo Espírito e anuncia sua missão.",
+      "primary_theme": "missão",
+      "secondary_themes": [],
+      "primary_bible_reference": "Lucas 4,16-21",
+      "secondary_bible_references": [],
+      "biblical_story": "Jesus é ungido pelo Espírito e anuncia sua missão",
+      "biblical_characters": [],
+      "liturgical_context": "Tempo Comum",
+      "calendar_context": "Tempo Comum",
+      "editorial_keywords": [
+        "Tempo Comum",
+        "missão",
+        "Unção e Missão"
+      ],
+      "historical_context": "",
+      "evidence_level": "CORROBORATED",
+      "confidence": "HIGH",
+      "verification_status": "READY_FOR_EDITORIAL_REVIEW",
+      "provenance": {
+        "catalog_source": "songs.ts",
+        "curation_source": "catalog-curation.json",
+        "reference_method": "title/pericope semantic matching; conservative chapter/range selection",
+        "source_asset_video_id": null
+      }
+    },
+    {
+      "song_id": "song-058",
+      "slug": "tempo-comum-vai-e-faze-o-mesmo",
+      "title": "Vai e Faze o Mesmo",
+      "collection": "Tempo Comum",
+      "liturgical_season": "tempo-comum",
+      "liturgical_year": "C",
+      "core_message": "Parábola do bom samaritano",
+      "summary": "Vai e Faze o Mesmo: Parábola do bom samaritano.",
+      "primary_theme": "discipulado",
+      "secondary_themes": [
+        "esperança"
+      ],
+      "primary_bible_reference": "Lucas 10,25-37",
+      "secondary_bible_references": [],
+      "biblical_story": "Parábola do bom samaritano",
+      "biblical_characters": [],
+      "liturgical_context": "Tempo Comum",
+      "calendar_context": "Tempo Comum",
+      "editorial_keywords": [
+        "Tempo Comum",
+        "discipulado",
+        "esperança",
+        "Vai e Faze o Mesmo"
+      ],
+      "historical_context": "",
+      "evidence_level": "CORROBORATED",
+      "confidence": "HIGH",
+      "verification_status": "READY_FOR_EDITORIAL_REVIEW",
+      "provenance": {
+        "catalog_source": "songs.ts",
+        "curation_source": "catalog-curation.json",
+        "reference_method": "title/pericope semantic matching; conservative chapter/range selection",
+        "source_asset_video_id": null
+      }
+    },
+    {
+      "song_id": "song-059",
+      "slug": "tempo-comum-vim-trazer-fogo-a-terra",
+      "title": "Vim Trazer Fogo à Terra",
+      "collection": "Tempo Comum",
+      "liturgical_season": "tempo-comum",
+      "liturgical_year": "C",
+      "core_message": "Jesus fala do fogo que veio lançar sobre a terra",
+      "summary": "Vim Trazer Fogo à Terra: Jesus fala do fogo que veio lançar sobre a terra.",
+      "primary_theme": "discipulado",
+      "secondary_themes": [
+        "esperança"
+      ],
+      "primary_bible_reference": "Lucas 12,49-53",
+      "secondary_bible_references": [],
+      "biblical_story": "Jesus fala do fogo que veio lançar sobre a terra",
+      "biblical_characters": [],
+      "liturgical_context": "Tempo Comum",
+      "calendar_context": "Tempo Comum",
+      "editorial_keywords": [
+        "Tempo Comum",
+        "discipulado",
+        "esperança",
+        "Vim Trazer Fogo à Terra"
+      ],
+      "historical_context": "",
+      "evidence_level": "CORROBORATED",
+      "confidence": "HIGH",
+      "verification_status": "READY_FOR_EDITORIAL_REVIEW",
+      "provenance": {
+        "catalog_source": "songs.ts",
+        "curation_source": "catalog-curation.json",
+        "reference_method": "title/pericope semantic matching; conservative chapter/range selection",
+        "source_asset_video_id": null
+      }
+    },
+    {
+      "song_id": "song-060",
+      "slug": "tempo-comum-a-minha-porta",
+      "title": "À Minha Porta",
+      "collection": "Tempo Comum",
+      "liturgical_season": "tempo-comum",
+      "liturgical_year": "C",
+      "core_message": "Cristo está à porta e chama à comunhão",
+      "summary": "À Minha Porta: Cristo está à porta e chama à comunhão.",
+      "primary_theme": "discipulado",
+      "secondary_themes": [
+        "esperança"
+      ],
+      "primary_bible_reference": "Apocalipse 3,20",
+      "secondary_bible_references": [],
+      "biblical_story": "Cristo está à porta e chama à comunhão",
+      "biblical_characters": [],
+      "liturgical_context": "Tempo Comum",
+      "calendar_context": "Tempo Comum",
+      "editorial_keywords": [
+        "Tempo Comum",
+        "discipulado",
+        "esperança",
+        "À Minha Porta"
+      ],
+      "historical_context": "",
+      "evidence_level": "CORROBORATED",
+      "confidence": "HIGH",
+      "verification_status": "READY_FOR_EDITORIAL_REVIEW",
+      "provenance": {
+        "catalog_source": "songs.ts",
+        "curation_source": "catalog-curation.json",
+        "reference_method": "title/pericope semantic matching; conservative chapter/range selection",
+        "source_asset_video_id": "VNiSeeJp3hM"
+      }
+    },
+    {
+      "song_id": "song-061",
+      "slug": "tempo-comum-aguas-profundas",
+      "title": "Águas Profundas",
+      "collection": "Tempo Comum",
+      "liturgical_season": "tempo-comum",
+      "liturgical_year": "C",
+      "core_message": "Pesca milagrosa e chamado de Simão",
+      "summary": "Águas Profundas: Pesca milagrosa e chamado de Simão.",
+      "primary_theme": "discipulado",
+      "secondary_themes": [
+        "esperança"
+      ],
+      "primary_bible_reference": "Lucas 5,1-11",
+      "secondary_bible_references": [],
+      "biblical_story": "Pesca milagrosa e chamado de Simão",
+      "biblical_characters": [],
+      "liturgical_context": "Tempo Comum",
+      "calendar_context": "Tempo Comum",
+      "editorial_keywords": [
+        "Tempo Comum",
+        "discipulado",
+        "esperança",
+        "Águas Profundas"
+      ],
+      "historical_context": "",
+      "evidence_level": "CORROBORATED",
+      "confidence": "HIGH",
+      "verification_status": "READY_FOR_EDITORIAL_REVIEW",
+      "provenance": {
+        "catalog_source": "songs.ts",
+        "curation_source": "catalog-curation.json",
+        "reference_method": "title/pericope semantic matching; conservative chapter/range selection",
+        "source_asset_video_id": "eBPNDTLlPs4"
+      }
+    },
+    {
+      "song_id": "song-062",
+      "slug": "tempo-comum-arvore-junto-as-aguas",
+      "title": "Árvore Junto às Águas",
+      "collection": "Tempo Comum",
+      "liturgical_season": "tempo-comum",
+      "liturgical_year": "C",
+      "core_message": "Quem confia no Senhor é como árvore plantada junto às águas",
+      "summary": "Árvore Junto às Águas: Quem confia no Senhor é como árvore plantada junto às águas.",
+      "primary_theme": "discipulado",
+      "secondary_themes": [
+        "esperança"
+      ],
+      "primary_bible_reference": "Jeremias 17,5-8",
+      "secondary_bible_references": [],
+      "biblical_story": "Quem confia no Senhor é como árvore plantada junto às águas",
+      "biblical_characters": [],
+      "liturgical_context": "Tempo Comum",
+      "calendar_context": "Tempo Comum",
+      "editorial_keywords": [
+        "Tempo Comum",
+        "discipulado",
+        "esperança",
+        "Árvore Junto às Águas"
+      ],
+      "historical_context": "",
+      "evidence_level": "CORROBORATED",
+      "confidence": "HIGH",
+      "verification_status": "READY_FOR_EDITORIAL_REVIEW",
+      "provenance": {
+        "catalog_source": "songs.ts",
+        "curation_source": "catalog-curation.json",
+        "reference_method": "title/pericope semantic matching; conservative chapter/range selection",
+        "source_asset_video_id": "ENPc0_AI25Y"
+      }
+    },
+    {
+      "song_id": "song-063",
+      "slug": "tempo-comum-e-pela-perseveranca",
+      "title": "É Pela Perseverança",
+      "collection": "Tempo Comum",
+      "liturgical_season": "tempo-comum",
+      "liturgical_year": "C",
+      "core_message": "Jesus chama à perseverança nas provações",
+      "summary": "É Pela Perseverança: Jesus chama à perseverança nas provações.",
+      "primary_theme": "perseverança",
+      "secondary_themes": [],
+      "primary_bible_reference": "Lucas 21,5-19",
+      "secondary_bible_references": [],
+      "biblical_story": "Jesus chama à perseverança nas provações",
+      "biblical_characters": [],
+      "liturgical_context": "Tempo Comum",
+      "calendar_context": "Tempo Comum",
+      "editorial_keywords": [
+        "Tempo Comum",
+        "perseverança",
+        "É Pela Perseverança"
+      ],
+      "historical_context": "",
+      "evidence_level": "CORROBORATED",
+      "confidence": "HIGH",
+      "verification_status": "READY_FOR_EDITORIAL_REVIEW",
+      "provenance": {
+        "catalog_source": "songs.ts",
+        "curation_source": "catalog-curation.json",
+        "reference_method": "title/pericope semantic matching; conservative chapter/range selection",
+        "source_asset_video_id": "l_xPC_5xJBI"
+      }
+    },
+    {
+      "song_id": "song-064",
+      "slug": "tempo-comum-e-vos-quem-dizeis-que-eu-sou",
+      "title": "E Vós, Quem Dizeis Que Eu Sou",
+      "collection": "Tempo Comum",
+      "liturgical_season": "tempo-comum",
+      "liturgical_year": "C",
+      "core_message": "Pedro professa que Jesus é o Cristo",
+      "summary": "E Vós, Quem Dizeis Que Eu Sou: Pedro professa que Jesus é o Cristo.",
+      "primary_theme": "discipulado",
+      "secondary_themes": [
+        "esperança"
+      ],
+      "primary_bible_reference": "Lucas 9,18-24",
+      "secondary_bible_references": [],
+      "biblical_story": "Pedro professa que Jesus é o Cristo",
+      "biblical_characters": [],
+      "liturgical_context": "Tempo Comum",
+      "calendar_context": "Tempo Comum",
+      "editorial_keywords": [
+        "Tempo Comum",
+        "discipulado",
+        "esperança",
+        "E Vós, Quem Dizeis Que Eu Sou"
+      ],
+      "historical_context": "",
+      "evidence_level": "CORROBORATED",
+      "confidence": "HIGH",
+      "verification_status": "READY_FOR_EDITORIAL_REVIEW",
+      "provenance": {
+        "catalog_source": "songs.ts",
+        "curation_source": "catalog-curation.json",
+        "reference_method": "title/pericope semantic matching; conservative chapter/range selection",
+        "source_asset_video_id": "SpGswtyFbvs"
+      }
+    },
+    {
+      "song_id": "song-065",
+      "slug": "tempo-do-natal-a-estrela-e-o-rei",
+      "title": "A Estrela e o Rei",
+      "collection": "Tempo do Natal",
+      "liturgical_season": "natal",
+      "liturgical_year": "C",
+      "core_message": "Os magos seguem a estrela e adoram o Menino",
+      "summary": "A Estrela e o Rei: Os magos seguem a estrela e adoram o Menino.",
+      "primary_theme": "discipulado",
+      "secondary_themes": [
+        "esperança"
+      ],
+      "primary_bible_reference": "Mateus 2,1-12",
+      "secondary_bible_references": [],
+      "biblical_story": "Os magos seguem a estrela e adoram o Menino",
+      "biblical_characters": [],
+      "liturgical_context": "Tempo do Natal",
+      "calendar_context": "Tempo do Natal",
+      "editorial_keywords": [
+        "Tempo do Natal",
+        "discipulado",
+        "esperança",
+        "A Estrela e o Rei"
+      ],
+      "historical_context": "",
+      "evidence_level": "CORROBORATED",
+      "confidence": "HIGH",
+      "verification_status": "READY_FOR_EDITORIAL_REVIEW",
+      "provenance": {
+        "catalog_source": "songs.ts",
+        "curation_source": "catalog-curation.json",
+        "reference_method": "title/pericope semantic matching; conservative chapter/range selection",
+        "source_asset_video_id": "dqQFqB-GiJU"
+      }
+    },
+    {
+      "song_id": "song-066",
+      "slug": "tempo-do-natal-escudo-do-lar",
+      "title": "Escudo do Lar",
+      "collection": "Tempo do Natal",
+      "liturgical_season": "natal",
+      "liturgical_year": "C",
+      "core_message": "José protege Jesus e Maria diante da ameaça de Herodes",
+      "summary": "Escudo do Lar: José protege Jesus e Maria diante da ameaça de Herodes.",
+      "primary_theme": "discipulado",
+      "secondary_themes": [
+        "esperança"
+      ],
+      "primary_bible_reference": "Mateus 2,13-15.19-23",
+      "secondary_bible_references": [],
+      "biblical_story": "José protege Jesus e Maria diante da ameaça de Herodes",
+      "biblical_characters": [],
+      "liturgical_context": "Tempo do Natal",
+      "calendar_context": "Tempo do Natal",
+      "editorial_keywords": [
+        "Tempo do Natal",
+        "discipulado",
+        "esperança",
+        "Escudo do Lar"
+      ],
+      "historical_context": "",
+      "evidence_level": "CORROBORATED",
+      "confidence": "HIGH",
+      "verification_status": "READY_FOR_EDITORIAL_REVIEW",
+      "provenance": {
+        "catalog_source": "songs.ts",
+        "curation_source": "catalog-curation.json",
+        "reference_method": "title/pericope semantic matching; conservative chapter/range selection",
+        "source_asset_video_id": "h2LJzIKv_ww"
+      }
+    },
+    {
+      "song_id": "song-067",
+      "slug": "tempo-do-natal-o-ceu-se-abriu",
+      "title": "O Céu se Abriu",
+      "collection": "Tempo do Natal",
+      "liturgical_season": "natal",
+      "liturgical_year": "C",
+      "core_message": "Batismo de Jesus e manifestação do Pai e do Espírito",
+      "summary": "O Céu se Abriu: Batismo de Jesus e manifestação do Pai e do Espírito.",
+      "primary_theme": "discipulado",
+      "secondary_themes": [
+        "esperança"
+      ],
+      "primary_bible_reference": "Lucas 3,15-16.21-22",
+      "secondary_bible_references": [],
+      "biblical_story": "Batismo de Jesus e manifestação do Pai e do Espírito",
+      "biblical_characters": [],
+      "liturgical_context": "Tempo do Natal",
+      "calendar_context": "Tempo do Natal",
+      "editorial_keywords": [
+        "Tempo do Natal",
+        "discipulado",
+        "esperança",
+        "O Céu se Abriu"
+      ],
+      "historical_context": "",
+      "evidence_level": "CORROBORATED",
+      "confidence": "HIGH",
+      "verification_status": "READY_FOR_EDITORIAL_REVIEW",
+      "provenance": {
+        "catalog_source": "songs.ts",
+        "curation_source": "catalog-curation.json",
+        "reference_method": "title/pericope semantic matching; conservative chapter/range selection",
+        "source_asset_video_id": "xh-CSWGVdAw"
+      }
+    },
+    {
+      "song_id": "song-068",
+      "slug": "12-meses-com-deus-ate-aqui-nos-sustentou-fevereiro",
+      "title": "Até Aqui Nos Sustentou — Fevereiro",
+      "collection": "12 Meses com Deus",
+      "liturgical_season": "12-meses",
+      "liturgical_year": "C",
+      "core_message": "Samuel ergue Ebenezer como memorial da ajuda do Senhor",
+      "summary": "Até Aqui Nos Sustentou — Fevereiro: Samuel ergue Ebenezer como memorial da ajuda do Senhor.",
+      "primary_theme": "discipulado",
+      "secondary_themes": [
+        "esperança"
+      ],
+      "primary_bible_reference": "1 Samuel 7,12",
+      "secondary_bible_references": [],
+      "biblical_story": "Samuel ergue Ebenezer como memorial da ajuda do Senhor",
+      "biblical_characters": [],
+      "liturgical_context": "12 Meses com Deus",
+      "calendar_context": "Fevereiro",
+      "editorial_keywords": [
+        "12 Meses com Deus",
+        "discipulado",
+        "esperança",
+        "Até Aqui Nos Sustentou — Fevereiro"
+      ],
+      "historical_context": "",
+      "evidence_level": "CORROBORATED",
+      "confidence": "HIGH",
+      "verification_status": "READY_FOR_EDITORIAL_REVIEW",
+      "provenance": {
+        "catalog_source": "songs.ts",
+        "curation_source": "catalog-curation.json",
+        "reference_method": "title/pericope semantic matching; conservative chapter/range selection",
+        "source_asset_video_id": null
+      }
+    },
+    {
+      "song_id": "song-069",
+      "slug": "12-meses-com-deus-ate-aqui-deus-foi-fiel-dezembro",
+      "title": "Até Aqui, Deus Foi Fiel — Dezembro",
+      "collection": "12 Meses com Deus",
+      "liturgical_season": "12-meses",
+      "liturgical_year": "C",
+      "core_message": "Memória da fidelidade e misericórdia renovada de Deus",
+      "summary": "Até Aqui, Deus Foi Fiel — Dezembro: Memória da fidelidade e misericórdia renovada de Deus.",
+      "primary_theme": "misericórdia",
+      "secondary_themes": [
+        "fidelidade"
+      ],
+      "primary_bible_reference": "Lamentações 3,22-23",
+      "secondary_bible_references": [],
+      "biblical_story": "Memória da fidelidade e misericórdia renovada de Deus",
+      "biblical_characters": [],
+      "liturgical_context": "12 Meses com Deus",
+      "calendar_context": "Dezembro",
+      "editorial_keywords": [
+        "12 Meses com Deus",
+        "misericórdia",
+        "fidelidade",
+        "Até Aqui, Deus Foi Fiel — Dezembro"
+      ],
+      "historical_context": "",
+      "evidence_level": "CORROBORATED",
+      "confidence": "HIGH",
+      "verification_status": "READY_FOR_EDITORIAL_REVIEW",
+      "provenance": {
+        "catalog_source": "songs.ts",
+        "curation_source": "catalog-curation.json",
+        "reference_method": "title/pericope semantic matching; conservative chapter/range selection",
+        "source_asset_video_id": null
+      }
+    },
+    {
+      "song_id": "song-070",
+      "slug": "12-meses-com-deus-conte-as-bencaos-novembro",
+      "title": "Conte as Bênçãos — Novembro",
+      "collection": "12 Meses com Deus",
+      "liturgical_season": "12-meses",
+      "liturgical_year": "C",
+      "core_message": "Convite a recordar e bendizer os benefícios do Senhor",
+      "summary": "Conte as Bênçãos — Novembro: Convite a recordar e bendizer os benefícios do Senhor.",
+      "primary_theme": "discipulado",
+      "secondary_themes": [
+        "esperança"
+      ],
+      "primary_bible_reference": "Salmo 103,1-5",
+      "secondary_bible_references": [],
+      "biblical_story": "Convite a recordar e bendizer os benefícios do Senhor",
+      "biblical_characters": [],
+      "liturgical_context": "12 Meses com Deus",
+      "calendar_context": "Novembro",
+      "editorial_keywords": [
+        "12 Meses com Deus",
+        "discipulado",
+        "esperança",
+        "Conte as Bênçãos — Novembro"
+      ],
+      "historical_context": "",
+      "evidence_level": "CORROBORATED",
+      "confidence": "HIGH",
+      "verification_status": "READY_FOR_EDITORIAL_REVIEW",
+      "provenance": {
+        "catalog_source": "songs.ts",
+        "curation_source": "catalog-curation.json",
+        "reference_method": "title/pericope semantic matching; conservative chapter/range selection",
+        "source_asset_video_id": null
+      }
+    },
+    {
+      "song_id": "song-071",
+      "slug": "12-meses-com-deus-depois-da-cruz-a-vida-abril",
+      "title": "Depois da Cruz, a Vida — Abril",
+      "collection": "12 Meses com Deus",
+      "liturgical_season": "12-meses",
+      "liturgical_year": "C",
+      "core_message": "A ressurreição inaugura vida nova depois da cruz",
+      "summary": "Depois da Cruz, a Vida — Abril: A ressurreição inaugura vida nova depois da cruz.",
+      "primary_theme": "ressurreição",
+      "secondary_themes": [],
+      "primary_bible_reference": "João 20,1-18",
+      "secondary_bible_references": [],
+      "biblical_story": "A ressurreição inaugura vida nova depois da cruz",
+      "biblical_characters": [],
+      "liturgical_context": "12 Meses com Deus",
+      "calendar_context": "Abril",
+      "editorial_keywords": [
+        "12 Meses com Deus",
+        "ressurreição",
+        "Depois da Cruz, a Vida — Abril"
+      ],
+      "historical_context": "",
+      "evidence_level": "CORROBORATED",
+      "confidence": "HIGH",
+      "verification_status": "READY_FOR_EDITORIAL_REVIEW",
+      "provenance": {
+        "catalog_source": "songs.ts",
+        "curation_source": "catalog-curation.json",
+        "reference_method": "title/pericope semantic matching; conservative chapter/range selection",
+        "source_asset_video_id": null
+      }
+    },
+    {
+      "song_id": "song-072",
+      "slug": "12-meses-com-deus-forca-para-continuar-julho",
+      "title": "Força Para Continuar — Julho",
+      "collection": "12 Meses com Deus",
+      "liturgical_season": "12-meses",
+      "liturgical_year": "C",
+      "core_message": "O Senhor renova as forças dos que nele esperam",
+      "summary": "Força Para Continuar — Julho: O Senhor renova as forças dos que nele esperam.",
+      "primary_theme": "discipulado",
+      "secondary_themes": [
+        "esperança"
+      ],
+      "primary_bible_reference": "Isaías 40,28-31",
+      "secondary_bible_references": [],
+      "biblical_story": "O Senhor renova as forças dos que nele esperam",
+      "biblical_characters": [],
+      "liturgical_context": "12 Meses com Deus",
+      "calendar_context": "Julho",
+      "editorial_keywords": [
+        "12 Meses com Deus",
+        "discipulado",
+        "esperança",
+        "Força Para Continuar — Julho"
+      ],
+      "historical_context": "",
+      "evidence_level": "CORROBORATED",
+      "confidence": "HIGH",
+      "verification_status": "READY_FOR_EDITORIAL_REVIEW",
+      "provenance": {
+        "catalog_source": "songs.ts",
+        "curation_source": "catalog-curation.json",
+        "reference_method": "title/pericope semantic matching; conservative chapter/range selection",
+        "source_asset_video_id": null
+      }
+    },
+    {
+      "song_id": "song-073",
+      "slug": "12-meses-com-deus-gigantes-vao-cair-outubro",
+      "title": "Gigantes Vão Cair — Outubro",
+      "collection": "12 Meses com Deus",
+      "liturgical_season": "12-meses",
+      "liturgical_year": "C",
+      "core_message": "Davi enfrenta Golias confiando no Senhor",
+      "summary": "Gigantes Vão Cair — Outubro: Davi enfrenta Golias confiando no Senhor.",
+      "primary_theme": "discipulado",
+      "secondary_themes": [
+        "esperança"
+      ],
+      "primary_bible_reference": "1 Samuel 17",
+      "secondary_bible_references": [],
+      "biblical_story": "Davi enfrenta Golias confiando no Senhor",
+      "biblical_characters": [],
+      "liturgical_context": "12 Meses com Deus",
+      "calendar_context": "Outubro",
+      "editorial_keywords": [
+        "12 Meses com Deus",
+        "discipulado",
+        "esperança",
+        "Gigantes Vão Cair — Outubro"
+      ],
+      "historical_context": "",
+      "evidence_level": "CORROBORATED",
+      "confidence": "HIGH",
+      "verification_status": "READY_FOR_EDITORIAL_REVIEW",
+      "provenance": {
+        "catalog_source": "songs.ts",
+        "curation_source": "catalog-curation.json",
+        "reference_method": "title/pericope semantic matching; conservative chapter/range selection",
+        "source_asset_video_id": null
+      }
+    },
+    {
+      "song_id": "song-074",
+      "slug": "12-meses-com-deus-no-meio-da-tempestade-junho",
+      "title": "No Meio da Tempestade — Junho",
+      "collection": "12 Meses com Deus",
+      "liturgical_season": "12-meses",
+      "liturgical_year": "C",
+      "core_message": "Jesus acalma a tempestade",
+      "summary": "No Meio da Tempestade — Junho: Jesus acalma a tempestade.",
+      "primary_theme": "confiança",
+      "secondary_themes": [],
+      "primary_bible_reference": "Marcos 4,35-41",
+      "secondary_bible_references": [],
+      "biblical_story": "Jesus acalma a tempestade",
+      "biblical_characters": [],
+      "liturgical_context": "12 Meses com Deus",
+      "calendar_context": "Junho",
+      "editorial_keywords": [
+        "12 Meses com Deus",
+        "confiança",
+        "No Meio da Tempestade — Junho"
+      ],
+      "historical_context": "",
+      "evidence_level": "CORROBORATED",
+      "confidence": "HIGH",
+      "verification_status": "READY_FOR_EDITORIAL_REVIEW",
+      "provenance": {
+        "catalog_source": "songs.ts",
+        "curation_source": "catalog-curation.json",
+        "reference_method": "title/pericope semantic matching; conservative chapter/range selection",
+        "source_asset_video_id": null
+      }
+    },
+    {
+      "song_id": "song-075",
+      "slug": "12-meses-com-deus-pedras-viraram-altares-agosto",
+      "title": "Pedras Viraram Altares — Agosto",
+      "collection": "12 Meses com Deus",
+      "liturgical_season": "12-meses",
+      "liturgical_year": "C",
+      "core_message": "Jacó transforma a pedra de seu repouso em memorial e altar",
+      "summary": "Pedras Viraram Altares — Agosto: Jacó transforma a pedra de seu repouso em memorial e altar.",
+      "primary_theme": "discipulado",
+      "secondary_themes": [
+        "esperança"
+      ],
+      "primary_bible_reference": "Gênesis 28,10-22",
+      "secondary_bible_references": [],
+      "biblical_story": "Jacó transforma a pedra de seu repouso em memorial e altar",
+      "biblical_characters": [],
+      "liturgical_context": "12 Meses com Deus",
+      "calendar_context": "Agosto",
+      "editorial_keywords": [
+        "12 Meses com Deus",
+        "discipulado",
+        "esperança",
+        "Pedras Viraram Altares — Agosto"
+      ],
+      "historical_context": "",
+      "evidence_level": "CORROBORATED",
+      "confidence": "HIGH",
+      "verification_status": "READY_FOR_EDITORIAL_REVIEW",
+      "provenance": {
+        "catalog_source": "songs.ts",
+        "curation_source": "catalog-curation.json",
+        "reference_method": "title/pericope semantic matching; conservative chapter/range selection",
+        "source_asset_video_id": null
+      }
+    },
+    {
+      "song_id": "song-076",
+      "slug": "12-meses-com-deus-quando-as-aguas-se-abriram-marco",
+      "title": "Quando as Águas se Abriram — Março",
+      "collection": "12 Meses com Deus",
+      "liturgical_season": "12-meses",
+      "liturgical_year": "C",
+      "core_message": "Travessia do Mar Vermelho",
+      "summary": "Quando as Águas se Abriram — Março: Travessia do Mar Vermelho.",
+      "primary_theme": "discipulado",
+      "secondary_themes": [
+        "esperança"
+      ],
+      "primary_bible_reference": "Êxodo 14",
+      "secondary_bible_references": [],
+      "biblical_story": "Travessia do Mar Vermelho",
+      "biblical_characters": [],
+      "liturgical_context": "12 Meses com Deus",
+      "calendar_context": "Março",
+      "editorial_keywords": [
+        "12 Meses com Deus",
+        "discipulado",
+        "esperança",
+        "Quando as Águas se Abriram — Março"
+      ],
+      "historical_context": "",
+      "evidence_level": "CORROBORATED",
+      "confidence": "HIGH",
+      "verification_status": "READY_FOR_EDITORIAL_REVIEW",
+      "provenance": {
+        "catalog_source": "songs.ts",
+        "curation_source": "catalog-curation.json",
+        "reference_method": "title/pericope semantic matching; conservative chapter/range selection",
+        "source_asset_video_id": null
+      }
+    },
+    {
+      "song_id": "song-077",
+      "slug": "12-meses-com-deus-tempo-de-colheita-setembro",
+      "title": "Tempo de Colheita — Setembro",
+      "collection": "12 Meses com Deus",
+      "liturgical_season": "12-meses",
+      "liturgical_year": "C",
+      "core_message": "Há um tempo determinado para cada propósito",
+      "summary": "Tempo de Colheita — Setembro: Há um tempo determinado para cada propósito.",
+      "primary_theme": "gratidão",
+      "secondary_themes": [],
+      "primary_bible_reference": "Eclesiastes 3,1-8",
+      "secondary_bible_references": [],
+      "biblical_story": "Há um tempo determinado para cada propósito",
+      "biblical_characters": [],
+      "liturgical_context": "12 Meses com Deus",
+      "calendar_context": "Setembro",
+      "editorial_keywords": [
+        "12 Meses com Deus",
+        "gratidão",
+        "Tempo de Colheita — Setembro"
+      ],
+      "historical_context": "",
+      "evidence_level": "CORROBORATED",
+      "confidence": "HIGH",
+      "verification_status": "READY_FOR_EDITORIAL_REVIEW",
+      "provenance": {
+        "catalog_source": "songs.ts",
+        "curation_source": "catalog-curation.json",
+        "reference_method": "title/pericope semantic matching; conservative chapter/range selection",
+        "source_asset_video_id": null
+      }
+    },
+    {
+      "song_id": "song-078",
+      "slug": "12-meses-com-deus-tudo-vem-de-tuas-maos-maio",
+      "title": "Tudo Vem de Tuas Mãos — Maio",
+      "collection": "12 Meses com Deus",
+      "liturgical_season": "12-meses",
+      "liturgical_year": "C",
+      "core_message": "Davi reconhece que tudo vem das mãos de Deus",
+      "summary": "Tudo Vem de Tuas Mãos — Maio: Davi reconhece que tudo vem das mãos de Deus.",
+      "primary_theme": "discipulado",
+      "secondary_themes": [
+        "esperança"
+      ],
+      "primary_bible_reference": "1 Crônicas 29,10-14",
+      "secondary_bible_references": [],
+      "biblical_story": "Davi reconhece que tudo vem das mãos de Deus",
+      "biblical_characters": [],
+      "liturgical_context": "12 Meses com Deus",
+      "calendar_context": "Maio",
+      "editorial_keywords": [
+        "12 Meses com Deus",
+        "discipulado",
+        "esperança",
+        "Tudo Vem de Tuas Mãos — Maio"
+      ],
+      "historical_context": "",
+      "evidence_level": "CORROBORATED",
+      "confidence": "HIGH",
+      "verification_status": "READY_FOR_EDITORIAL_REVIEW",
+      "provenance": {
+        "catalog_source": "songs.ts",
+        "curation_source": "catalog-curation.json",
+        "reference_method": "title/pericope semantic matching; conservative chapter/range selection",
+        "source_asset_video_id": null
+      }
+    },
+    {
+      "song_id": "song-079",
+      "slug": "12-meses-com-deus-um-novo-caminho-janeiro",
+      "title": "Um Novo Caminho — Janeiro",
+      "collection": "12 Meses com Deus",
+      "liturgical_season": "12-meses",
+      "liturgical_year": "C",
+      "core_message": "Deus anuncia que fará algo novo e abrirá caminho",
+      "summary": "Um Novo Caminho — Janeiro: Deus anuncia que fará algo novo e abrirá caminho.",
+      "primary_theme": "discipulado",
+      "secondary_themes": [
+        "esperança"
+      ],
+      "primary_bible_reference": "Isaías 43,18-19",
+      "secondary_bible_references": [],
+      "biblical_story": "Deus anuncia que fará algo novo e abrirá caminho",
+      "biblical_characters": [],
+      "liturgical_context": "12 Meses com Deus",
+      "calendar_context": "Janeiro",
+      "editorial_keywords": [
+        "12 Meses com Deus",
+        "discipulado",
+        "esperança",
+        "Um Novo Caminho — Janeiro"
+      ],
+      "historical_context": "",
+      "evidence_level": "CORROBORATED",
+      "confidence": "HIGH",
+      "verification_status": "READY_FOR_EDITORIAL_REVIEW",
+      "provenance": {
+        "catalog_source": "songs.ts",
+        "curation_source": "catalog-curation.json",
+        "reference_method": "title/pericope semantic matching; conservative chapter/range selection",
+        "source_asset_video_id": null
+      }
+    }
+  ]
+}
