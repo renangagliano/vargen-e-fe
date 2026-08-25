@@ -31,6 +31,11 @@ export type MediaConfig = {
   azureStorageSasTtlMinutes: number;
   azureStorageBlobPrefix: string;
   azureStorageEndpointSuffix: string;
+  microsoftPersonalClientId: string | null;
+  microsoftPersonalAuthority: string;
+  microsoftPersonalRedirectUri: string;
+  microsoftPersonalScopes: string[];
+  microsoftPersonalAuthCacheRoot: string;
 };
 
 function configuredPath(value: string | undefined, fallback: string): { value: string; configured: boolean } {
@@ -101,6 +106,11 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env, repoRoot = proc
     azureStorageSasTtlMinutes: numeric("AZURE_STORAGE_SAS_TTL_MINUTES", 60),
     azureStorageBlobPrefix: effectiveEnv.AZURE_STORAGE_BLOB_PREFIX?.trim() || "instagram-pilot",
     azureStorageEndpointSuffix: effectiveEnv.AZURE_STORAGE_ENDPOINT_SUFFIX?.trim() || "core.windows.net",
+    microsoftPersonalClientId: effectiveEnv.MICROSOFT_PERSONAL_CLIENT_ID?.trim() || null,
+    microsoftPersonalAuthority: effectiveEnv.MICROSOFT_PERSONAL_AUTHORITY?.trim() || "https://login.microsoftonline.com/consumers",
+    microsoftPersonalRedirectUri: effectiveEnv.MICROSOFT_PERSONAL_REDIRECT_URI?.trim() || "http://localhost",
+    microsoftPersonalScopes: (effectiveEnv.MICROSOFT_PERSONAL_SCOPES?.trim() || "Files.ReadWrite").split(/[\s,]+/).filter(Boolean),
+    microsoftPersonalAuthCacheRoot: path.join(state.value, "auth"),
   };
 }
 

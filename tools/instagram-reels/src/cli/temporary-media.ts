@@ -8,6 +8,7 @@ import { resolveReviewFile } from "../review/files.js";
 import { freezePilotSnapshot, validatePilotSnapshot } from "../publishing/pilot.js";
 import { AzureBlobTemporaryMediaProvider } from "../publishing/azure-temporary-media.js";
 import { OneDrivePersonalTemporaryMediaProvider } from "../publishing/onedrive-personal-temporary-media.js";
+import { createPersonalGraphTokenProvider } from "../publishing/personal-microsoft-auth.js";
 
 function option(args: string[], name: string): string | undefined {
   const prefix = `--${name}=`;
@@ -83,7 +84,7 @@ export async function runTemporaryMediaCommand(command: string | undefined, args
 
   if (command === "instagram:media-cleanup") {
     const providerMode = option(args, "provider");
-    const provider = providerMode === "onedrive-personal" ? new OneDrivePersonalTemporaryMediaProvider(config) : providerMode === "azure" ? new AzureBlobTemporaryMediaProvider(config) : null;
+    const provider = providerMode === "onedrive-personal" ? new OneDrivePersonalTemporaryMediaProvider(config, { tokenProvider: createPersonalGraphTokenProvider(config) }) : providerMode === "azure" ? new AzureBlobTemporaryMediaProvider(config) : null;
     if (!provider) throw new Error("TEMPORARY_MEDIA_PROVIDER_REQUIRED");
     if (args.includes("--expired")) {
       console.log(`Cleaned temporary blobs: ${await provider.cleanupExpiredMedia()}`);
@@ -105,7 +106,7 @@ export async function runTemporaryMediaCommand(command: string | undefined, args
   const snapshot = await freezePilotSnapshot(reelId as string, "temporary-media-operator", config);
   const readiness = await evaluateContentReadiness(reelId as string, config);
   if (readiness.status !== "CONTENT_READY") throw new Error(`CONTENT_READY_REQUIRED:${readiness.reasons.join(",")}`);
-  const provider = providerMode === "onedrive-personal" ? new OneDrivePersonalTemporaryMediaProvider(config) : providerMode === "azure" ? new AzureBlobTemporaryMediaProvider(config) : null;
+  const provider = providerMode === "onedrive-personal" ? new OneDrivePersonalTemporaryMediaProvider(config, { tokenProvider: createPersonalGraphTokenProvider(config) }) : providerMode === "azure" ? new AzureBlobTemporaryMediaProvider(config) : null;
   if (!provider) throw new Error("TEMPORARY_MEDIA_PROVIDER_INVALID");
   const prepared = await provider.prepareTemporaryMedia({ reelId: snapshot.reel_id, publicationKey: snapshot.publication_key, derivedReelRelativePath: snapshot.derived_reel_relative_path, derivedChecksum: snapshot.derived_reel_checksum, editorialVersion: snapshot.editorial_version });
   const report = { generated_at: new Date().toISOString(), reel_id: prepared.reelId, song: snapshot.song, collection: snapshot.collection, provider: prepared.provider, item_path: prepared.itemPath, blob_name: prepared.blobName, drive_id: prepared.driveId, item_id: prepared.itemId, blob_size: prepared.blobSize, derived_checksum: prepared.derivedChecksum, expires_at: prepared.expiresAt, validation: prepared.validation, safe_url: prepared.safeUrl, cleanup_status: prepared.cleanupStatus, status: prepared.state, meta_calls: "NO" };

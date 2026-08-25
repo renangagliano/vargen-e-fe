@@ -40,6 +40,10 @@ export function openDatabase(config: MediaConfig): DatabaseSync {
   ensureColumn(db, "reel_candidates", "analysis_version", "TEXT");
   ensureColumn(db, "reel_candidates", "configuration_version", "TEXT");
   ensureColumn(db, "reel_candidates", "decision", "TEXT");
+  ensureColumn(db, "temporary_media", "drive_id", "TEXT");
+  ensureColumn(db, "temporary_media", "item_id", "TEXT");
+  ensureColumn(db, "temporary_media", "item_path", "TEXT");
+  ensureColumn(db, "temporary_media", "permission_id", "TEXT");
   db.prepare("UPDATE media_assets SET rights_status = 'RIGHTS_PENDING_CONFIRMATION' WHERE rights_status = 'UNKNOWN'").run();
   return db;
 }
@@ -545,6 +549,10 @@ export type TemporaryMediaRecord = {
   last_error_safe: string | null;
   created_at: string;
   updated_at: string;
+  drive_id?: string | null;
+  item_id?: string | null;
+  item_path?: string | null;
+  permission_id?: string | null;
 };
 
 export function temporaryMediaByReel(db: DatabaseSync, reelId: string): TemporaryMediaRecord | undefined {
@@ -561,8 +569,9 @@ export function upsertTemporaryMedia(db: DatabaseSync, input: Omit<TemporaryMedi
     INSERT INTO temporary_media (
       temporary_media_id, reel_id, publication_key, provider, blob_container,
       blob_name, blob_size, derived_checksum, prepared_at, expires_at, status,
-      cleanup_status, last_error_safe, created_at, updated_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      cleanup_status, last_error_safe, created_at, updated_at, drive_id, item_id,
+      item_path, permission_id
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ON CONFLICT(provider, publication_key, derived_checksum) DO UPDATE SET
       reel_id = excluded.reel_id,
       blob_container = excluded.blob_container,
@@ -573,12 +582,17 @@ export function upsertTemporaryMedia(db: DatabaseSync, input: Omit<TemporaryMedi
       status = excluded.status,
       cleanup_status = excluded.cleanup_status,
       last_error_safe = excluded.last_error_safe,
+      drive_id = excluded.drive_id,
+      item_id = excluded.item_id,
+      item_path = excluded.item_path,
+      permission_id = excluded.permission_id,
       updated_at = excluded.updated_at
   `).run(
     input.temporary_media_id, input.reel_id, input.publication_key, input.provider,
     input.blob_container, input.blob_name, input.blob_size, input.derived_checksum,
     input.prepared_at, input.expires_at, input.status, input.cleanup_status,
-    input.last_error_safe, timestamp, timestamp,
+    input.last_error_safe, timestamp, timestamp, input.drive_id ?? null, input.item_id ?? null,
+    input.item_path ?? null, input.permission_id ?? null,
   );
   return db.prepare("SELECT * FROM temporary_media WHERE provider = ? AND publication_key = ? AND derived_checksum = ? LIMIT 1").get(input.provider, input.publication_key, input.derived_checksum) as TemporaryMediaRecord;
 }

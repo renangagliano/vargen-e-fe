@@ -4,6 +4,12 @@
 
 - `PERSONAL_MICROSOFT_ACCOUNT_REQUIRED`: configure the approved delegated
   personal Graph token adapter; Azure CLI or a work account is not accepted.
+- `PERSONAL_MICROSOFT_APP_REGISTRATION_REQUIRED`: create the personal public
+  client and place only its Application (client) ID in ignored `.env.local`.
+  Do not create a secret. Then run `npm run onedrive:login`.
+- `CORPORATE_MICROSOFT_IDENTITY_REJECTED`: the authenticated Graph drive was
+  business, SharePoint or otherwise corporate. The local personal cache is
+  cleared; do not retry with that identity.
 - `PERSONAL_ONEDRIVE_IDENTITY_NOT_CONFIRMED`: Graph returned a business or
   document-library drive. Stop and sign in to the personal OneDrive account.
 - `ONEDRIVE_ITEM_COLLISION`: the deterministic temporary path already contains

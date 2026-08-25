@@ -6,19 +6,18 @@ OneDrive only. It never uses a work tenant, Azure, or Meta publishing APIs.
 
 ## Authentication and permissions
 
-Authentication is delegated Microsoft identity authentication. The provider
-accepts an injected access-token provider; it does not read or persist a token
-from project files, and it does not reuse Azure CLI credentials. The minimum
-Graph delegated permission for upload, metadata, anonymous-link fallback and
-cleanup is `Files.ReadWrite`. No mailbox, calendar, contacts, Teams or
-SharePoint permissions are requested.
+Authentication is delegated Microsoft identity authentication through the
+local `@azure/msal-node` public client. The provider does not read Azure CLI
+credentials or corporate sessions. The minimum Graph delegated permission
+for upload, metadata, anonymous-link fallback and cleanup is `Files.ReadWrite`.
+No mailbox, calendar, contacts, Teams or SharePoint permissions are requested.
 
-The operator must create or approve a personal-account public client/device
-code authentication flow, grant only `Files.ReadWrite`, and supply a short-
-lived token through the approved local credential adapter. The provider calls
-`/me/drive` and requires `driveType=personal` before any OneDrive mutation.
-A business/document-library drive fails closed with
-`PERSONAL_ONEDRIVE_IDENTITY_NOT_CONFIRMED`.
+The operator must create the personal public client described in
+`PERSONAL_MICROSOFT_AUTH.md`, grant only `Files.ReadWrite`, and run
+`npm run onedrive:login`. MSAL owns the authorization-code, PKCE and
+localhost-loopback mechanics. The provider calls `/me/drive` and requires
+`driveType=personal` before any OneDrive mutation. A business/document-library
+drive fails closed with `CORPORATE_MICROSOFT_IDENTITY_REJECTED`.
 
 ## Storage boundary and lifecycle
 
@@ -34,7 +33,7 @@ existing item with a different size, type or known hash is rejected.
 
 The preferred URL is the documented `@microsoft.graph.downloadUrl` property.
 It is short-lived and held only in memory. Safe state stores provider, drive
-ID, item path, size, checksum, status and estimated expiry; it never stores a
+ID, item ID, item path, size, checksum, status and estimated expiry; it never stores a
 Graph token, download URL query string or sharing token.
 
 ## Validation

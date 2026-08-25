@@ -59,7 +59,7 @@ test("OneDrive provider rejects a business/corporate drive before mutation", asy
   const checksum = await sha256File(output);
   const graph = { ...fakeGraph().graph, getDrive: async () => ({ id: "business-drive", driveType: "business", owner: { user: { id: "corporate-user" } } }) };
   const provider = new OneDrivePersonalTemporaryMediaProvider(item.config, { graph });
-  await assert.rejects(() => provider.prepareTemporaryMedia(input(item.reelId, checksum)), /PERSONAL_ONEDRIVE_IDENTITY_NOT_CONFIRMED/);
+  await assert.rejects(() => provider.prepareTemporaryMedia(input(item.reelId, checksum)), /CORPORATE_MICROSOFT_IDENTITY_REJECTED/);
 });
 
 test("OneDrive provider uploads exactly one deterministic MP4, validates anonymously, and reuses an identical item", async () => {
@@ -84,6 +84,9 @@ test("OneDrive provider uploads exactly one deterministic MP4, validates anonymo
     assert.equal(record?.provider, "onedrive-personal");
     assert.equal(record?.blob_container, "personal-drive-1");
     assert.equal(record?.blob_name.includes(item.reelId), true);
+    assert.equal(record?.drive_id, "personal-drive-1");
+    assert.equal(record?.item_id, "item-1");
+    assert.equal(record?.item_path, record?.blob_name);
     const auditRows = db.prepare("SELECT metadata_json_safe FROM publication_audit_events WHERE entity_id = ?").all(item.reelId) as Array<{ metadata_json_safe: string }>;
     assert.ok(auditRows.every((row) => !row.metadata_json_safe.includes("public.example.invalid/file?")));
     db.prepare("UPDATE temporary_media SET expires_at = ? WHERE reel_id = ?").run("2026-08-25T11:00:00.000Z", item.reelId);

@@ -72,6 +72,9 @@ delegated personal Microsoft account, validates `/me/drive` as
 `@microsoft.graph.downloadUrl` as the exact MP4. See
 `ONEDRIVE_TEMP_MEDIA.md`. A sharing web page is not a media URL, and no
 provider is allowed to call Meta during media preparation.
+
+Personal authentication setup, cache handling and the localhost PKCE flow are
+documented in `PERSONAL_MICROSOFT_AUTH.md`.
 # Fase 7 — governança antes da publicação
 
 Antes de qualquer futura fila de publicação, o cockpit exige aprovação

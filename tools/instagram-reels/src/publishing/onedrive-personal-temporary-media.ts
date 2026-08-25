@@ -172,7 +172,7 @@ function itemFromJson(value: Record<string, unknown>): OneDriveDriveItem {
   return value as unknown as OneDriveDriveItem;
 }
 
-function defaultGraph(tokenProvider: PersonalGraphTokenProvider): OneDrivePersonalGraphClient {
+export function createOneDrivePersonalGraphClient(tokenProvider: PersonalGraphTokenProvider): OneDrivePersonalGraphClient {
   const request = async (method: string, route: string, body?: BodyInit, contentTypeValue?: string): Promise<Record<string, unknown>> => {
     const token = await tokenProvider.getAccessToken();
     if (!token || token.length < 20) throw new Error("PERSONAL_MICROSOFT_ACCOUNT_REQUIRED");
@@ -223,7 +223,8 @@ function auditTemporary(db: ReturnType<typeof openDatabase>, eventType: string, 
   audit(db, { eventId: `section10.3.2:${eventType}:${temporaryMediaId}`, entityType: "TEMPORARY_MEDIA", entityId: reelId, eventType, actor: "temporary-media-provider", metadata: { temporary_media_id: temporaryMediaId, provider: ONEDRIVE_PERSONAL_TEMPORARY_MEDIA_PROVIDER, ...metadata } });
 }
 
-function personalDriveOrThrow(drive: OneDriveDrive): { id: string } {
+export function personalDriveOrThrow(drive: OneDriveDrive): { id: string } {
+  if (["business", "documentLibrary", "sharePoint"].includes(String(drive.driveType))) throw new Error("CORPORATE_MICROSOFT_IDENTITY_REJECTED");
   if (drive.driveType !== "personal" || !drive.id || !drive.owner?.user) throw new Error("PERSONAL_ONEDRIVE_IDENTITY_NOT_CONFIRMED");
   return { id: drive.id };
 }
@@ -237,7 +238,7 @@ export class OneDrivePersonalTemporaryMediaProvider implements TemporaryMediaPro
   private readonly permissionIds = new Map<string, string>();
 
   public constructor(private readonly config: MediaConfig, dependencies: OneDrivePersonalTemporaryMediaDependencies = {}) {
-    this.graphClient = dependencies.graph ?? (dependencies.tokenProvider ? defaultGraph(dependencies.tokenProvider) : undefined);
+    this.graphClient = dependencies.graph ?? (dependencies.tokenProvider ? createOneDrivePersonalGraphClient(dependencies.tokenProvider) : undefined);
     this.fetcher = dependencies.fetcher ?? defaultAnonymousFetcher;
     this.now = dependencies.now ?? (() => new Date());
   }
@@ -269,7 +270,7 @@ export class OneDrivePersonalTemporaryMediaProvider implements TemporaryMediaPro
     try {
       const existingRecord = temporaryMediaByIdentity(db, ONEDRIVE_PERSONAL_TEMPORARY_MEDIA_PROVIDER, input.publicationKey, input.derivedChecksum);
       auditTemporary(db, "TEMP_MEDIA_PREPARE_STARTED", temporaryMediaId, input.reelId, { item_path: itemPath, expected_size: initialStats.size });
-      upsertTemporaryMedia(db, { temporary_media_id: temporaryMediaId, reel_id: input.reelId, publication_key: input.publicationKey, provider: ONEDRIVE_PERSONAL_TEMPORARY_MEDIA_PROVIDER, blob_container: drive.id, blob_name: itemPath, blob_size: initialStats.size, derived_checksum: input.derivedChecksum, prepared_at: preparedAt, expires_at: expiresAt, status: "PREPARING", cleanup_status: existingRecord?.cleanup_status ?? "NOT_REQUESTED", last_error_safe: null });
+      upsertTemporaryMedia(db, { temporary_media_id: temporaryMediaId, reel_id: input.reelId, publication_key: input.publicationKey, provider: ONEDRIVE_PERSONAL_TEMPORARY_MEDIA_PROVIDER, blob_container: drive.id, blob_name: itemPath, blob_size: initialStats.size, derived_checksum: input.derivedChecksum, prepared_at: preparedAt, expires_at: expiresAt, status: "PREPARING", cleanup_status: existingRecord?.cleanup_status ?? "NOT_REQUESTED", last_error_safe: null, drive_id: drive.id, item_path: itemPath });
 
       const graph = this.graph();
       await graph.ensureFolder(ONEDRIVE_PERSONAL_TEMPORARY_ROOT);
@@ -297,11 +298,11 @@ export class OneDrivePersonalTemporaryMediaProvider implements TemporaryMediaPro
       const afterChecksum = await sha256File(output.absolutePath);
       if (afterChecksum !== input.derivedChecksum) throw new Error("SNAPSHOT_INVALIDATED");
       if (!validation.ok) {
-        upsertTemporaryMedia(db, { temporary_media_id: temporaryMediaId, reel_id: input.reelId, publication_key: input.publicationKey, provider: ONEDRIVE_PERSONAL_TEMPORARY_MEDIA_PROVIDER, blob_container: drive.id, blob_name: itemPath, blob_size: initialStats.size, derived_checksum: input.derivedChecksum, prepared_at: preparedAt, expires_at: expiresAt, status: "FAILED", cleanup_status: "PENDING", last_error_safe: validation.code });
+        upsertTemporaryMedia(db, { temporary_media_id: temporaryMediaId, reel_id: input.reelId, publication_key: input.publicationKey, provider: ONEDRIVE_PERSONAL_TEMPORARY_MEDIA_PROVIDER, blob_container: drive.id, blob_name: itemPath, blob_size: initialStats.size, derived_checksum: input.derivedChecksum, prepared_at: preparedAt, expires_at: expiresAt, status: "FAILED", cleanup_status: "PENDING", last_error_safe: validation.code, drive_id: drive.id, item_id: item.id, item_path: itemPath, permission_id: permissionId ?? null });
         auditTemporary(db, "TEMP_MEDIA_FAILED", temporaryMediaId, input.reelId, { code: validation.code });
         throw new Error(`TEMPORARY_MEDIA_VALIDATION_FAILED:${validation.code}`);
       }
-      upsertTemporaryMedia(db, { temporary_media_id: temporaryMediaId, reel_id: input.reelId, publication_key: input.publicationKey, provider: ONEDRIVE_PERSONAL_TEMPORARY_MEDIA_PROVIDER, blob_container: drive.id, blob_name: itemPath, blob_size: initialStats.size, derived_checksum: input.derivedChecksum, prepared_at: preparedAt, expires_at: expiresAt, status: "VALIDATED", cleanup_status: "NOT_REQUESTED", last_error_safe: null });
+      upsertTemporaryMedia(db, { temporary_media_id: temporaryMediaId, reel_id: input.reelId, publication_key: input.publicationKey, provider: ONEDRIVE_PERSONAL_TEMPORARY_MEDIA_PROVIDER, blob_container: drive.id, blob_name: itemPath, blob_size: initialStats.size, derived_checksum: input.derivedChecksum, prepared_at: preparedAt, expires_at: expiresAt, status: "VALIDATED", cleanup_status: "NOT_REQUESTED", last_error_safe: null, drive_id: drive.id, item_id: item.id, item_path: itemPath, permission_id: permissionId ?? null });
       auditTemporary(db, "TEMP_MEDIA_VALIDATED", temporaryMediaId, input.reelId, { item_path: itemPath, item_id: item.id, blob_size: initialStats.size, expires_at: expiresAt, direct_download: Boolean(directUrl), sharing_permission: Boolean(permissionId) });
       return { ...prepared, state: "VALIDATED", validation };
     } catch (error) {
@@ -328,9 +329,9 @@ export class OneDrivePersonalTemporaryMediaProvider implements TemporaryMediaPro
     try {
       const row = temporaryMediaByReel(db, reelId);
       if (!row || row.provider !== ONEDRIVE_PERSONAL_TEMPORARY_MEDIA_PROVIDER) return;
-      const item = await this.graph().getItemByPath(row.blob_name);
+      const item = row.item_id ? await this.graph().getItemById(row.item_id) : await this.graph().getItemByPath(row.item_path ?? row.blob_name);
       if (item) {
-        const permissionId = this.permissionIds.get(row.temporary_media_id);
+        const permissionId = row.permission_id ?? this.permissionIds.get(row.temporary_media_id);
         if (permissionId) await this.graph().deletePermission(item.id, permissionId);
         await this.graph().deleteItem(item.id);
       }
@@ -346,7 +347,7 @@ export class OneDrivePersonalTemporaryMediaProvider implements TemporaryMediaPro
       const rows = expiredTemporaryMedia(db, ONEDRIVE_PERSONAL_TEMPORARY_MEDIA_PROVIDER, ONEDRIVE_PERSONAL_TEMPORARY_ROOT, this.now().toISOString());
       for (const row of rows) {
         updateTemporaryMediaStatus(db, row.temporary_media_id, "EXPIRED", "PENDING");
-        const item = await this.graph().getItemByPath(row.blob_name);
+        const item = row.item_id ? await this.graph().getItemById(row.item_id) : await this.graph().getItemByPath(row.item_path ?? row.blob_name);
         if (item) await this.graph().deleteItem(item.id);
         updateTemporaryMediaStatus(db, row.temporary_media_id, "CLEANED", "CLEANED");
         auditTemporary(db, "TEMP_MEDIA_CLEANED", row.temporary_media_id, row.reel_id, { item_path: row.blob_name });

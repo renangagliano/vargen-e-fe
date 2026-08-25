@@ -20,6 +20,9 @@
     "instagram:media-prepare": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js instagram:media-prepare",
     "instagram:media-status": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js instagram:media-status",
     "instagram:media-cleanup": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js instagram:media-cleanup",
+    "onedrive:login": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js onedrive:login",
+    "onedrive:status": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js onedrive:status",
+    "onedrive:logout": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js onedrive:logout",
     "reel:analyze": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js reel:analyze",
     "reel:candidates": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js reel:candidates",
     "reel:generate": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js reel:generate",
@@ -45,41 +48,41 @@
     "curation:sample": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js curation:sample",
     "curation:run": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js curation:run",
     "curation:status": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js curation:status",
-    "curation:manifest": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js curation:manifest"
-    ,"review:instagram": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js review:instagram"
-    ,"review:list": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js review:list"
-    ,"review:progress": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js review:progress"
-    ,"review:next": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js review:next"
-    ,"review:session-start": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js review:session-start"
-    ,"review:session-next": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js review:session-next"
-    ,"review:session-end": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js review:session-end"
-    ,"review:report": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js review:report"
-    ,"review:section9-report": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js review:section9-report"
-    ,"review:approve": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js review:approve"
-    ,"review:reject": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js review:reject"
-    ,"review:needs-changes": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js review:needs-changes"
-    ,"review:readiness": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js review:readiness"
-    ,"content-ready:status": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js content-ready:status"
-    ,"content-ready:list": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js content-ready:list"
-    ,"review:edit": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js review:edit"
-    ,"bible:set": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js bible:set"
-    ,"bible:verify": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js bible:verify"
-    ,"rights:status": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js rights:status"
-    ,"rights:preview": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js rights:preview"
-    ,"rights:confirm-source": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js rights:confirm-source"
-    ,"rights:reject-source": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js rights:reject-source"
-    ,"rights:confirm-catalog": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js rights:confirm-catalog"
-    ,"ai-review:primary": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js ai-review:primary"
-    ,"ai-review:status": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js ai-review:status"
-    ,"ai-review:reel": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js ai-review:reel"
-    ,"ai-review:report": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js ai-review:report"
-    ,"ai-review:apply": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js ai-review:apply"
-    ,"biblical:registry": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js biblical:registry"
-    ,"biblical:resolve": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js biblical:resolve"
-    ,"editorial:calibrate": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js editorial:calibrate"
-    ,"editorial:report": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js editorial:report"
-    ,"ai-review:phase72": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js ai-review:phase72"
-    ,"editorial:knowledge-calibrate": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js editorial:knowledge-calibrate",
+    "curation:manifest": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js curation:manifest",
+    "review:instagram": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js review:instagram",
+    "review:list": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js review:list",
+    "review:progress": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js review:progress",
+    "review:next": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js review:next",
+    "review:session-start": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js review:session-start",
+    "review:session-next": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js review:session-next",
+    "review:session-end": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js review:session-end",
+    "review:report": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js review:report",
+    "review:section9-report": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js review:section9-report",
+    "review:approve": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js review:approve",
+    "review:reject": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js review:reject",
+    "review:needs-changes": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js review:needs-changes",
+    "review:readiness": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js review:readiness",
+    "content-ready:status": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js content-ready:status",
+    "content-ready:list": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js content-ready:list",
+    "review:edit": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js review:edit",
+    "bible:set": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js bible:set",
+    "bible:verify": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js bible:verify",
+    "rights:status": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js rights:status",
+    "rights:preview": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js rights:preview",
+    "rights:confirm-source": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js rights:confirm-source",
+    "rights:reject-source": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js rights:reject-source",
+    "rights:confirm-catalog": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js rights:confirm-catalog",
+    "ai-review:primary": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js ai-review:primary",
+    "ai-review:status": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js ai-review:status",
+    "ai-review:reel": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js ai-review:reel",
+    "ai-review:report": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js ai-review:report",
+    "ai-review:apply": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js ai-review:apply",
+    "biblical:registry": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js biblical:registry",
+    "biblical:resolve": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js biblical:resolve",
+    "editorial:calibrate": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js editorial:calibrate",
+    "editorial:report": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js editorial:report",
+    "ai-review:phase72": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js ai-review:phase72",
+    "editorial:knowledge-calibrate": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js editorial:knowledge-calibrate",
     "editorial:knowledge-run": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js editorial:knowledge-run",
     "editorial:knowledge-report": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js editorial:knowledge-report",
     "bible:knowledge-resolve": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js bible:knowledge-resolve",
@@ -88,6 +91,7 @@
   },
   "dependencies": {
     "@azure/identity": "^4.13.2",
+    "@azure/msal-node": "^5.6.0",
     "@azure/storage-blob": "^12.33.0",
     "next": "latest",
     "react": "latest",
