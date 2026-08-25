@@ -238,6 +238,70 @@ export type BibleSourceType = "CATALOG_METADATA" | "SONG_METADATA" | "LYRICS_MET
 export type BibleVerificationStatus = "VERIFIED" | "REVIEW_REQUIRED" | "MISSING" | "CONFLICT";
 export type ContentReadinessStatus = "CONTENT_READY" | "NOT_READY";
 
+export type AiRecommendation = "RECOMMEND_APPROVE" | "RECOMMEND_CHANGES" | "RECOMMEND_REJECT" | "HUMAN_REVIEW_REQUIRED";
+export type AiDuplicateRisk = "LOW" | "MEDIUM" | "HIGH";
+export type AiRiskLevel = "LOW" | "MEDIUM" | "HIGH";
+export type AiBibleConfidence = "HIGH" | "MEDIUM" | "LOW";
+export type AiBibleSuggestionStatus = "AI_SUGGESTED" | "HUMAN_VERIFIED" | "REJECTED" | "CONFLICT" | "INSUFFICIENT_EVIDENCE";
+export type AiEditorialSuggestionStatus = "PROPOSED" | "APPLIED" | "DISMISSED";
+
+export type AiReviewResult = {
+  reel_id: string;
+  ai_review_version: string;
+  provider: string;
+  ai_reviewed_at: string;
+  editorial_quality_score: number;
+  hook_score: number;
+  caption_score: number;
+  cta_score: number;
+  hashtag_score: number;
+  title_score: number;
+  pillar_consistency_score: number;
+  collection_consistency_score: number;
+  biblical_consistency_score: number;
+  theological_risk: number;
+  duplicate_risk: AiDuplicateRisk;
+  retention_score: number;
+  clarity_score: number;
+  emotional_impact_score: number;
+  authenticity_score: number;
+  clickbait_risk: number;
+  overall_ai_score: number;
+  ai_recommendation: AiRecommendation;
+  ai_reasoning_summary: string;
+  related_reel_ids: string[];
+  review_priority_score: number | null;
+  review_priority_rank: number | null;
+  engine_version: string;
+};
+
+export type AiBibleSuggestion = {
+  suggestion_id: string;
+  reel_id: string;
+  ai_review_version: string;
+  reference: string | null;
+  book: string | null;
+  chapter: number | null;
+  verse_range: string | null;
+  confidence: AiBibleConfidence;
+  evidence_sources: string[];
+  reasoning_summary: string;
+  status: AiBibleSuggestionStatus;
+  engine_version: string;
+};
+
+export type AiEditorialSuggestion = {
+  suggestion_id: string;
+  reel_id: string;
+  ai_review_version: string;
+  base_editorial_version: number;
+  suggested_package: Partial<EditorialPackage>;
+  changed_fields: string[];
+  reasoning_summary: string;
+  status: AiEditorialSuggestionStatus;
+  engine_version: string;
+};
+
 export type BibleReferenceSource = {
   bible_reference_id: string;
   reel_id: string;

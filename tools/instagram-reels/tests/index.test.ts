@@ -12,3 +12,4 @@ import "./publishing.test.js";
 import "./catalog.test.js";
 import "./curation.test.js";
 import "./review.test.js";
+import "./ai-review.test.js";

@@ -56,6 +56,11 @@
     ,"rights:confirm-source": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js rights:confirm-source"
     ,"rights:reject-source": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js rights:reject-source"
     ,"rights:confirm-catalog": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js rights:confirm-catalog"
+    ,"ai-review:primary": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js ai-review:primary"
+    ,"ai-review:status": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js ai-review:status"
+    ,"ai-review:reel": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js ai-review:reel"
+    ,"ai-review:report": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js ai-review:report"
+    ,"ai-review:apply": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js ai-review:apply"
   },
   "dependencies": {
     "next": "latest",

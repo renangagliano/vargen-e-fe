@@ -1,5 +1,13 @@
 # Cockpit local de revisão — Fase 7
 
+## Assistência AI — Fase 7.1
+
+O cockpit exibe o pre-review determinístico local quando disponível. O painel
+é explicitamente marcado como sugestão e mostra scores, recomendação, riscos,
+referência bíblica sugerida e comparação editorial. A aplicação é seletiva e
+manual; ela cria nova versão e invalida aprovação material. Se a camada AI
+falhar, o fluxo humano continua funcionando.
+
 O cockpit é uma ferramenta local separada do site institucional. Ele não é
 exportado pelo Next.js, não é publicado no GitHub Pages e não chama Meta.
 

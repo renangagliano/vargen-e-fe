@@ -51,6 +51,11 @@ Quando existir UI/backend, separar papéis de operador, editor e publicador. O p
 
 Na Phase 5, ações locais exigem `--by` e nota. A confirmação de direitos e aprovação editorial são auditadas. Alterações materiais geram nova versão editorial e invalidam a aprovação anterior. Jobs usam `publication_key`, lock durável e mensagens de erro seguras.
 
+Na Phase 7.1, o provider é local e determinístico. Não há segredo, prompt bruto,
+credencial de LLM ou chamada Meta. Sugestões AI ficam em tabelas separadas,
+não satisfazem gates humanos e só podem ser aplicadas por ação explícita do
+operador.
+
 `META_PRODUCTION_ELIGIBLE=false` é fail-closed até a verificação empresarial e o acesso oficial serem comprovados. O adaptador Meta não usa browser automation e não expõe o OneDrive.
 
 ## Logs e incidentes

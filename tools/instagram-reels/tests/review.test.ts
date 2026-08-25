@@ -16,7 +16,7 @@ import { filterReviewItems, queuePredicate, reviewProgress } from "../src/review
 import { resolveReviewFile } from "../src/review/files.js";
 import { EMPTY_METADATA, type ReelCuration } from "../src/shared/types.js";
 
-async function fixture() {
+export async function fixture() {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), "vargen-review-"));
   const mediaRoot = path.join(root, "source");
   const outputRoot = path.join(root, "reels");

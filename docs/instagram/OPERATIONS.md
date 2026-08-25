@@ -128,3 +128,13 @@ O fluxo operacional local está documentado em `REVIEW_COCKPIT.md`. Gere o
 relatório primário com `npm run review:report`; os arquivos gerados ficam em
 OneDrive e não entram no Git. Não confirme direitos em lote sem um manifesto
 e a confirmação explícita do operador.
+## Fase 7.1 — pre-review AI
+
+Execute `npm run ai-review:primary` para a amostra segura de 10 primários e
+verifique a distribuição antes de usar `--full`. A execução completa cria
+apenas avaliações, sugestões e prioridades para os 78 primários. Não cria
+aprovação, confirmação de direitos, jobs de publicação ou chamadas Meta.
+
+O provider atual é `DeterministicLocalProvider`; a ausência de um provedor LLM
+externo é intencional. Referências bíblicas sem evidência local ficam como
+`INSUFFICIENT_EVIDENCE` e exigem entrada/verificação humana no cockpit.
