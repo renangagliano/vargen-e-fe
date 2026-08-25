@@ -1,0 +1,38 @@
+name: Instagram API Connectivity
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  connectivity:
+    name: Validate official Instagram API connectivity
+    runs-on: ubuntu-latest
+    environment: instagram-production
+    env:
+      INSTAGRAM_ACCESS_TOKEN: ${{ secrets.INSTAGRAM_ACCESS_TOKEN }}
+      META_APP_SECRET: ${{ secrets.META_APP_SECRET }}
+      INSTAGRAM_ACCOUNT_ID: ${{ vars.INSTAGRAM_ACCOUNT_ID }}
+      META_APP_ID: ${{ vars.META_APP_ID }}
+      META_GRAPH_API_VERSION: ${{ vars.META_GRAPH_API_VERSION }}
+      INSTAGRAM_PUBLISH_MODE: ${{ vars.INSTAGRAM_PUBLISH_MODE }}
+      INSTAGRAM_REQUIRE_APPROVAL: ${{ vars.INSTAGRAM_REQUIRE_APPROVAL }}
+      INSTAGRAM_TIMEZONE: ${{ vars.INSTAGRAM_TIMEZONE }}
+      MAX_REELS_PER_DAY: ${{ vars.MAX_REELS_PER_DAY }}
+      MIN_HOURS_BETWEEN_REELS: ${{ vars.MIN_HOURS_BETWEEN_REELS }}
+      MAX_REELS_PER_SONG_PER_30_DAYS: ${{ vars.MAX_REELS_PER_SONG_PER_30_DAYS }}
+      MAX_REELS_PER_COLLECTION_CONSECUTIVELY: ${{ vars.MAX_REELS_PER_COLLECTION_CONSECUTIVELY }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Run read-only connectivity validation
+        run: npm run instagram:connectivity
