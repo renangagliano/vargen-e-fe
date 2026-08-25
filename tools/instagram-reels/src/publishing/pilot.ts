@@ -19,7 +19,7 @@ export const PILOT_CONFIRMATION = "I_CONFIRM_ONE_REEL_PUBLICATION" as const;
 export const PILOT_SNAPSHOT_VERSION = "section10.2-snapshot-v1" as const;
 
 export type PilotStatus = "FROZEN" | "INVALIDATED" | "PUBLISHED" | "FAILED" | "DRY_RUN_VALIDATED" | "AWAITING_HUMAN_CONTENT_READY";
-export type PilotFailureCode = "CONTENT_READY_REQUIRED" | "TEMPORARY_MEDIA_PROVIDER_REQUIRED" | "MEDIA_PROVIDER_ERROR" | "MEDIA_URL_INVALID" | "CONTAINER_CREATION_ERROR" | "CONTAINER_PROCESSING_ERROR" | "CONTAINER_TIMEOUT" | "PUBLISH_PERMISSION_ERROR" | "MEDIA_PUBLISH_ERROR" | "RATE_LIMITED" | "TOKEN_EXPIRED" | "AUTHENTICATION_ERROR" | "CONTENT_READY_REVOKED" | "SNAPSHOT_INVALIDATED" | "DUPLICATE_PUBLICATION_PREVENTED" | "META_API_ERROR" | "NETWORK_ERROR" | "CONFIRMATION_REQUIRED" | "REAL_PILOT_ENVIRONMENT_REQUIRED";
+export type PilotFailureCode = "CONTENT_READY_REQUIRED" | "TEMPORARY_MEDIA_PROVIDER_REQUIRED" | "MEDIA_PROVIDER_ERROR" | "MEDIA_URL_INVALID" | "CONTAINER_CREATION_ERROR" | "CONTAINER_PROCESSING_ERROR" | "CONTAINER_TIMEOUT" | "PUBLISH_PERMISSION_ERROR" | "MEDIA_PUBLISH_ERROR" | "META_READBACK_FAILED" | "RATE_LIMITED" | "TOKEN_EXPIRED" | "AUTHENTICATION_ERROR" | "CONTENT_READY_REVOKED" | "SNAPSHOT_INVALIDATED" | "DUPLICATE_PUBLICATION_PREVENTED" | "META_API_ERROR" | "NETWORK_ERROR" | "CONFIRMATION_REQUIRED" | "REAL_PILOT_ENVIRONMENT_REQUIRED";
 
 export type PilotSnapshot = {
   snapshot_id: string;
@@ -68,6 +68,7 @@ export type PilotExecutionResult = {
   media_publish_called: boolean;
   content_published: boolean;
   publishing_proven: boolean;
+  temporary_media_cleanup?: "NOT_REQUESTED" | "SUCCEEDED" | "PENDING";
 };
 
 type Row = Record<string, unknown>;
@@ -228,7 +229,8 @@ export async function executeFrozenPilot(options: PilotExecutionOptions): Promis
     try { media = await provider.getTemporaryPublicUrl(snapshot.reel_id); } catch { return { status: "BLOCKED", failure_code: "MEDIA_PROVIDER_ERROR", snapshot, readiness, media_url: null, container_id: null, remote_status: null, instagram_media_id: null, permalink: null, published_at: null, media_container_created: false, media_publish_called: false, content_published: false, publishing_proven: false }; }
     const mediaUrl = options.validateUrl ? await options.validateUrl(media.url, options.dryRun) : await validateTemporaryMediaUrl(media.url, undefined, options.dryRun);
     if (!mediaUrl.ok || (!options.dryRun && (media.checksumSha256 !== snapshot.derived_reel_checksum || !media.expiresAt || Number.isNaN(Date.parse(media.expiresAt)) || Date.parse(media.expiresAt) <= Date.now()))) return { status: "BLOCKED", failure_code: "MEDIA_URL_INVALID", snapshot, readiness, media_url: mediaUrl, container_id: null, remote_status: null, instagram_media_id: null, permalink: null, published_at: null, media_container_created: false, media_publish_called: false, content_published: false, publishing_proven: false };
-    auditPilot(db, "TEMP_MEDIA_CREATED", snapshot, options.actor, { provider: media.provider, media_url: mediaUrl.safeUrl });
+    auditPilot(db, "PUBLICATION_PILOT_STARTED", snapshot, options.actor, { provider: media.provider });
+    auditPilot(db, "TEMP_MEDIA_REFRESHED", snapshot, options.actor, { provider: media.provider, media_url: mediaUrl.safeUrl });
     if (options.dryRun) return { status: "DRY_RUN_VALIDATED", snapshot, readiness, media_url: mediaUrl, container_id: null, remote_status: null, instagram_media_id: null, permalink: null, published_at: null, media_container_created: false, media_publish_called: false, content_published: false, publishing_proven: false };
     if (runtimeEnvironmentValue("INSTAGRAM_PILOT_REAL") !== "true" || loadAutomationConfig().publishMode !== "approval" || !loadAutomationConfig().requireApproval) return { status: "BLOCKED", failure_code: "REAL_PILOT_ENVIRONMENT_REQUIRED", snapshot, readiness, media_url: mediaUrl, container_id: null, remote_status: null, instagram_media_id: null, permalink: null, published_at: null, media_container_created: false, media_publish_called: false, content_published: false, publishing_proven: false };
     if (!options.api) throw new Error("META_PILOT_API_REQUIRED");
@@ -241,6 +243,7 @@ export async function executeFrozenPilot(options: PilotExecutionOptions): Promis
     db.prepare("UPDATE pilot_publications SET remote_status = ?, last_checked_at = ?, updated_at = ? WHERE publication_key = ?").run(remoteStatus, now(), now(), snapshot.publication_key);
     if (remoteStatus !== "FINISHED") { db.prepare("UPDATE pilot_publications SET status = 'FAILED', error_code = ?, updated_at = ? WHERE publication_key = ?").run(remoteStatus === "IN_PROGRESS" ? "CONTAINER_TIMEOUT" : "CONTAINER_PROCESSING_ERROR", now(), snapshot.publication_key); auditPilot(db, "PILOT_ABORTED", snapshot, options.actor, { reason: remoteStatus === "IN_PROGRESS" ? "CONTAINER_TIMEOUT" : "CONTAINER_PROCESSING_ERROR" }); return { status: "FAILED", failure_code: remoteStatus === "IN_PROGRESS" ? "CONTAINER_TIMEOUT" : "CONTAINER_PROCESSING_ERROR", snapshot, readiness, media_url: mediaUrl, container_id: container.containerId, remote_status: remoteStatus, instagram_media_id: null, permalink: null, published_at: null, media_container_created: true, media_publish_called: false, content_published: false, publishing_proven: false }; }
     auditPilot(db, "MEDIA_CONTAINER_READY", snapshot, options.actor, { container_id: container.containerId });
+    auditPilot(db, "META_CONTAINER_FINISHED", snapshot, options.actor, { container_id: container.containerId });
     const finalReadiness = await evaluateContentReadiness(snapshot.reel_id, config);
     const finalSnapshot = await validatePilotSnapshot(snapshot, config);
     if (finalReadiness.status !== "CONTENT_READY" || !finalSnapshot.valid) {
@@ -253,16 +256,29 @@ export async function executeFrozenPilot(options: PilotExecutionOptions): Promis
     mediaPublishCalled = true;
     const published = await options.api.publishContainer(container.containerId);
     const readback: MetaPublicationReadback = await options.api.readPublication(published.mediaId);
+    if (readback.id !== published.mediaId || !readback.permalink || (readback.media_product_type && readback.media_product_type.toUpperCase() !== "REELS") || (readback.username && readback.username !== "vargen.fe")) throw new MetaPilotApiError("META_READBACK_FAILED", "Instagram read-back did not confirm the expected Reel.");
     const publishedAt = readback.timestamp ?? now();
     db.prepare("UPDATE pilot_publications SET status = 'PUBLISHED', remote_status = 'FINISHED', instagram_media_id = ?, permalink = ?, published_at = ?, updated_at = ? WHERE publication_key = ?").run(published.mediaId, readback.permalink ?? null, publishedAt, now(), snapshot.publication_key);
     auditPilot(db, "MEDIA_PUBLISH_SUCCEEDED", snapshot, options.actor, { container_id: container.containerId, instagram_media_id: published.mediaId });
     auditPilot(db, "PUBLICATION_CONFIRMED", snapshot, options.actor, { instagram_media_id: published.mediaId, permalink: readback.permalink ?? null });
+    auditPilot(db, "META_READBACK_CONFIRMED", snapshot, options.actor, { instagram_media_id: published.mediaId, permalink: readback.permalink ?? null });
+    let temporaryMediaCleanup: "SUCCEEDED" | "PENDING" | "NOT_REQUESTED" = "NOT_REQUESTED";
+    if (options.mediaProvider) {
+      try {
+        await options.mediaProvider.revokeTemporaryPublicUrl(snapshot.reel_id, media.url);
+        temporaryMediaCleanup = "SUCCEEDED";
+        auditPilot(db, "TEMP_MEDIA_CLEANUP_SUCCEEDED", snapshot, options.actor, { provider: media.provider });
+      } catch {
+        temporaryMediaCleanup = "PENDING";
+        auditPilot(db, "TEMP_MEDIA_CLEANUP_PENDING", snapshot, options.actor, { provider: media.provider });
+      }
+    }
     db.prepare("UPDATE pilot_snapshots SET status = 'PUBLISHED', updated_at = ? WHERE snapshot_id = ?").run(now(), snapshot.snapshot_id);
-    return { status: "PUBLISHED", snapshot: { ...snapshot, status: "PUBLISHED" }, readiness, media_url: mediaUrl, container_id: container.containerId, remote_status: "FINISHED", instagram_media_id: published.mediaId, permalink: readback.permalink ?? null, published_at: publishedAt, media_container_created: true, media_publish_called: true, content_published: true, publishing_proven: true };
+    return { status: "PUBLISHED", snapshot: { ...snapshot, status: "PUBLISHED" }, readiness, media_url: mediaUrl, container_id: container.containerId, remote_status: "FINISHED", instagram_media_id: published.mediaId, permalink: readback.permalink ?? null, published_at: publishedAt, media_container_created: true, media_publish_called: true, content_published: true, publishing_proven: true, temporary_media_cleanup: temporaryMediaCleanup };
   } catch (error) {
     const message = error instanceof Error ? error.message : "Meta pilot operation failed.";
     const errorCode = error instanceof MetaPilotApiError ? error.code : "";
-    const code: PilotFailureCode = errorCode === "AUTHENTICATION_ERROR" ? "AUTHENTICATION_ERROR" : errorCode === "RATE_LIMITED" ? "RATE_LIMITED" : errorCode === "MEDIA_PUBLISH_ERROR" ? "MEDIA_PUBLISH_ERROR" : errorCode === "CONTAINER_CREATION_ERROR" ? "CONTAINER_CREATION_ERROR" : message.includes("AUTH") ? "AUTHENTICATION_ERROR" : "META_API_ERROR";
+    const code: PilotFailureCode = errorCode === "AUTHENTICATION_ERROR" ? "AUTHENTICATION_ERROR" : errorCode === "RATE_LIMITED" ? "RATE_LIMITED" : errorCode === "MEDIA_PUBLISH_ERROR" ? "MEDIA_PUBLISH_ERROR" : errorCode === "CONTAINER_CREATION_ERROR" ? "CONTAINER_CREATION_ERROR" : errorCode === "META_READBACK_FAILED" ? "META_READBACK_FAILED" : message.includes("AUTH") ? "AUTHENTICATION_ERROR" : "META_API_ERROR";
     auditPilot(db, "MEDIA_PUBLISH_FAILED", snapshot, options.actor, { error_code: code });
     if (mediaContainerCreated) db.prepare("UPDATE pilot_publications SET status = ?, error_code = ?, error_message_safe = ?, updated_at = ? WHERE publication_key = ?").run(mediaPublishCalled ? "UNCERTAIN" : "FAILED", code, "Pilot remote state requires reconciliation before retry.", now(), snapshot.publication_key);
     db.prepare("UPDATE pilot_snapshots SET status = 'FAILED', updated_at = ? WHERE snapshot_id = ?").run(now(), snapshot.snapshot_id);

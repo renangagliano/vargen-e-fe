@@ -5,7 +5,9 @@ import { openDatabase, latestEditorialPackage } from "../src/database/db.js";
 import { confirmSourceRights, RIGHTS_CONFIRMATION_STATEMENT } from "../src/review/rights.js";
 import { saveBibleReferenceDraft } from "../src/review/bible.js";
 import { approveEditorial } from "../src/publishing/approval.js";
-import { runPilotDryRun } from "../src/publishing/pilot.js";
+import { executeFrozenPilot, runPilotDryRun } from "../src/publishing/pilot.js";
+import { configuredMediaProvider, runPilotCommand, selectedProviderMode } from "../src/cli/pilot.js";
+import { OneDrivePersonalTemporaryMediaProvider } from "../src/publishing/onedrive-personal-temporary-media.js";
 import { MetaPilotApi } from "../src/publishing/meta-pilot-api.js";
 import { sanitizeMediaUrl, validateMediaUrlShape, validateTemporaryMediaUrl } from "../src/publishing/temporary-media.js";
 
@@ -69,4 +71,65 @@ test("pilot dry-run requires CONTENT_READY and cannot create or publish", async 
     assert.equal((state.prepare("SELECT COUNT(*) AS count FROM pilot_publications").get() as { count: number }).count, 0);
     assert.equal((state.prepare("SELECT COUNT(*) AS count FROM publication_jobs WHERE status = 'PUBLISHED'").get() as { count: number }).count, 0);
   } finally { state.close(); }
+});
+
+test("pilot provider selection is explicit and rejects unknown providers", async () => {
+  assert.equal(selectedProviderMode("onedrive-personal"), "onedrive-personal");
+  assert.equal(selectedProviderMode("azure"), "azure");
+  assert.throws(() => selectedProviderMode("unknown"), /TEMPORARY_MEDIA_PROVIDER_INVALID/);
+  const item = await fixture();
+  item.config.microsoftPersonalClientId = "00000000-0000-4000-8000-000000000001";
+  assert.ok(configuredMediaProvider(item.config, "onedrive-personal") instanceof OneDrivePersonalTemporaryMediaProvider);
+});
+
+test("real pilot confirmation is required before provider or Meta calls", async () => {
+  const item = await fixture();
+  await assert.rejects(() => runPilotCommand("instagram:pilot", [`--reel=${item.reelId}`, "--provider=onedrive-personal"], item.config), /CONFIRMATION_REQUIRED/);
+});
+
+test("cleanup is attempted only after confirmed publication read-back", async () => {
+  const item = await fixture();
+  section8FastPath(item.config, item.reelId);
+  confirmSourceRights(item.assetId, "qa-owner", "Fixture rights", RIGHTS_CONFIRMATION_STATEMENT, item.config);
+  await saveBibleReferenceDraft({ reelId: item.reelId, reference: "Êxodo 14", actor: "qa-reviewer", note: "Fixture reference", verify: true }, item.config);
+  const db = openDatabase(item.config);
+  const version = latestEditorialPackage(db, item.reelId)?.editorial_version ?? 0;
+  db.close();
+  approveEditorial(item.reelId, version, "qa-editor", "Fixture approval", item.config);
+  const dry = await runPilotDryRun(item.reelId, "qa-pilot", item.config);
+  assert.ok(dry.selection.snapshot && dry.result);
+  const snapshot = dry.selection.snapshot;
+  const readiness = dry.result.readiness;
+  const originalReal = process.env.INSTAGRAM_PILOT_REAL;
+  const originalMode = process.env.INSTAGRAM_PUBLISH_MODE;
+  process.env.INSTAGRAM_PILOT_REAL = "true";
+  process.env.INSTAGRAM_PUBLISH_MODE = "approval";
+  let revoked = 0;
+  try {
+    const result = await executeFrozenPilot({
+      config: item.config,
+      snapshot,
+      readiness,
+      actor: "qa-pilot",
+      dryRun: false,
+      mediaProvider: {
+        async getTemporaryPublicUrl() { return { url: "https://cdn.example/pilot.mp4?temporary=secret", provider: "onedrive-personal", checksumSha256: snapshot.derived_reel_checksum, expiresAt: new Date(Date.now() + 3_600_000).toISOString() }; },
+        async revokeTemporaryPublicUrl() { revoked += 1; },
+      },
+      validateUrl: async () => ({ ok: true, code: "PASS", safeUrl: "https://cdn.example/pilot.mp4", contentType: "video/mp4", contentLength: 42 }),
+      api: {
+        async createReelContainer() { return { containerId: "container-qa", safeMediaUrl: "https://cdn.example/pilot.mp4" }; },
+        async getContainerStatus() { return { status: "FINISHED" as const }; },
+        async publishContainer() { return { mediaId: "media-qa" }; },
+        async readPublication() { return { id: "media-qa", media_type: "REELS", permalink: "https://instagram.example/reel-qa", timestamp: "2026-01-01T00:00:00Z" }; },
+      },
+      pollIntervalMs: 0,
+    });
+    assert.equal(result.status, "PUBLISHED");
+    assert.equal(result.temporary_media_cleanup, "SUCCEEDED");
+    assert.equal(revoked, 1);
+  } finally {
+    if (originalReal === undefined) delete process.env.INSTAGRAM_PILOT_REAL; else process.env.INSTAGRAM_PILOT_REAL = originalReal;
+    if (originalMode === undefined) delete process.env.INSTAGRAM_PUBLISH_MODE; else process.env.INSTAGRAM_PUBLISH_MODE = originalMode;
+  }
 });

@@ -62,6 +62,15 @@ export type OneDrivePersonalTemporaryMediaDependencies = {
   now?: () => Date;
 };
 
+export type OneDriveTemporaryMediaReadiness = {
+  ready: boolean;
+  personalAuthentication: "READY" | "FAILED";
+  driveItem: "READY" | "MISSING" | "MISMATCH";
+  freshDownloadUrl: "READY" | "UNAVAILABLE";
+  anonymousValidation: "PASS" | "NOT_RUN" | "FAILED";
+  reason?: string;
+};
+
 function safeErrorCode(error: unknown): string {
   const value = error as { code?: unknown; status?: unknown; statusCode?: unknown };
   const code = typeof value?.code === "string" ? value.code : typeof value?.status === "number" ? `GRAPH_HTTP_${value.status}` : typeof value?.statusCode === "number" ? `GRAPH_HTTP_${value.statusCode}` : "GRAPH_API_ERROR";
@@ -321,6 +330,30 @@ export class OneDrivePersonalTemporaryMediaProvider implements TemporaryMediaPro
   }
 
   private async validateIdentity(): Promise<{ id: string }> { return personalDriveOrThrow(await this.graph().getDrive()); }
+
+  /**
+   * Read-only capability check for pilot dry-runs. It refreshes the current
+   * DriveItem metadata and validates the short-lived URL in memory, but never
+   * uploads, creates a sharing link, writes SQLite state, or emits an audit row.
+   */
+  public async checkTemporaryMediaReadiness(input: TemporaryMediaPreparationInput): Promise<OneDriveTemporaryMediaReadiness> {
+    const output = await resolveReviewFile(this.config, input.derivedReelRelativePath);
+    const stats = await fs.stat(output.absolutePath);
+    const checksum = await sha256File(output.absolutePath);
+    if (!stats.isFile() || stats.size <= 0 || checksum.toUpperCase() !== input.derivedChecksum.toUpperCase()) return { ready: false, personalAuthentication: "FAILED", driveItem: "MISMATCH", freshDownloadUrl: "UNAVAILABLE", anonymousValidation: "NOT_RUN", reason: "LOCAL_SNAPSHOT_INVALID" };
+    try { await this.validateIdentity(); } catch (error) { return { ready: false, personalAuthentication: "FAILED", driveItem: "MISSING", freshDownloadUrl: "UNAVAILABLE", anonymousValidation: "NOT_RUN", reason: safeErrorCode(error) }; }
+    const itemPath = itemPathFor(input);
+    const item = await this.graph().getItemByPath(itemPath);
+    if (!item) return { ready: false, personalAuthentication: "READY", driveItem: "MISSING", freshDownloadUrl: "UNAVAILABLE", anonymousValidation: "NOT_RUN", reason: "ONEDRIVE_ITEM_NOT_FOUND" };
+    const knownHash = item.file?.hashes?.sha256Hash;
+    if (item.size !== stats.size || (knownHash && knownHash.toUpperCase() !== input.derivedChecksum.toUpperCase()) || (!knownHash && item.file?.mimeType !== "video/mp4")) return { ready: false, personalAuthentication: "READY", driveItem: "MISMATCH", freshDownloadUrl: "UNAVAILABLE", anonymousValidation: "NOT_RUN", reason: "ONEDRIVE_ITEM_COLLISION" };
+    let freshItem: OneDriveDriveItem;
+    try { freshItem = await this.graph().getItemById(item.id); } catch (error) { return { ready: false, personalAuthentication: "READY", driveItem: "MISSING", freshDownloadUrl: "UNAVAILABLE", anonymousValidation: "NOT_RUN", reason: safeErrorCode(error) }; }
+    const url = freshItem["@microsoft.graph.downloadUrl"];
+    if (!url) return { ready: false, personalAuthentication: "READY", driveItem: "READY", freshDownloadUrl: "UNAVAILABLE", anonymousValidation: "NOT_RUN", reason: "DIRECT_DOWNLOAD_UNAVAILABLE" };
+    const validation = await validateOneDriveAnonymousDownload({ url, expectedSize: stats.size, expectedChecksum: input.derivedChecksum, expectedMimeType: freshItem.file?.mimeType, expectedFileName: freshItem.name, now: this.now(), fetcher: this.fetcher, expiresAt: expiredAt(this.now()) });
+    return { ready: validation.ok, personalAuthentication: "READY", driveItem: "READY", freshDownloadUrl: "READY", anonymousValidation: validation.ok ? "PASS" : "FAILED", ...(validation.ok ? {} : { reason: validation.code }), };
+  }
 
   public async validateTemporaryMedia(result: TemporaryMediaPreparationResult): Promise<TemporaryMediaValidationResult> {
     if (result.provider !== ONEDRIVE_PERSONAL_TEMPORARY_MEDIA_PROVIDER || !result.url) throw new Error("ONEDRIVE_PERSONAL_REQUIRED");

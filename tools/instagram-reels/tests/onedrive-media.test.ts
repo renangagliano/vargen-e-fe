@@ -176,3 +176,20 @@ test("Graph metadata selects the documented downloadUrl annotation", async () =>
     globalThis.fetch = originalFetch;
   }
 });
+
+test("readiness refreshes the existing DriveItem URL without creating state or uploading", async () => {
+  const item = await fixture();
+  const output = path.join(item.config.reelsOutputRoot as string, "pilot", "reel.mp4");
+  await fs.writeFile(output, validMp4());
+  const checksum = await sha256File(output);
+  const fake = fakeGraph();
+  const provider = new OneDrivePersonalTemporaryMediaProvider(item.config, { graph: fake.graph, fetcher: fetcherFor(validMp4()) });
+  await provider.prepareTemporaryMedia(input(item.reelId, checksum));
+  const db = openDatabase(item.config);
+  try { db.prepare("DELETE FROM temporary_media").run(); } finally { db.close(); }
+  const readiness = await provider.checkTemporaryMediaReadiness(input(item.reelId, checksum));
+  assert.deepEqual(readiness, { ready: true, personalAuthentication: "READY", driveItem: "READY", freshDownloadUrl: "READY", anonymousValidation: "PASS" });
+  assert.equal(fake.uploads, 1);
+  const after = openDatabase(item.config);
+  try { assert.equal((after.prepare("SELECT COUNT(*) AS count FROM temporary_media").get() as { count: number }).count, 0); } finally { after.close(); }
+});
