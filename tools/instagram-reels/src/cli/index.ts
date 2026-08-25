@@ -7,6 +7,7 @@ import { generateEditorialBatchCommand, generateEditorialCommand, requiredArgume
 import { runPublishingCommand } from "./publishing.js";
 import { runCatalogFactoryCommand } from "./catalog-factory.js";
 import { runCurationCommand } from "./curation.js";
+import { runReviewCommand } from "./review.js";
 
 function filterArgument(args: string[]): string | undefined {
   const value = args.find((arg) => arg.startsWith("--"));
@@ -16,6 +17,7 @@ function filterArgument(args: string[]): string | undefined {
 async function main(): Promise<void> {
   const [, , command, ...args] = process.argv;
   const config = loadConfig();
+  if (await runReviewCommand(command, args)) return;
   if (await runPublishingCommand(command, args)) return;
   if (await runCatalogFactoryCommand(command, args)) return;
   if (await runCurationCommand(command, args)) return;
@@ -63,7 +65,7 @@ async function main(): Promise<void> {
       await reviewEditorialCommand(requiredArgument(args));
       return;
     default:
-      console.log("Usage: doctor | scan | list ... | catalog:analyze|catalog:generate|catalog:validate|catalog:editorial [--limit=N] [--collection=C] [--song=S] [--assets=id1,id2] [--resume=false] | catalog:status | catalog:manifest | catalog:storage --assets=N | curation:sample | curation:run | curation:status | curation:manifest | reel:analyze <asset-id> | reel:candidates <asset-id> | reel:generate <asset-id> | reel:inspect <reel-id> | reel:validate <reel-id> | reel:editorial <reel-id> | reel:editorial-batch <asset-id> | reel:review <asset-id> | reel:rights <reel-id> confirm|reject --by=<operator> | reel:approve <reel-id> --version=1 --by=<operator> | reel:eligibility <reel-id> | reel:schedule <reel-id> <datetime> --by=<operator> | publish:dry-run <reel-id> | publish:status <job-id> | scheduler:run-once");
+      console.log("Usage: doctor | scan | list | review:instagram | review:list --queue=primary|secondary|hold | review:progress | review:report | review:approve|review:reject|review:needs-changes <reel-id> --version=1 --by=<operator> | review:readiness <reel-id> | bible:set <reel-id> <reference> --by=<operator> | bible:verify <reel-id> --by=<operator> | rights:status [asset-id] | rights:confirm-source <asset-id> --confirm=I_CONFIRM_RIGHTS --by=<operator> | rights:reject-source <asset-id> --by=<operator> | ...");
       process.exitCode = command ? 1 : 0;
   }
 }

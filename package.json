@@ -41,6 +41,21 @@
     "curation:run": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js curation:run",
     "curation:status": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js curation:status",
     "curation:manifest": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js curation:manifest"
+    ,"review:instagram": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js review:instagram"
+    ,"review:list": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js review:list"
+    ,"review:progress": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js review:progress"
+    ,"review:report": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js review:report"
+    ,"review:approve": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js review:approve"
+    ,"review:reject": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js review:reject"
+    ,"review:needs-changes": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js review:needs-changes"
+    ,"review:readiness": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js review:readiness"
+    ,"review:edit": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js review:edit"
+    ,"bible:set": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js bible:set"
+    ,"bible:verify": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js bible:verify"
+    ,"rights:status": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js rights:status"
+    ,"rights:confirm-source": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js rights:confirm-source"
+    ,"rights:reject-source": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js rights:reject-source"
+    ,"rights:confirm-catalog": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js rights:confirm-catalog"
   },
   "dependencies": {
     "next": "latest",
