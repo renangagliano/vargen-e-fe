@@ -20,7 +20,6 @@ function config(overrides: Partial<InstagramConnectivityConfig> = {}): Instagram
     accessToken: secret,
     graphApiVersion: "v22.0",
     graphApiBaseUrl: "https://graph.instagram.com",
-    permissionsEndpoint: "/me/permissions",
     timeoutMs: 1000,
     ...overrides,
   };
@@ -34,12 +33,6 @@ function successfulFetch(calls: Array<{ url: string; method: string; authorizati
   return async (input, init) => {
     const url = String(input);
     calls.push({ url, method: String(init?.method ?? "GET"), authorization: String((init?.headers as Record<string, string> | undefined)?.Authorization ?? null) });
-    if (url.includes("/me/permissions")) {
-      return response({ data: [
-        { permission: "instagram_business_basic", status: "granted" },
-        { permission: "instagram_business_content_publish", status: "granted" },
-      ] });
-    }
     return response({ id: "123", username: "vargen_fe", account_type: "BUSINESS" });
   };
 }
@@ -55,22 +48,23 @@ test("missing connectivity credentials return configuration error without attemp
   assert.equal(calls, 0);
 });
 
-test("successful connectivity validates account identity and permissions without publishing", async () => {
+test("successful Instagram Login connectivity validates account identity without probing permissions or publishing", async () => {
   const calls: Array<{ url: string; method: string; authorization: string | null }> = [];
   const result = await new MetaInstagramConnectivityValidator(config(), successfulFetch(calls)).validate();
   assert.equal(result.state, "READY_FOR_CONTROLLED_TEST");
   assert.equal(result.readyForControlledTest, true);
-  assert.equal(result.publishingCapability, "PASS");
+  assert.equal(result.publishingCapability, "CONFIGURED_FOR_CONTROLLED_TEST");
+  assert.equal(result.publishingProven, false);
+  assert.deepEqual(result.requiredPublishingPermissions, ["instagram_business_basic", "instagram_business_content_publish"]);
   assert.equal(result.checks.configuration, "PASS");
   assert.equal(result.checks.accountCompatibility, "PASS");
   assert.equal(result.account?.id, "123");
   assert.equal(result.checks.authentication, "PASS");
   assert.equal(result.checks.accountIdMatch, "PASS");
-  assert.equal(calls.length, 2);
+  assert.equal(calls.length, 1);
   assert.ok(calls.every((call) => call.method === "GET"));
   assert.equal(calls[0]?.url, "https://graph.instagram.com/v22.0/me?fields=id%2Cusername%2Cname%2Caccount_type");
-  assert.equal(calls[1]?.url, "https://graph.instagram.com/v22.0/me/permissions");
-  assert.ok(calls.every((call) => !call.url.includes("access_token") && !call.url.includes("media_publish") && !call.url.match(/\/media(?:\/|$)/)));
+  assert.ok(calls.every((call) => !call.url.includes("/permissions") && !call.url.includes("access_token") && !call.url.includes("media_publish") && !call.url.match(/\/media(?:\/|$)/)));
   assert.ok(calls.every((call) => call.authorization === `Bearer ${secret}`));
   assert.ok(!JSON.stringify(result).includes(secret));
   const output = formatInstagramConnectivityResult(result);
@@ -82,6 +76,10 @@ test("successful connectivity validates account identity and permissions without
   assert.match(output, /Authenticated account ID: 123/);
   assert.match(output, /Authenticated username: vargen_fe/);
   assert.match(output, /Authenticated account type: BUSINESS/);
+  assert.match(output, /Professional account: PASS/);
+  assert.match(output, /API model: Instagram Login/);
+  assert.match(output, /Publishing configuration: READY_FOR_CONTROLLED_TEST/);
+  assert.match(output, /Publishing proven: NO/);
   assert.match(output, /token_present=true/);
   assert.ok(!output.includes(secret));
 });
@@ -206,47 +204,36 @@ test("non-professional account types are blocked when Meta exposes the type", as
 });
 
 test("Meta MEDIA_CREATOR account type is accepted as a professional Instagram account", async () => {
-  const result = await new MetaInstagramConnectivityValidator(config(), async (input) => {
-    return String(input).includes("/me/permissions")
-      ? response({ data: [{ permission: "instagram_business_basic", status: "granted" }, { permission: "instagram_business_content_publish", status: "granted" }] })
-      : response({ id: "123", username: "vargen.fe", account_type: "MEDIA_CREATOR" });
+  let calls = 0;
+  const result = await new MetaInstagramConnectivityValidator(config(), async () => {
+    calls += 1;
+    return response({ id: "123", username: "vargen.fe", account_type: "MEDIA_CREATOR" });
   }).validate();
   assert.equal(result.state, "READY_FOR_CONTROLLED_TEST");
   assert.equal(result.checks.accountCompatibility, "PASS");
+  assert.equal(result.publishingCapability, "CONFIGURED_FOR_CONTROLLED_TEST");
+  assert.equal(calls, 1);
 });
 
 test("missing account type remains limited rather than being treated as compatible", async () => {
-  const result = await new MetaInstagramConnectivityValidator(config(), async (input) => {
-    return String(input).includes("/me/permissions")
-      ? response({ data: [{ permission: "instagram_business_basic", status: "granted" }, { permission: "instagram_business_content_publish", status: "granted" }] })
-      : response({ id: "123", username: "vargen_fe" });
+  const result = await new MetaInstagramConnectivityValidator(config(), async () => {
+    return response({ id: "123", username: "vargen_fe" });
   }).validate();
   assert.equal(result.state, "LIMITED");
   assert.equal(result.errorCode, "ACCOUNT_NOT_COMPATIBLE");
   assert.equal(result.publishingCapability, "LIMITED");
 });
 
-test("missing publishing permission is limited and never assumed to pass", async () => {
+test("unsupported permissions edges cannot block Instagram Login connectivity readiness", async () => {
+  const requestedUrls: string[] = [];
   const result = await new MetaInstagramConnectivityValidator(config(), async (input) => {
-    return String(input).includes("/me/permissions")
-      ? response({ data: [{ permission: "instagram_basic", status: "granted" }, { permission: "instagram_content_publish", status: "declined" }] })
-      : response({ id: "123", username: "vargen_fe" });
+    requestedUrls.push(String(input));
+    return response({ id: "123", username: "vargen_fe", account_type: "BUSINESS" });
   }).validate();
-  assert.equal(result.state, "LIMITED");
-  assert.equal(result.publishingCapability, "LIMITED");
-  assert.equal(result.checks.publishingCapability, "LIMITED");
-  assert.equal(result.readyForControlledTest, false);
-});
-
-test("permission endpoint failure is blocked and uncertain capability remains fail-closed", async () => {
-  const result = await new MetaInstagramConnectivityValidator(config(), async (input) => {
-    return String(input).includes("/me/permissions")
-      ? response({ error: { code: "10", message: "Permission denied" } }, 403)
-      : response({ id: "123", username: "vargen_fe" });
-  }).validate();
-  assert.equal(result.errorCode, "PERMISSION_ERROR");
-  assert.equal(result.publishingCapability, "BLOCKED");
-  assert.equal(result.readyForControlledTest, false);
+  assert.equal(result.state, "READY_FOR_CONTROLLED_TEST");
+  assert.equal(result.publishingCapability, "CONFIGURED_FOR_CONTROLLED_TEST");
+  assert.equal(result.publishingProven, false);
+  assert.ok(requestedUrls.every((url) => !url.includes("/me/permissions")));
 });
 
 test("Meta API failures retain a safe API error classification", async () => {
@@ -278,15 +265,15 @@ test("the Facebook Graph host is rejected for Instagram Login tokens", async () 
   assert.equal(calls, 0);
 });
 
-test("connectivity client rejects publication paths before any request", async () => {
+test("connectivity validation has no configurable permissions or publication path", async () => {
   let calls = 0;
-  const result = await new MetaInstagramConnectivityValidator(config({ permissionsEndpoint: "/media" }), async () => {
+  const result = await new MetaInstagramConnectivityValidator(config(), async () => {
     calls += 1;
     return response({ id: "123", username: "vargen_fe" });
   }).validate();
-  assert.equal(result.state, "UNCONFIGURED");
-  assert.equal(result.errorCode, "CONFIGURATION_ERROR");
-  assert.equal(calls, 0);
+  assert.equal(result.state, "LIMITED");
+  assert.equal(result.errorCode, "ACCOUNT_NOT_COMPATIBLE");
+  assert.equal(calls, 1);
 });
 
 test("connectivity operation guard permits only read-only non-publication paths", () => {

@@ -14,10 +14,18 @@ approved time-limited HTTPS media URL
 ```
 
 Section 8.1 replaces the former universal business-verification assumption
-with capability-based readiness. The read-only connectivity validator checks
-the configured account and permission evidence through official Graph API GET
-requests. It does not create a media container and never calls
-`media_publish`. Ambiguous or missing capability evidence remains fail-closed.
+with capability-based readiness. For Instagram API with Instagram Login, the
+read-only connectivity validator checks the configured account identity and
+professional account metadata through the official `/me` Graph API GET. It
+does not call the unsupported `/me/permissions` edge, does not fabricate
+permission evidence, does not create a media container and never calls
+`media_publish`.
+
+The app records `instagram_business_basic` and
+`instagram_business_content_publish` as expected publishing scopes. This is
+configuration evidence, not proof that publishing has been exercised. The
+controlled Section 10.2 pilot is the first operation that may establish
+`PUBLISHING_PROVEN`.
 
 The Meta publisher itself still returns `BLOCKED_EXTERNAL` until a verified
 connectivity result, an approved temporary HTTPS media provider, and all
@@ -28,7 +36,7 @@ Readiness states are:
 
 ```text
 UNCONFIGURED -> CREDENTIALS_PRESENT -> AUTHENTICATED -> ACCOUNT_VERIFIED
-  -> PUBLISH_PERMISSION_VERIFIED -> READY_FOR_CONTROLLED_TEST
+  -> READY_FOR_CONTROLLED_TEST -> PUBLISHING_PROVEN
   -> BLOCKED | ERROR
 ```
 
@@ -43,7 +51,6 @@ Expected configuration is injected at runtime only:
 ```text
 META_GRAPH_API_VERSION=v22.0
 META_GRAPH_API_BASE_URL=https://graph.instagram.com
-META_PERMISSIONS_ENDPOINT=/me/permissions
 META_APP_ID=
 INSTAGRAM_ACCOUNT_ID=
 INSTAGRAM_ACCESS_TOKEN=

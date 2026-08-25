@@ -10,13 +10,13 @@ export type InstagramApiReadinessState =
   | "CREDENTIALS_PRESENT"
   | "AUTHENTICATED"
   | "ACCOUNT_VERIFIED"
-  | "PUBLISH_PERMISSION_VERIFIED"
+  | "PUBLISHING_PROVEN"
   | "READY_FOR_CONTROLLED_TEST"
   | "LIMITED"
   | "BLOCKED"
   | "ERROR";
 
-export type ConnectivityCapability = "PASS" | "LIMITED" | "BLOCKED";
+export type ConnectivityCapability = "CONFIGURED_FOR_CONTROLLED_TEST" | "LIMITED" | "BLOCKED";
 
 export type ConnectivityCheckStatus = "PASS" | "FAIL" | "LIMITED" | "BLOCKED" | "NOT_RUN";
 
@@ -38,7 +38,6 @@ export type InstagramConnectivityConfig = {
   accessToken?: string;
   graphApiVersion: string;
   graphApiBaseUrl: string;
-  permissionsEndpoint: string;
   timeoutMs: number;
   tokenShape?: InstagramTokenShapeDiagnostics;
 };
@@ -64,10 +63,10 @@ export type InstagramAccountMetadata = {
   account_type?: string;
 };
 
-export type InstagramPermission = {
-  permission: string;
-  status: string;
-};
+export const REQUIRED_INSTAGRAM_PUBLISHING_PERMISSIONS = [
+  "instagram_business_basic",
+  "instagram_business_content_publish",
+] as const;
 
 export type ConnectivityChecks = {
   configuration: ConnectivityCheckStatus;
@@ -82,10 +81,11 @@ export type ConnectivityChecks = {
 export type InstagramConnectivityResult = {
   state: InstagramApiReadinessState;
   publishingCapability: ConnectivityCapability;
+  publishingProven: boolean;
   readyForControlledTest: boolean;
   checks: ConnectivityChecks;
   account?: InstagramAccountMetadata;
-  permissions?: InstagramPermission[];
+  requiredPublishingPermissions: readonly string[];
   errorCode?: ConnectivityErrorCode;
   errorMessageSafe?: string;
   apiHost: string;
@@ -104,11 +104,6 @@ type MetaErrorDetails = {
   subcode?: string;
   type?: string;
 };
-
-const REQUIRED_PERMISSION_ALIASES: ReadonlyArray<ReadonlyArray<string>> = [
-  ["instagram_basic", "instagram_business_basic"],
-  ["instagram_content_publish", "instagram_business_content_publish"],
-];
 
 const OFFICIAL_META_GRAPH_HOSTS = new Set(["graph.instagram.com"]);
 
@@ -152,7 +147,6 @@ export function loadInstagramConnectivityConfig(env: NodeJS.ProcessEnv = process
     accessToken: rawAccessToken?.trim() || undefined,
     graphApiVersion: envValue("META_GRAPH_API_VERSION", env) ?? DEFAULT_META_GRAPH_API_VERSION,
     graphApiBaseUrl: envValue("META_GRAPH_API_BASE_URL", env) ?? DEFAULT_META_GRAPH_API_BASE_URL,
-    permissionsEndpoint: envValue("META_PERMISSIONS_ENDPOINT", env) ?? "/me/permissions",
     timeoutMs: Number(envValue("META_CONNECTIVITY_TIMEOUT_MS", env) ?? DEFAULT_META_CONNECTIVITY_TIMEOUT_MS),
     tokenShape: inspectInstagramTokenShape(rawAccessToken),
   };
@@ -176,9 +170,6 @@ function invalidConfiguration(config: InstagramConnectivityConfig): string[] {
     }
   } catch {
     invalid.push("META_GRAPH_API_BASE_URL_INVALID");
-  }
-  if (!config.permissionsEndpoint.startsWith("/") || config.permissionsEndpoint.includes("..") || config.permissionsEndpoint.includes("?") || config.permissionsEndpoint.includes("#") || pathIsForbidden(config.permissionsEndpoint)) {
-    invalid.push("META_PERMISSIONS_ENDPOINT_INVALID");
   }
   const tokenShape = config.tokenShape ?? inspectInstagramTokenShape(config.accessToken);
   if (tokenShape.startsWithBearerLiteral) invalid.push("INSTAGRAM_ACCESS_TOKEN_MUST_CONTAIN_RAW_TOKEN");
@@ -226,7 +217,9 @@ function resultBase(config: InstagramConnectivityConfig, configurationPresent: b
   return {
     state: configurationPresent && credentialsPresent ? "CREDENTIALS_PRESENT" : "UNCONFIGURED",
     publishingCapability: "BLOCKED",
+    publishingProven: false,
     readyForControlledTest: false,
+    requiredPublishingPermissions: [...REQUIRED_INSTAGRAM_PUBLISHING_PERMISSIONS],
     apiHost: safeHost(config.graphApiBaseUrl),
     authenticationEndpoint: INSTAGRAM_PROFILE_ENDPOINT,
     authorizationMethod: "Bearer header",
@@ -253,21 +246,6 @@ function accountMetadata(body: unknown): InstagramAccountMetadata | undefined {
     ...(text(value?.name) ? { name: text(value?.name) } : {}),
     ...(text(value?.account_type) ? { account_type: text(value?.account_type) } : {}),
   };
-}
-
-function permissions(body: unknown): InstagramPermission[] {
-  const value = record(body);
-  if (!Array.isArray(value?.data)) return [];
-  return value.data.flatMap((item): InstagramPermission[] => {
-    const permission = record(item);
-    const name = text(permission?.permission);
-    const status = text(permission?.status);
-    return name && status ? [{ permission: name, status }] : [];
-  });
-}
-
-function requiredPermissionsGranted(items: InstagramPermission[]): boolean {
-  return REQUIRED_PERMISSION_ALIASES.every((aliases) => items.some((item) => aliases.includes(item.permission) && item.status.toLowerCase() === "granted"));
 }
 
 function tokenExpired(error?: MetaErrorDetails): boolean {
@@ -399,14 +377,24 @@ export class MetaInstagramConnectivityValidator {
 
     const accountType = account.account_type?.toUpperCase();
     const accountCompatibility = compatibilityStatus(accountType);
-    if (accountCompatibility === "FAIL") {
+    if (accountCompatibility !== "PASS") {
       return {
         ...result,
-        state: "BLOCKED",
-        checks: { ...result.checks, authentication: "PASS", accountAccess: "PASS", accountIdMatch: "PASS", accountCompatibility },
+        state: accountCompatibility === "FAIL" ? "BLOCKED" : "LIMITED",
+        publishingCapability: accountCompatibility === "FAIL" ? "BLOCKED" : "LIMITED",
+        checks: {
+          ...result.checks,
+          authentication: "PASS",
+          accountAccess: "PASS",
+          accountIdMatch: "PASS",
+          accountCompatibility,
+          publishingCapability: accountCompatibility === "FAIL" ? "BLOCKED" : "LIMITED",
+        },
         account,
         errorCode: "ACCOUNT_NOT_COMPATIBLE",
-        errorMessageSafe: "Meta returned an account type that is not compatible with Instagram publishing.",
+        errorMessageSafe: accountCompatibility === "FAIL"
+          ? "Meta returned an account type that is not compatible with Instagram publishing."
+          : "Meta did not expose a professional account type for compatibility validation.",
       };
     }
 
@@ -417,65 +405,13 @@ export class MetaInstagramConnectivityValidator {
       account,
     };
 
-    let permissionsResponse: Awaited<ReturnType<MetaInstagramConnectivityValidator["getJson"]>>;
-    try {
-      permissionsResponse = await this.getJson(this.config.permissionsEndpoint, {});
-    } catch {
-      return {
-        ...authenticated,
-        state: "ERROR",
-        publishingCapability: "BLOCKED",
-        checks: { ...authenticated.checks, publishingCapability: "BLOCKED" },
-        errorCode: "NETWORK_ERROR",
-        errorMessageSafe: "Meta permission network request failed safely.",
-      };
-    }
-    if (!permissionsResponse.ok) {
-      const errorCode = responseErrorCode(permissionsResponse.status, permissionsResponse.error, true);
-      return {
-        ...authenticated,
-        state: stateForError(errorCode),
-        publishingCapability: "BLOCKED",
-        checks: { ...authenticated.checks, publishingCapability: "BLOCKED" },
-        errorCode,
-        errorMessageSafe: permissionsResponse.error?.message ?? "Meta publishing permission validation failed safely.",
-      };
-    }
-
-    const permissionItems = permissions(permissionsResponse.body);
-    if (!requiredPermissionsGranted(permissionItems)) {
-      return {
-        ...authenticated,
-        state: "LIMITED",
-        publishingCapability: permissionItems.length > 0 ? "LIMITED" : "BLOCKED",
-        checks: { ...authenticated.checks, publishingCapability: permissionItems.length > 0 ? "LIMITED" : "BLOCKED" },
-        permissions: permissionItems,
-        errorCode: "PERMISSION_ERROR",
-        errorMessageSafe: permissionItems.length > 0
-          ? "Required Instagram publishing permissions were not fully granted."
-          : "Meta returned no usable publishing permission evidence.",
-      };
-    }
-
-    if (authenticated.checks.accountCompatibility !== "PASS") {
-      return {
-        ...authenticated,
-        state: "LIMITED",
-        publishingCapability: "LIMITED",
-        readyForControlledTest: false,
-        errorCode: "ACCOUNT_NOT_COMPATIBLE",
-        errorMessageSafe: "Meta did not expose a professional account type for compatibility validation.",
-        permissions: permissionItems,
-      };
-    }
-
     return {
       ...authenticated,
       state: "READY_FOR_CONTROLLED_TEST",
-      publishingCapability: "PASS",
+      publishingCapability: "CONFIGURED_FOR_CONTROLLED_TEST",
+      publishingProven: false,
       readyForControlledTest: true,
       checks: { ...authenticated.checks, publishingCapability: "PASS" },
-      permissions: permissionItems,
     };
   }
 }
@@ -511,7 +447,10 @@ export function formatInstagramConnectivityResult(result: InstagramConnectivityR
     `Authentication: ${status(result.checks.authentication)}`,
     `Account access: ${status(result.checks.accountAccess)}`,
     `Account ID match: ${status(result.checks.accountIdMatch)}`,
-    `Publishing capability: ${result.publishingCapability}`,
+    `Professional account: ${status(result.checks.accountCompatibility)}`,
+    "API model: Instagram Login",
+    `Publishing configuration: ${result.readyForControlledTest ? "READY_FOR_CONTROLLED_TEST" : result.publishingCapability}`,
+    `Publishing proven: ${result.publishingProven ? "YES" : "NO"}`,
     "Publishing executed: NO",
     "",
     `Readiness: ${result.readyForControlledTest ? "READY_FOR_CONTROLLED_TEST" : result.state}`,

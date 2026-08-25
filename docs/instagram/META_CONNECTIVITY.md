@@ -14,7 +14,12 @@ HTTPS host. The probe reads:
 
 1. `/me` account metadata (`id`, `username`, `name`, `account_type`);
 2. the configured account identity match;
-3. read-only permission evidence from the configured permissions endpoint.
+3. professional-account compatibility.
+
+Instagram API with Instagram Login does not use the legacy `/me/permissions`
+probe. The validator therefore does not call or configure that unsupported
+edge. It records the publishing scopes expected by the app, but it does not
+claim that those scopes have been empirically exercised.
 
 The required permission aliases include the current owned-account testing
 permissions:
@@ -24,9 +29,9 @@ instagram_business_basic
 instagram_business_content_publish
 ```
 
-Legacy aliases are accepted when returned by the official API. A successful
-probe means capability is ready for a future controlled test; it does not
-authorize publication.
+These names are configuration expectations only. A successful probe means
+the authenticated account is ready for a future controlled publishing test;
+it does not authorize publication or prove content publishing.
 
 ## Readiness states
 
@@ -35,16 +40,17 @@ UNCONFIGURED
 CREDENTIALS_PRESENT
 AUTHENTICATED
 ACCOUNT_VERIFIED
-PUBLISH_PERMISSION_VERIFIED
+PUBLISHING_PROVEN
 READY_FOR_CONTROLLED_TEST
 LIMITED
 BLOCKED
 ERROR
 ```
 
-Credentials are never treated as readiness. Missing account type, partial
-permissions, ambiguous API responses, and transport failures remain
-fail-closed.
+Credentials are never treated as readiness. Missing account type, ambiguous
+API responses, and transport failures remain fail-closed. `PUBLISHING_PROVEN`
+is intentionally unreachable in Section 10.1; it requires the separately
+governed Section 10.2 controlled pilot.
 
 ## GitHub Environment
 
@@ -95,7 +101,7 @@ artifact upload.
 | `TOKEN_EXPIRED` | Meta explicitly reported an expired token/session | Issue a new official token and replace the secret |
 | `ACCOUNT_MISMATCH` | API identity differs from `INSTAGRAM_ACCOUNT_ID` | Correct the account ID or token/account pairing |
 | `ACCOUNT_NOT_COMPATIBLE` | Account type is non-professional or unavailable for compatibility proof | Verify the account type and current API login mode |
-| `PERMISSION_ERROR` | Required permission evidence is missing or denied | Review app mode, account connection and permissions |
+| `PERMISSION_ERROR` | A later operation explicitly reports a permission failure | Review app mode, account connection and permissions |
 | `RATE_LIMITED` | Meta rate limit was returned | Wait and retry manually; do not automate retries here |
 | `NETWORK_ERROR` | The request could not reach Meta or timed out | Check runner/network and retry manually |
 | `META_API_ERROR` | Meta returned another API failure | Review only the sanitized detail and official documentation |
