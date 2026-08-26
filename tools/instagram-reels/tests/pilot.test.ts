@@ -87,6 +87,21 @@ test("real pilot confirmation is required before provider or Meta calls", async 
   await assert.rejects(() => runPilotCommand("instagram:pilot", [`--reel=${item.reelId}`, "--provider=onedrive-personal"], item.config), /CONFIRMATION_REQUIRED/);
 });
 
+test("real pilot environment must be explicitly enabled even with exact confirmation", async () => {
+  const item = await fixture();
+  const originalReal = process.env.INSTAGRAM_PILOT_REAL;
+  delete process.env.INSTAGRAM_PILOT_REAL;
+  try {
+    await assert.rejects(
+      () => runPilotCommand("instagram:pilot", [`--reel=${item.reelId}`, "--provider=onedrive-personal", "--confirm=I_CONFIRM_ONE_REEL_PUBLICATION"], item.config),
+      /REAL_PILOT_ENVIRONMENT_REQUIRED/,
+    );
+  } finally {
+    if (originalReal === undefined) delete process.env.INSTAGRAM_PILOT_REAL;
+    else process.env.INSTAGRAM_PILOT_REAL = originalReal;
+  }
+});
+
 test("cleanup is attempted only after confirmed publication read-back", async () => {
   const item = await fixture();
   section8FastPath(item.config, item.reelId);

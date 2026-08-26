@@ -52,6 +52,8 @@ export async function runInstagramConfigCheckCommand(command: string | undefined
   console.log(`  Source: ${projectEnvironmentSource("INSTAGRAM_PUBLISH_MODE", process.env, repoRoot)}`);
   console.log(`INSTAGRAM_REQUIRE_APPROVAL: ${automation.requireApproval ? "ENABLED" : "DISABLED"}`);
   console.log(`  Source: ${projectEnvironmentSource("INSTAGRAM_REQUIRE_APPROVAL", process.env, repoRoot)}`);
+  console.log(`Real pilot environment: ${automation.realPilotEnabled ? "ENABLED" : "DISABLED"}`);
+  console.log(`  Source: ${projectEnvironmentSource("INSTAGRAM_PILOT_REAL", process.env, repoRoot)}`);
   console.log(`Approval gate: ${isPublicationApprovalConfigurationValid(automation) ? "VALID" : "BLOCKED"}`);
   console.log(`INSTAGRAM_TIMEZONE: ${env.INSTAGRAM_TIMEZONE?.trim() ? "PRESENT" : "OPTIONAL_DEFAULT"}`);
   console.log(`Graph API host: ${graphHost}`);

@@ -3,7 +3,7 @@ import path from "node:path";
 import { randomUUID } from "node:crypto";
 import type { DatabaseSync } from "node:sqlite";
 import { loadConfig, type MediaConfig } from "../config/index.js";
-import { loadAutomationConfig, runtimeEnvironmentValue } from "../config/automation.js";
+import { isRealPilotEnvironmentReady, loadAutomationConfig, runtimeEnvironmentValue } from "../config/automation.js";
 import { derivedReelById, inspectAsset, latestEditorialPackage, openDatabase } from "../database/db.js";
 import { sha256File } from "../media/checksum.js";
 import { listReviewItems, type ReviewItem } from "../review/service.js";
@@ -232,7 +232,8 @@ export async function executeFrozenPilot(options: PilotExecutionOptions): Promis
     auditPilot(db, "PUBLICATION_PILOT_STARTED", snapshot, options.actor, { provider: media.provider });
     auditPilot(db, "TEMP_MEDIA_REFRESHED", snapshot, options.actor, { provider: media.provider, media_url: mediaUrl.safeUrl });
     if (options.dryRun) return { status: "DRY_RUN_VALIDATED", snapshot, readiness, media_url: mediaUrl, container_id: null, remote_status: null, instagram_media_id: null, permalink: null, published_at: null, media_container_created: false, media_publish_called: false, content_published: false, publishing_proven: false };
-    if (runtimeEnvironmentValue("INSTAGRAM_PILOT_REAL") !== "true" || loadAutomationConfig().publishMode !== "approval" || !loadAutomationConfig().requireApproval) return { status: "BLOCKED", failure_code: "REAL_PILOT_ENVIRONMENT_REQUIRED", snapshot, readiness, media_url: mediaUrl, container_id: null, remote_status: null, instagram_media_id: null, permalink: null, published_at: null, media_container_created: false, media_publish_called: false, content_published: false, publishing_proven: false };
+    const automation = loadAutomationConfig(process.env, config.repoRoot);
+    if (!isRealPilotEnvironmentReady(automation)) return { status: "BLOCKED", failure_code: "REAL_PILOT_ENVIRONMENT_REQUIRED", snapshot, readiness, media_url: mediaUrl, container_id: null, remote_status: null, instagram_media_id: null, permalink: null, published_at: null, media_container_created: false, media_publish_called: false, content_published: false, publishing_proven: false };
     if (!options.api) throw new Error("META_PILOT_API_REQUIRED");
     const container = await options.api.createReelContainer({ videoUrl: media.url, caption: snapshot.caption });
     containerId = container.containerId;

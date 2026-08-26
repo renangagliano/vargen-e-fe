@@ -3,7 +3,7 @@ import fs from "node:fs/promises";
 import test from "node:test";
 import os from "node:os";
 import path from "node:path";
-import { isPublicationApprovalConfigurationValid, loadAutomationConfig, resolveInstagramPublishMode, resolveRequireApproval } from "../src/config/automation.js";
+import { isPublicationApprovalConfigurationValid, isRealPilotEnvironmentReady, loadAutomationConfig, resolveInstagramPublishMode, resolveRealPilotEnabled, resolveRequireApproval } from "../src/config/automation.js";
 
 test("defaults automation to dry-run with conservative controls", () => {
   const config = loadAutomationConfig({ ...process.env, INSTAGRAM_PUBLISH_MODE: undefined, INSTAGRAM_REQUIRE_APPROVAL: undefined }, path.join(process.cwd(), "tools"));
@@ -51,4 +51,15 @@ test("approval requires the approval flag and explicit false blocks publication"
   assert.throws(() => resolveRequireApproval("maybe"), /INSTAGRAM_REQUIRE_APPROVAL_INVALID/);
   assert.equal(isPublicationApprovalConfigurationValid({ publishMode: "approval", requireApproval: true }), true);
   assert.equal(isPublicationApprovalConfigurationValid({ publishMode: "approval", requireApproval: false }), false);
+});
+
+test("real pilot environment is explicit, strict and approval-gated", () => {
+  assert.equal(resolveRealPilotEnabled(undefined), false);
+  assert.equal(resolveRealPilotEnabled("false"), false);
+  assert.equal(resolveRealPilotEnabled("true"), true);
+  assert.throws(() => resolveRealPilotEnabled("yes"), /INSTAGRAM_PILOT_REAL_INVALID/);
+  assert.equal(isRealPilotEnvironmentReady({ realPilotEnabled: false, publishMode: "approval", requireApproval: true }), false);
+  assert.equal(isRealPilotEnvironmentReady({ realPilotEnabled: true, publishMode: "dry-run", requireApproval: true }), false);
+  assert.equal(isRealPilotEnvironmentReady({ realPilotEnabled: true, publishMode: "approval", requireApproval: false }), false);
+  assert.equal(isRealPilotEnvironmentReady({ realPilotEnabled: true, publishMode: "approval", requireApproval: true }), true);
 });

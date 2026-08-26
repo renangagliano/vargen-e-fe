@@ -77,11 +77,11 @@ export async function runPilotCommand(command: string | undefined, args: string[
   const dryRun = args.includes("--dry-run");
   const reelId = option(args, "reel");
   const provider = selectedProviderMode(option(args, "provider"));
-  loadAutomationConfig(process.env, config.repoRoot);
+  const automation = loadAutomationConfig(process.env, config.repoRoot);
   const actor = option(args, "by") ?? runtimeEnvironmentValue("VARGEN_REVIEWER_NAME") ?? "operator";
   if (!dryRun && option(args, "confirm") !== PILOT_CONFIRMATION) throw new Error("CONFIRMATION_REQUIRED");
   if (!dryRun && !reelId) throw new Error("EXACTLY_ONE_REEL_REQUIRED");
-  if (!dryRun && runtimeEnvironmentValue("INSTAGRAM_PILOT_REAL") !== "true") throw new Error("REAL_PILOT_ENVIRONMENT_REQUIRED");
+  if (!dryRun && !automation.realPilotEnabled) throw new Error("REAL_PILOT_ENVIRONMENT_REQUIRED");
   if (dryRun) {
     const outcome = await runPilotDryRun(reelId, actor, config);
     let providerReadiness: OneDriveTemporaryMediaReadiness | undefined;

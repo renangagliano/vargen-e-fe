@@ -5,6 +5,7 @@ export type InstagramPublishMode = "dry-run" | "approval";
 export type AutomationConfig = {
   publishMode: InstagramPublishMode;
   requireApproval: boolean;
+  realPilotEnabled: boolean;
   timezone: string;
   maxReelsPerDay: number;
   minHoursBetweenReels: number;
@@ -31,8 +32,19 @@ export function resolveRequireApproval(value: string | undefined): boolean {
   throw new Error("INSTAGRAM_REQUIRE_APPROVAL_INVALID");
 }
 
+export function resolveRealPilotEnabled(value: string | undefined): boolean {
+  const normalized = value?.trim();
+  if (!normalized || normalized === "false") return false;
+  if (normalized === "true") return true;
+  throw new Error("INSTAGRAM_PILOT_REAL_INVALID");
+}
+
 export function isPublicationApprovalConfigurationValid(config: Pick<AutomationConfig, "publishMode" | "requireApproval">): boolean {
   return config.publishMode !== "approval" || config.requireApproval;
+}
+
+export function isRealPilotEnvironmentReady(config: Pick<AutomationConfig, "publishMode" | "requireApproval" | "realPilotEnabled">): boolean {
+  return config.realPilotEnabled && config.publishMode === "approval" && config.requireApproval;
 }
 
 export function loadAutomationConfig(env: NodeJS.ProcessEnv = process.env, repoRoot = process.cwd()): AutomationConfig {
@@ -41,6 +53,7 @@ export function loadAutomationConfig(env: NodeJS.ProcessEnv = process.env, repoR
   return {
     publishMode,
     requireApproval: resolveRequireApproval(effectiveEnv.INSTAGRAM_REQUIRE_APPROVAL),
+    realPilotEnabled: resolveRealPilotEnabled(effectiveEnv.INSTAGRAM_PILOT_REAL),
     timezone: effectiveEnv.INSTAGRAM_TIMEZONE?.trim() || "America/Sao_Paulo",
     maxReelsPerDay: integer(effectiveEnv.MAX_REELS_PER_DAY, 1),
     minHoursBetweenReels: integer(effectiveEnv.MIN_HOURS_BETWEEN_REELS, 24),
