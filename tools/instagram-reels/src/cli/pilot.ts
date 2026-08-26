@@ -1,7 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { loadConfig, type MediaConfig } from "../config/index.js";
-import { runtimeEnvironmentValue } from "../config/automation.js";
+import { loadAutomationConfig, runtimeEnvironmentValue } from "../config/automation.js";
 import { evaluateContentReadiness } from "../review/readiness.js";
 import { BlockedPublicationMediaProvider } from "../publishing/media-provider.js";
 import { AzureBlobTemporaryMediaProvider } from "../publishing/azure-temporary-media.js";
@@ -77,6 +77,7 @@ export async function runPilotCommand(command: string | undefined, args: string[
   const dryRun = args.includes("--dry-run");
   const reelId = option(args, "reel");
   const provider = selectedProviderMode(option(args, "provider"));
+  loadAutomationConfig(process.env, config.repoRoot);
   const actor = option(args, "by") ?? runtimeEnvironmentValue("VARGEN_REVIEWER_NAME") ?? "operator";
   if (!dryRun && option(args, "confirm") !== PILOT_CONFIRMATION) throw new Error("CONFIRMATION_REQUIRED");
   if (!dryRun && !reelId) throw new Error("EXACTLY_ONE_REEL_REQUIRED");

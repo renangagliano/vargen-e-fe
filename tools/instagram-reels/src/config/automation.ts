@@ -1,6 +1,6 @@
 import { loadProjectEnvironment } from "./index.js";
 
-export type InstagramPublishMode = "dry-run" | "approval" | "full-auto";
+export type InstagramPublishMode = "dry-run" | "approval";
 
 export type AutomationConfig = {
   publishMode: InstagramPublishMode;
@@ -17,13 +17,30 @@ function integer(value: string | undefined, fallback: number): number {
   return Number.isInteger(parsed) && parsed >= 0 ? parsed : fallback;
 }
 
-export function loadAutomationConfig(env: NodeJS.ProcessEnv = process.env): AutomationConfig {
-  const effectiveEnv = loadProjectEnvironment(env);
-  const rawMode = effectiveEnv.INSTAGRAM_PUBLISH_MODE?.trim() as InstagramPublishMode | undefined;
-  const publishMode: InstagramPublishMode = rawMode === "approval" || rawMode === "full-auto" ? rawMode : "dry-run";
+export function resolveInstagramPublishMode(value: string | undefined): InstagramPublishMode {
+  const normalized = value?.trim();
+  if (!normalized || normalized === "dry-run") return "dry-run";
+  if (normalized === "approval") return "approval";
+  throw new Error("INSTAGRAM_PUBLISH_MODE_INVALID");
+}
+
+export function resolveRequireApproval(value: string | undefined): boolean {
+  const normalized = value?.trim();
+  if (!normalized || normalized === "true") return true;
+  if (normalized === "false") return false;
+  throw new Error("INSTAGRAM_REQUIRE_APPROVAL_INVALID");
+}
+
+export function isPublicationApprovalConfigurationValid(config: Pick<AutomationConfig, "publishMode" | "requireApproval">): boolean {
+  return config.publishMode !== "approval" || config.requireApproval;
+}
+
+export function loadAutomationConfig(env: NodeJS.ProcessEnv = process.env, repoRoot = process.cwd()): AutomationConfig {
+  const effectiveEnv = loadProjectEnvironment(env, repoRoot);
+  const publishMode = resolveInstagramPublishMode(effectiveEnv.INSTAGRAM_PUBLISH_MODE);
   return {
     publishMode,
-    requireApproval: effectiveEnv.INSTAGRAM_REQUIRE_APPROVAL !== "false",
+    requireApproval: resolveRequireApproval(effectiveEnv.INSTAGRAM_REQUIRE_APPROVAL),
     timezone: effectiveEnv.INSTAGRAM_TIMEZONE?.trim() || "America/Sao_Paulo",
     maxReelsPerDay: integer(effectiveEnv.MAX_REELS_PER_DAY, 1),
     minHoursBetweenReels: integer(effectiveEnv.MIN_HOURS_BETWEEN_REELS, 24),

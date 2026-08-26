@@ -110,8 +110,15 @@ test("SQLite publication job can be durably locked once", async () => {
 
 test("dry-run schedule can be cancelled without a publisher call", async () => {
   const item = await fixture();
-  const scheduled = await schedulePublication(item.reelId, "2030-01-01T18:00:00-03:00", "qa-operator", item.config);
-  assert.equal(scheduled.job.status, "SCHEDULED");
-  const cancelled = cancelPublication(scheduled.job.publication_job_id, "qa-operator", item.config);
-  assert.equal(cancelled.status, "CANCELLED");
+  const originalMode = process.env.INSTAGRAM_PUBLISH_MODE;
+  process.env.INSTAGRAM_PUBLISH_MODE = "dry-run";
+  try {
+    const scheduled = await schedulePublication(item.reelId, "2030-01-01T18:00:00-03:00", "qa-operator", item.config);
+    assert.equal(scheduled.job.status, "SCHEDULED");
+    const cancelled = cancelPublication(scheduled.job.publication_job_id, "qa-operator", item.config);
+    assert.equal(cancelled.status, "CANCELLED");
+  } finally {
+    if (originalMode === undefined) delete process.env.INSTAGRAM_PUBLISH_MODE;
+    else process.env.INSTAGRAM_PUBLISH_MODE = originalMode;
+  }
 });

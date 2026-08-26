@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
-import { loadProjectEnvironment } from "../config/index.js";
+import { loadProjectEnvironment, projectEnvironmentLocalKeyCount, projectEnvironmentSource } from "../config/index.js";
+import { isPublicationApprovalConfigurationValid, loadAutomationConfig } from "../config/automation.js";
 
 const REQUIRED_FOR_CONNECTIVITY = ["INSTAGRAM_ACCESS_TOKEN", "INSTAGRAM_ACCOUNT_ID", "META_APP_ID"] as const;
 const SECRET_KEYS = new Set(["INSTAGRAM_ACCESS_TOKEN", "META_APP_SECRET"]);
@@ -30,9 +31,16 @@ export async function runInstagramConfigCheckCommand(command: string | undefined
   const localEnvPath = path.join(repoRoot, ".env.local");
   const missing = REQUIRED_FOR_CONNECTIVITY.filter((key) => !present(env, key));
   const corporate = corporateRuntimeDependency(env);
+  let automation: ReturnType<typeof loadAutomationConfig>;
+  try {
+    automation = loadAutomationConfig(process.env, repoRoot);
+  } catch (error) {
+    console.log(`Configuration error: ${error instanceof Error ? error.message : "INVALID_CONFIGURATION"}`);
+    process.exitCode = 1;
+    return true;
+  }
   const graphHost = safeGraphHost(env.META_GRAPH_API_BASE_URL);
   const graphApiVersion = env.META_GRAPH_API_VERSION?.trim() || "v22.0 (default)";
-  const publishMode = env.INSTAGRAM_PUBLISH_MODE?.trim() || "dry-run (default)";
   console.log("Instagram Local Configuration");
   console.log("------------------------------");
   console.log(`INSTAGRAM_ACCESS_TOKEN: ${present(env, "INSTAGRAM_ACCESS_TOKEN") ? "PRESENT" : "MISSING"}`);
@@ -40,8 +48,11 @@ export async function runInstagramConfigCheckCommand(command: string | undefined
   console.log(`META_APP_ID: ${present(env, "META_APP_ID") ? "PRESENT" : "MISSING"}`);
   console.log(`META_APP_SECRET: ${present(env, "META_APP_SECRET") ? "PRESENT (UNUSED)" : "NOT_REQUIRED"}`);
   console.log(`META_GRAPH_API_VERSION: ${graphApiVersion}`);
-  console.log(`INSTAGRAM_PUBLISH_MODE: ${publishMode}`);
-  console.log(`INSTAGRAM_REQUIRE_APPROVAL: ${env.INSTAGRAM_REQUIRE_APPROVAL?.trim() === "false" ? "DISABLED" : "ENABLED (default-safe)"}`);
+  console.log(`INSTAGRAM_PUBLISH_MODE: ${automation.publishMode}`);
+  console.log(`  Source: ${projectEnvironmentSource("INSTAGRAM_PUBLISH_MODE", process.env, repoRoot)}`);
+  console.log(`INSTAGRAM_REQUIRE_APPROVAL: ${automation.requireApproval ? "ENABLED" : "DISABLED"}`);
+  console.log(`  Source: ${projectEnvironmentSource("INSTAGRAM_REQUIRE_APPROVAL", process.env, repoRoot)}`);
+  console.log(`Approval gate: ${isPublicationApprovalConfigurationValid(automation) ? "VALID" : "BLOCKED"}`);
   console.log(`INSTAGRAM_TIMEZONE: ${env.INSTAGRAM_TIMEZONE?.trim() ? "PRESENT" : "OPTIONAL_DEFAULT"}`);
   console.log(`Graph API host: ${graphHost}`);
   console.log(`Account ID: ${env.INSTAGRAM_ACCOUNT_ID?.trim() || "MISSING"}`);
@@ -51,6 +62,10 @@ export async function runInstagramConfigCheckCommand(command: string | undefined
   if (missing.length > 0) console.log(`Connectivity configuration: MISSING (${missing.join(", ")})`);
   else if (corporate) console.log("Connectivity configuration: BLOCKED_CORPORATE_DEPENDENCY");
   else console.log("Connectivity configuration: READY_FOR_READ_ONLY_VALIDATION");
-  if (missing.length > 0 || corporate) process.exitCode = 1;
+  if (missing.length > 0 || corporate || !isPublicationApprovalConfigurationValid(automation)) process.exitCode = 1;
+  for (const key of ["INSTAGRAM_PUBLISH_MODE", "INSTAGRAM_REQUIRE_APPROVAL"]) {
+    const count = projectEnvironmentLocalKeyCount(key, repoRoot);
+    if (count > 1) console.log(`${key}: DUPLICATE_LOCAL_DEFINITIONS=${count}`);
+  }
   return true;
 }

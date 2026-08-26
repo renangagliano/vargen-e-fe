@@ -38,6 +38,14 @@ export type MediaConfig = {
   microsoftPersonalAuthCacheRoot: string;
 };
 
+export type ProjectEnvironmentSource = "process.env" | ".env.local" | "default";
+
+type ProjectEnvironmentDetails = {
+  values: NodeJS.ProcessEnv;
+  sources: Map<string, Exclude<ProjectEnvironmentSource, "default">>;
+  localKeyCounts: Map<string, number>;
+};
+
 function configuredPath(value: string | undefined, fallback: string): { value: string; configured: boolean } {
   const trimmed = value?.trim();
   return trimmed
@@ -45,11 +53,14 @@ function configuredPath(value: string | undefined, fallback: string): { value: s
     : { value: fallback, configured: false };
 }
 
-export function loadProjectEnvironment(env: NodeJS.ProcessEnv = process.env, repoRoot = process.cwd()): NodeJS.ProcessEnv {
-  if (env !== process.env) return env;
+function readProjectEnvironmentDetails(env: NodeJS.ProcessEnv, repoRoot: string): ProjectEnvironmentDetails {
+  const sources = new Map<string, Exclude<ProjectEnvironmentSource, "default">>();
+  for (const [key, value] of Object.entries(env)) if (value !== undefined) sources.set(key, "process.env");
+  const localKeyCounts = new Map<string, number>();
   const localEnvPath = path.join(repoRoot, ".env.local");
-  if (!fs.existsSync(localEnvPath)) return env;
   const merged = { ...env };
+  if (!fs.existsSync(localEnvPath)) return { values: merged, sources, localKeyCounts };
+  const localValues = new Map<string, string>();
   for (const line of fs.readFileSync(localEnvPath, "utf8").split(/\r?\n/)) {
     const trimmed = line.trim();
     if (!trimmed || trimmed.startsWith("#")) continue;
@@ -57,9 +68,28 @@ export function loadProjectEnvironment(env: NodeJS.ProcessEnv = process.env, rep
     if (separator <= 0) continue;
     const key = trimmed.slice(0, separator).trim();
     const value = trimmed.slice(separator + 1).trim().replace(/^(['"])(.*)\1$/, "$2");
-    if (merged[key] === undefined) merged[key] = value;
+    localValues.set(key, value);
+    localKeyCounts.set(key, (localKeyCounts.get(key) ?? 0) + 1);
   }
-  return merged;
+  for (const [key, value] of localValues) {
+    if (merged[key] === undefined) {
+      merged[key] = value;
+      sources.set(key, ".env.local");
+    }
+  }
+  return { values: merged, sources, localKeyCounts };
+}
+
+export function loadProjectEnvironment(env: NodeJS.ProcessEnv = process.env, repoRoot = process.cwd()): NodeJS.ProcessEnv {
+  return readProjectEnvironmentDetails(env, path.resolve(repoRoot)).values;
+}
+
+export function projectEnvironmentSource(key: string, env: NodeJS.ProcessEnv = process.env, repoRoot = process.cwd()): ProjectEnvironmentSource {
+  return readProjectEnvironmentDetails(env, path.resolve(repoRoot)).sources.get(key) ?? "default";
+}
+
+export function projectEnvironmentLocalKeyCount(key: string, repoRoot = process.cwd()): number {
+  return readProjectEnvironmentDetails(Object.create(null) as NodeJS.ProcessEnv, path.resolve(repoRoot)).localKeyCounts.get(key) ?? 0;
 }
 
 export function loadConfig(env: NodeJS.ProcessEnv = process.env, repoRoot = process.cwd()): MediaConfig {
