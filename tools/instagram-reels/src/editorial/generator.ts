@@ -90,11 +90,18 @@ export function generateEditorialPackage(input: { reelId: string; category: Cand
   };
 }
 
-export function validateEditorialPackage(editorial: EditorialPackage): string[] {
+export type EditorialValidationOptions = {
+  allowHumanBibleReference?: boolean;
+};
+
+export function validateEditorialPackage(editorial: EditorialPackage, options: EditorialValidationOptions = {}): string[] {
   const errors: string[] = [];
   if (editorial.selected_hook.length < 15 || editorial.selected_hook.length > 140) errors.push("HOOK_LENGTH_INVALID");
   if (!editorial.caption.startsWith(editorial.selected_hook)) errors.push("CAPTION_MUST_START_WITH_SELECTED_HOOK");
-  if (editorial.bible_reference !== PILOT_BIBLE_REFERENCE) errors.push("BIBLE_REFERENCE_NOT_VERIFIED");
+  // Generated pilot packages retain their historical fixed reference. Human
+  // review edits may enter another structurally valid reference, but the
+  // Bible workflow remains responsible for verification and CONTENT_READY.
+  if (!options.allowHumanBibleReference && editorial.bible_reference !== PILOT_BIBLE_REFERENCE) errors.push("BIBLE_REFERENCE_NOT_VERIFIED");
   if (editorial.hashtags.length < 5 || editorial.hashtags.length > 10) errors.push("HASHTAG_COUNT_INVALID");
   if (!editorial.hashtags.includes("#VargenEFé")) errors.push("BRAND_HASHTAG_MISSING");
   if (editorial.rights_status !== "RIGHTS_PENDING_CONFIRMATION" && editorial.rights_status !== "RIGHTS_CONFIRMED") errors.push("RIGHTS_STATUS_CHANGED_UNEXPECTEDLY");

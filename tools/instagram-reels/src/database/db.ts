@@ -448,8 +448,9 @@ export function saveEditorialPackage(db: DatabaseSync, editorial: EditorialPacka
       bible_reference, cta, hashtags_json, content_pillar, secondary_pillar,
       editorial_intent, cover_relative_path, cover_text, review_status,
       publication_status, publication_priority, suggested_context,
-      suggested_spacing, rights_status, package_json, created_at, updated_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      suggested_spacing, rights_status, reviewed_by, reviewed_at, review_note,
+      package_json, created_at, updated_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).run(
     packageToStore.reel_id, packageToStore.editorial_version, packageToStore.editorial_title,
     packageToStore.selected_hook, packageToStore.caption, packageToStore.bible_reference,
@@ -458,7 +459,8 @@ export function saveEditorialPackage(db: DatabaseSync, editorial: EditorialPacka
     packageToStore.cover_filename, packageToStore.cover_text, packageToStore.review_status,
     packageToStore.publication_status, packageToStore.publication_priority,
     packageToStore.suggested_context, packageToStore.suggested_spacing,
-    packageToStore.rights_status, JSON.stringify(packageToStore), timestamp, timestamp,
+    packageToStore.rights_status, packageToStore.reviewed_by ?? null, packageToStore.reviewed_at ?? null,
+    packageToStore.review_note ?? null, JSON.stringify(packageToStore), timestamp, timestamp,
   );
   return packageToStore;
 }

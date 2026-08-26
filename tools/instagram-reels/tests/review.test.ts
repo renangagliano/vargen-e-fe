@@ -162,3 +162,101 @@ test("review progress starts from actual human state and never auto-approves", a
   assert.equal(progress.reviewed, 0);
   assert.equal(progress.pending, 1);
 });
+
+test("cockpit editorial DTO persists both pillars, note, and read-after-write across reconstruction", async () => {
+  const item = await fixture();
+  const server = createReviewServer(item.config);
+  await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
+  const address = server.address() as { port: number };
+  const endpoint = `http://127.0.0.1:${address.port}/api/reels/${encodeURIComponent(item.reelId)}/editorial`;
+  try {
+    const response = await fetch(endpoint, {
+      method: "POST",
+      headers: { origin: `http://127.0.0.1:${item.config.reviewPort}`, "content-type": "application/json" },
+      body: JSON.stringify({ actor: "qa-reviewer", note: "Pilares revisados", content_pillar: "SCRIPTURE", secondary_pillar: "FAITH" }),
+    });
+    assert.equal(response.status, 200, await response.text());
+    const readBack = await (await fetch(`http://127.0.0.1:${address.port}/api/reels/${encodeURIComponent(item.reelId)}`)).json() as { editorial: { content_pillar: string; secondary_pillar: string; review_note: string } };
+    assert.equal(readBack.editorial.content_pillar, "SCRIPTURE");
+    assert.equal(readBack.editorial.secondary_pillar, "FAITH");
+    assert.equal(readBack.editorial.review_note, "Pilares revisados");
+  } finally {
+    await new Promise<void>((resolve) => server.close(() => resolve()));
+  }
+  const reconstructed = await (await import("../src/review/service.js")).getReviewItem(item.reelId, item.config);
+  assert.equal(reconstructed?.editorial?.content_pillar, "SCRIPTURE");
+  assert.equal(reconstructed?.editorial?.secondary_pillar, "FAITH");
+  const db = openDatabase(item.config);
+  try {
+    const row = db.prepare("SELECT content_pillar, secondary_pillar, review_note FROM reel_editorial_packages WHERE reel_id = ? ORDER BY editorial_version DESC LIMIT 1").get(item.reelId) as { content_pillar: string; secondary_pillar: string; review_note: string };
+    assert.equal(row.content_pillar, "SCRIPTURE");
+    assert.equal(row.secondary_pillar, "FAITH");
+    assert.equal(row.review_note, "Pilares revisados");
+  } finally { db.close(); }
+});
+
+test("cockpit Bible draft persists without verification, then explicit verification persists on the resulting version", async () => {
+  const item = await fixture();
+  const setupDb = openDatabase(item.config);
+  try {
+    const current = latestEditorialPackage(setupDb, item.reelId);
+    if (!current) throw new Error("fixture editorial missing");
+    const cleared = { ...current, bible_reference: "", bible_reference_review_required: true };
+    setupDb.prepare("UPDATE reel_editorial_packages SET bible_reference = '', package_json = ? WHERE reel_id = ? AND editorial_version = ?").run(JSON.stringify(cleared), item.reelId, current.editorial_version);
+  } finally { setupDb.close(); }
+  const server = createReviewServer(item.config);
+  await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
+  const address = server.address() as { port: number };
+  const endpoint = `http://127.0.0.1:${address.port}/api/reels/${encodeURIComponent(item.reelId)}/bible`;
+  const post = (body: Record<string, unknown>) => fetch(endpoint, { method: "POST", headers: { origin: `http://127.0.0.1:${item.config.reviewPort}`, "content-type": "application/json" }, body: JSON.stringify(body) });
+  try {
+    const draftResponse = await post({ actor: "qa-reviewer", note: "Referência encontrada na revisão", reference: "Lucas 19", verify: false });
+    assert.equal(draftResponse.status, 200, await draftResponse.text());
+    const draftRead = await (await fetch(`http://127.0.0.1:${address.port}/api/reels/${encodeURIComponent(item.reelId)}`)).json() as { bible: { status: string; reference: string } };
+    assert.equal(draftRead.bible.status, "REVIEW_REQUIRED");
+    assert.equal(draftRead.bible.reference, "Lucas 19");
+    const verifyResponse = await post({ actor: "qa-reviewer", note: "Verificação explícita do operador", reference: "Lucas 19", verify: true });
+    assert.equal(verifyResponse.status, 200, await verifyResponse.text());
+    const verifiedRead = await (await fetch(`http://127.0.0.1:${address.port}/api/reels/${encodeURIComponent(item.reelId)}`)).json() as { bible: { status: string; reference: string } };
+    assert.equal(verifiedRead.bible.status, "VERIFIED");
+    assert.equal(verifiedRead.bible.reference, "Lucas 19");
+    const invalidResponse = await post({ actor: "qa-reviewer", note: "Referência vazia", reference: "", verify: true });
+    assert.equal(invalidResponse.status, 400);
+  } finally {
+    await new Promise<void>((resolve) => server.close(() => resolve()));
+  }
+  const db = openDatabase(item.config);
+  try {
+    const packageRow = latestEditorialPackage(db, item.reelId);
+    const sourceRow = db.prepare("SELECT editorial_version, reference, verification_status FROM bible_reference_sources WHERE reel_id = ? ORDER BY updated_at DESC LIMIT 1").get(item.reelId) as { editorial_version: number; reference: string; verification_status: string };
+    assert.equal(sourceRow.reference, "Lucas 19");
+    assert.equal(sourceRow.verification_status, "VERIFIED");
+    assert.equal(sourceRow.editorial_version, packageRow?.editorial_version);
+  } finally { db.close(); }
+  const current = openDatabase(item.config);
+  const version = latestEditorialPackage(current, item.reelId)?.editorial_version ?? 0;
+  current.close();
+  confirmSourceRights(item.assetId, "qa-owner", "Direitos de fixture", RIGHTS_CONFIRMATION_STATEMENT, item.config);
+  approveEditorial(item.reelId, version, "qa-editor", "Aprovação de fixture", item.config);
+  const readiness = await evaluateContentReadiness(item.reelId, item.config);
+  assert.equal(readiness.gates.bible_reference, "PASS");
+  assert.equal(readiness.status, "CONTENT_READY");
+
+  const beforeRetry = openDatabase(item.config);
+  const beforeSources = Number((beforeRetry.prepare("SELECT COUNT(*) AS count FROM bible_reference_sources WHERE reel_id = ?").get(item.reelId) as { count: number }).count);
+  beforeRetry.close();
+  const retryServer = createReviewServer(item.config);
+  await new Promise<void>((resolve) => retryServer.listen(0, "127.0.0.1", resolve));
+  const retryAddress = retryServer.address() as { port: number };
+  try {
+    const retry = await fetch(`http://127.0.0.1:${retryAddress.port}/api/reels/${encodeURIComponent(item.reelId)}/bible`, { method: "POST", headers: { origin: `http://127.0.0.1:${item.config.reviewPort}`, "content-type": "application/json" }, body: JSON.stringify({ actor: "qa-reviewer", note: "Verificação explícita do operador", reference: "Lucas 19", verify: true }) });
+    assert.equal(retry.status, 200, await retry.text());
+  } finally {
+    await new Promise<void>((resolve) => retryServer.close(() => resolve()));
+  }
+  const afterRetry = openDatabase(item.config);
+  try {
+    const afterSources = Number((afterRetry.prepare("SELECT COUNT(*) AS count FROM bible_reference_sources WHERE reel_id = ?").get(item.reelId) as { count: number }).count);
+    assert.equal(afterSources, beforeSources);
+  } finally { afterRetry.close(); }
+});

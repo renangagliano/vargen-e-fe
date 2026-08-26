@@ -20,6 +20,7 @@ export type EditorialEdit = {
   bible_reference?: string;
   bible_reference_review_required?: boolean;
   cover_text?: string;
+  review_note?: string | null;
 };
 
 export async function editEditorialPackage(reelId: string, actor: string, changes: EditorialEdit, config: MediaConfig = loadConfig()): Promise<EditorialPackage> {
@@ -38,10 +39,10 @@ export async function editEditorialPackage(reelId: string, actor: string, change
       review_status: "READY_FOR_HUMAN_REVIEW",
       reviewed_by: null,
       reviewed_at: null,
-      review_note: `Material editorial change by ${actor}`,
+      review_note: changes.review_note?.trim() || `Material editorial change by ${actor}`,
       generated_at: new Date().toISOString(),
     };
-    const errors = validateEditorialPackage(next);
+    const errors = validateEditorialPackage(next, { allowHumanBibleReference: true });
     if (errors.length) throw new Error(`EDITORIAL_VALIDATION_FAILED: ${errors.join(",")}`);
     const stored = saveEditorialPackage(db, next);
     const outputPath = config.reelsOutputRoot ? path.resolve(config.reelsOutputRoot, String(reel.output_relative_path)) : null;

@@ -86,11 +86,17 @@ export function ensureLegacyBibleEvidence(db: DatabaseSync): void {
 
 export function bibleReferenceStatus(db: DatabaseSync, reelId: string): BibleGovernanceResult {
   ensureLegacyBibleEvidence(db);
+  const editorial = latestEditorialPackage(db, reelId);
   const source = sourceFromRow(latestSourceRow(db, reelId));
   if (source) {
+    if (source.editorial_version !== null && editorial && source.editorial_version !== editorial.editorial_version) {
+      const reference = normalizeBibleReference(editorial.bible_reference ?? "");
+      return reference
+        ? { status: "REVIEW_REQUIRED", reference, source, evidence: "A referência verificada pertence a uma versão editorial anterior; nova verificação explícita é necessária." }
+        : { status: "MISSING", reference: null, source, evidence: "A versão editorial atual não possui referência bíblica." };
+    }
     return { status: source.verification_status, reference: source.reference || null, source, evidence: source.source_location };
   }
-  const editorial = latestEditorialPackage(db, reelId);
   if (!editorial?.bible_reference?.trim()) return { status: "MISSING", reference: null, source: null, evidence: "Nenhuma referência local registrada." };
   if (editorial.bible_reference_review_required) return { status: "REVIEW_REQUIRED", reference: normalizeBibleReference(editorial.bible_reference), source: null, evidence: "Referência presente, mas ainda não verificada pelo operador." };
   return { status: "REVIEW_REQUIRED", reference: normalizeBibleReference(editorial.bible_reference), source: null, evidence: "Referência sem registro de fonte verificável." };
@@ -120,17 +126,26 @@ export async function saveBibleReferenceDraft(input: {
   requireSourceType(sourceType);
   const sourceLocation = input.sourceLocation?.trim() || "local-review-cockpit";
   const db = openDatabase(config);
+  let reusableSource: BibleReferenceSource | null = null;
   try {
-    if (!derivedReelById(db, input.reelId) || !latestEditorialPackage(db, input.reelId)) throw new Error("REEL_OR_EDITORIAL_PACKAGE_NOT_FOUND");
+    const currentPackage = latestEditorialPackage(db, input.reelId);
+    if (!derivedReelById(db, input.reelId) || !currentPackage) throw new Error("REEL_OR_EDITORIAL_PACKAGE_NOT_FOUND");
     const current = latestSourceRow(db, input.reelId);
     if (current && String(current.verification_status) === "VERIFIED" && normalizeBibleReference(String(current.reference)) !== reference) {
       throw new Error("BIBLE_REFERENCE_CONFLICT_WITH_VERIFIED_SOURCE");
     }
+    const currentSource = sourceFromRow(current);
+    if (currentSource && currentSource.editorial_version === currentPackage.editorial_version && currentSource.reference === reference && (currentSource.verification_status === "VERIFIED" || !input.verify)) {
+      reusableSource = currentSource;
+    }
   } finally { db.close(); }
+
+  if (reusableSource) return { package: await importLatestPackage(input.reelId, config), source: reusableSource };
 
   const packageValue = await editEditorialPackage(input.reelId, input.actor, {
     bible_reference: reference,
     bible_reference_review_required: true,
+    review_note: input.note,
   }, config);
   const dbAfter = openDatabase(config);
   try {
@@ -156,7 +171,13 @@ export async function saveBibleReferenceDraft(input: {
         return { package: await importLatestPackage(input.reelId, config), source: verified };
       } finally { verifiedDb.close(); }
     }
-    return { package: packageValue, source };
+    const persistedPackage = await importLatestPackage(input.reelId, config);
+    const persistedDb = openDatabase(config);
+    try {
+      const persistedSource = sourceFromRow(persistedDb.prepare("SELECT * FROM bible_reference_sources WHERE bible_reference_id = ?").get(source.bible_reference_id) as Row);
+      if (!persistedSource || persistedPackage.editorial_version !== source.editorial_version || persistedPackage.bible_reference !== reference) throw new Error("BIBLE_READ_AFTER_WRITE_FAILED");
+      return { package: persistedPackage, source: persistedSource };
+    } finally { persistedDb.close(); }
   } finally {
     // The verify branch closes this handle before reopening it.
     try { dbAfter.close(); } catch { /* already closed */ }
@@ -180,24 +201,34 @@ export async function verifyBibleReference(reelId: string, actor: string, note: 
     ensureLegacyBibleEvidence(db);
     source = sourceFromRow(latestSourceRow(db, reelId));
     if (!source) throw new Error("BIBLE_REFERENCE_NOT_FOUND");
-    if (source.verification_status === "VERIFIED") return source;
+    const currentEditorial = latestEditorialPackage(db, reelId);
+    if (source.verification_status === "VERIFIED" && currentEditorial?.editorial_version === source.editorial_version) return source;
+    if (source.verification_status === "VERIFIED" && currentEditorial && normalizeBibleReference(currentEditorial.bible_reference) !== normalizeBibleReference(source.reference)) throw new Error("BIBLE_REFERENCE_CONFLICT");
     if (source.verification_status === "CONFLICT") throw new Error("BIBLE_REFERENCE_CONFLICT");
     if (!isBibleReferenceStructurallyValid(source.reference)) throw new Error("BIBLE_REFERENCE_FORMAT_INVALID");
     db.prepare("UPDATE bible_reference_sources SET verification_status = 'VERIFIED', verified_by = ?, verified_at = ?, note = ?, updated_at = ? WHERE bible_reference_id = ?").run(actor.trim(), timestamp(), note.trim(), timestamp(), source.bible_reference_id);
   } finally { db.close(); }
 
   const current = await importLatestPackage(reelId, config);
+  let verifiedEditorialVersion = current.editorial_version;
   if (current.bible_reference_review_required) {
-    await editEditorialPackage(reelId, actor, { bible_reference_review_required: false }, config);
+    const verifiedPackage = await editEditorialPackage(reelId, actor, { bible_reference_review_required: false, review_note: note }, config);
+    verifiedEditorialVersion = verifiedPackage.editorial_version;
   }
   const verifiedDb = openDatabase(config);
   try {
+    dbUpdateBibleVersion(verifiedDb, source.bible_reference_id, verifiedEditorialVersion);
     const updated = sourceFromRow(latestSourceRow(verifiedDb, reelId));
-    if (!updated) throw new Error("BIBLE_REFERENCE_NOT_FOUND");
+    const persisted = latestEditorialPackage(verifiedDb, reelId);
+    if (!updated || !persisted || updated.verification_status !== "VERIFIED" || updated.editorial_version !== persisted.editorial_version) throw new Error("BIBLE_READ_AFTER_WRITE_FAILED");
     audit(verifiedDb, { entityType: "REEL", entityId: reelId, eventType: "BIBLE_REFERENCE_VERIFIED", actor: actor.trim(), metadata: { reference: updated.reference, source_type: updated.source_type } });
     audit(verifiedDb, { eventId: `section9-bible-human-verified:${reelId}:${updated.reference}`, entityType: "REEL", entityId: reelId, eventType: "BIBLE_HUMAN_VERIFIED", actor: actor.trim(), metadata: { reference: updated.reference, source_type: updated.source_type, verification: "explicit_operator_action" } });
     return updated;
   } finally { verifiedDb.close(); }
+}
+
+function dbUpdateBibleVersion(db: DatabaseSync, bibleReferenceId: string, editorialVersion: number): void {
+  db.prepare("UPDATE bible_reference_sources SET editorial_version = ?, updated_at = ? WHERE bible_reference_id = ?").run(editorialVersion, timestamp(), bibleReferenceId);
 }
 
 export function listBibleSources(config: MediaConfig = loadConfig()): BibleReferenceSource[] {
