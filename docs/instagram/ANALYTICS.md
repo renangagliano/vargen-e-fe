@@ -2,7 +2,9 @@
 
 ## Estado atual
 
-Não há collector, token, banco, webhook ou métricas Instagram no repositório. Nenhuma métrica foi inventada ou coletada nesta fase.
+O collector da Section 11.1 usa somente `GET /{instagram_media_id}/insights` no host oficial `https://graph.instagram.com`. Ele lê o Media ID persistido em `pilot_publications`, grava snapshots SQLite com timestamp e gera relatórios JSON/Markdown fora do código-fonte.
+
+Nenhum endpoint de publicação é chamado pelo collector.
 
 ## Dados pretendidos
 
@@ -13,8 +15,7 @@ Quando a API oficial e as permissões permitirem, armazenar snapshots de:
 - watch time e average watch time;
 - completion quando exposto;
 - likes, comments, shares e saves;
-- profile visits;
-- follows atribuíveis quando exposto;
+- followers/non-followers quando exposto pela resposta oficial;
 - data/hora de publicação;
 - song, collection, pillar, hook, duração, timestamps, CTA, hashtags e template.
 
@@ -35,7 +36,25 @@ follow_conversion = attributable_follows / profile_visits
 
 ## Janelas
 
-Snapshots preferenciais: 24 h, 72 h, 7 d e 30 d. Não comparar posts com janelas diferentes como se fossem equivalentes.
+Use explicitamente:
+
+```text
+initial | 1h | 24h | 72h | 7d
+```
+
+Exemplo:
+
+```text
+npm run instagram:analytics -- --reel=reel-80bc5fa99371b5d7b91b00cf --window=initial
+```
+
+As janelas posteriores são recusadas antes da chamada à Meta se ainda não forem devidas. Não comparar posts com janelas diferentes como se fossem equivalentes.
+
+## Persistência e estados
+
+Cada snapshot guarda o Media ID, publication key, janela, `captured_at`, timestamp de origem quando fornecido pela API, versão da API e métricas em JSON.
+
+Cada métrica é marcada como `AVAILABLE`, `UNSUPPORTED` ou `NOT_AVAILABLE`. Respostas vazias permanecem `NOT_AVAILABLE`; nunca são convertidas em zero. O relatório geral pode ser `READY`, `PARTIAL` ou `NOT_AVAILABLE`.
 
 ## Experimentos
 

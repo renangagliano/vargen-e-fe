@@ -11,6 +11,8 @@ export type MetaPilotApiOptions = {
 
 export type MetaContainerStatus = "IN_PROGRESS" | "FINISHED" | "ERROR" | "EXPIRED";
 export type MetaPublicationReadback = { id: string; media_type?: string; media_product_type?: string; permalink?: string; timestamp?: string; username?: string; caption?: string };
+export type MetaMediaInsightValue = { value?: unknown; end_time?: string };
+export type MetaMediaInsight = { name?: string; period?: string; values?: MetaMediaInsightValue[]; total_value?: { value?: unknown } };
 
 export class MetaPilotApiError extends Error {
   public constructor(public readonly code: string, message: string, public readonly httpStatus?: number) {
@@ -79,5 +81,10 @@ export class MetaPilotApi {
   async readPublication(mediaId: string): Promise<MetaPublicationReadback> {
     const response = await this.request(mediaId, { method: "GET", headers: { "content-type": "application/json" } }, new URLSearchParams({ fields: "id,media_type,media_product_type,permalink,timestamp,username,caption" }));
     return { id: typeof response.id === "string" ? response.id : mediaId, media_type: typeof response.media_type === "string" ? response.media_type : undefined, media_product_type: typeof response.media_product_type === "string" ? response.media_product_type : undefined, permalink: typeof response.permalink === "string" ? response.permalink : undefined, timestamp: typeof response.timestamp === "string" ? response.timestamp : undefined, username: typeof response.username === "string" ? response.username : undefined, caption: typeof response.caption === "string" ? response.caption : undefined };
+  }
+
+  async getMediaInsights(mediaId: string, metric: string): Promise<MetaMediaInsight[]> {
+    const response = await this.request(`${mediaId}/insights`, { method: "GET", headers: { "content-type": "application/json" } }, new URLSearchParams({ metric }));
+    return Array.isArray(response.data) ? response.data.filter((value): value is MetaMediaInsight => typeof value === "object" && value !== null) : [];
   }
 }

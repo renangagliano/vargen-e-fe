@@ -517,6 +517,43 @@ export function successfulPublicationExists(db: DatabaseSync, key: string): bool
   return Boolean(row?.found);
 }
 
+export function publishedPilotPublicationByReel(db: DatabaseSync, reelId: string): SqlRow | undefined {
+  return db.prepare("SELECT * FROM pilot_publications WHERE reel_id = ? AND status = 'PUBLISHED' ORDER BY published_at DESC, updated_at DESC LIMIT 1").get(reelId) as SqlRow | undefined;
+}
+
+export type InstagramAnalyticsSnapshotRecord = {
+  analytics_snapshot_id: string;
+  reel_id: string;
+  publication_key: string;
+  instagram_media_id: string;
+  observation_window: string;
+  captured_at: string;
+  source_timestamp: string | null;
+  api_version: string;
+  status: string;
+  metrics_json: string;
+  created_at: string;
+};
+
+export function insertInstagramAnalyticsSnapshot(db: DatabaseSync, input: InstagramAnalyticsSnapshotRecord): void {
+  db.prepare(`
+    INSERT INTO instagram_analytics_snapshots (
+      analytics_snapshot_id, reel_id, publication_key, instagram_media_id,
+      observation_window, captured_at, source_timestamp, api_version,
+      status, metrics_json, created_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(
+    input.analytics_snapshot_id, input.reel_id, input.publication_key,
+    input.instagram_media_id, input.observation_window, input.captured_at,
+    input.source_timestamp, input.api_version, input.status, input.metrics_json,
+    input.created_at,
+  );
+}
+
+export function instagramAnalyticsSnapshots(db: DatabaseSync, reelId: string): InstagramAnalyticsSnapshotRecord[] {
+  return db.prepare("SELECT * FROM instagram_analytics_snapshots WHERE reel_id = ? ORDER BY captured_at").all(reelId) as InstagramAnalyticsSnapshotRecord[];
+}
+
 export function duePublicationJob(db: DatabaseSync, nowIso: string): SqlRow | undefined {
   return db.prepare("SELECT * FROM publication_jobs WHERE status IN ('SCHEDULED', 'QUEUED') AND scheduled_at <= ? AND (next_attempt_at IS NULL OR next_attempt_at <= ?) AND (locked_until IS NULL OR locked_until < ?) ORDER BY scheduled_at LIMIT 1").get(nowIso, nowIso, nowIso) as SqlRow | undefined;
 }
