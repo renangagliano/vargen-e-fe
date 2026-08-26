@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { fixture } from "./review.test.js";
-import { openDatabase, latestEditorialPackage } from "../src/database/db.js";
+import { openDatabase, latestEditorialPackage, successfulPublicationExists } from "../src/database/db.js";
 import { confirmSourceRights, RIGHTS_CONFIRMATION_STATEMENT } from "../src/review/rights.js";
 import { saveBibleReferenceDraft } from "../src/review/bible.js";
 import { approveEditorial } from "../src/publishing/approval.js";
@@ -90,7 +90,7 @@ test("real pilot confirmation is required before provider or Meta calls", async 
 test("real pilot environment must be explicitly enabled even with exact confirmation", async () => {
   const item = await fixture();
   const originalReal = process.env.INSTAGRAM_PILOT_REAL;
-  delete process.env.INSTAGRAM_PILOT_REAL;
+  process.env.INSTAGRAM_PILOT_REAL = "false";
   try {
     await assert.rejects(
       () => runPilotCommand("instagram:pilot", [`--reel=${item.reelId}`, "--provider=onedrive-personal", "--confirm=I_CONFIRM_ONE_REEL_PUBLICATION"], item.config),
@@ -141,8 +141,39 @@ test("cleanup is attempted only after confirmed publication read-back", async ()
       pollIntervalMs: 0,
     });
     assert.equal(result.status, "PUBLISHED");
+    assert.equal(result.real_publication_authorized, true);
     assert.equal(result.temporary_media_cleanup, "SUCCEEDED");
     assert.equal(revoked, 1);
+    const state = openDatabase(item.config);
+    try {
+      assert.equal(successfulPublicationExists(state, snapshot.publication_key), true);
+    } finally { state.close(); }
+    let retryProviderCalls = 0;
+    let retryMetaCalls = 0;
+    const retry = await executeFrozenPilot({
+      config: item.config,
+      snapshot,
+      readiness,
+      actor: "qa-pilot-retry",
+      dryRun: false,
+      mediaProvider: {
+        async getTemporaryPublicUrl() { retryProviderCalls += 1; throw new Error("RETRY_PROVIDER_MUST_NOT_RUN"); },
+        async revokeTemporaryPublicUrl() { retryProviderCalls += 1; },
+      },
+      api: {
+        async createReelContainer() { retryMetaCalls += 1; throw new Error("RETRY_META_MUST_NOT_RUN"); },
+        async getContainerStatus() { retryMetaCalls += 1; return { status: "FINISHED" as const }; },
+        async publishContainer() { retryMetaCalls += 1; return { mediaId: "unexpected" }; },
+        async readPublication() { retryMetaCalls += 1; return { id: "unexpected", permalink: "https://instagram.example/unexpected" }; },
+      },
+      pollIntervalMs: 0,
+    });
+    assert.equal(retry.status, "ALREADY_PUBLISHED");
+    assert.equal(retry.media_container_created, false);
+    assert.equal(retry.media_publish_called, false);
+    assert.equal(retry.real_publication_authorized, false);
+    assert.equal(retryProviderCalls, 0);
+    assert.equal(retryMetaCalls, 0);
   } finally {
     if (originalReal === undefined) delete process.env.INSTAGRAM_PILOT_REAL; else process.env.INSTAGRAM_PILOT_REAL = originalReal;
     if (originalMode === undefined) delete process.env.INSTAGRAM_PUBLISH_MODE; else process.env.INSTAGRAM_PUBLISH_MODE = originalMode;

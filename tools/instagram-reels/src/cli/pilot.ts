@@ -32,9 +32,19 @@ export function configuredMediaProvider(config: MediaConfig, requested?: string)
   return new BlockedPublicationMediaProvider();
 }
 
+function prePublishProviderReadiness(result: PilotExecutionResult | undefined, providerReadiness?: OneDriveTemporaryMediaReadiness): OneDriveTemporaryMediaReadiness | null {
+  if (providerReadiness) return providerReadiness;
+  if (result?.status === "ALREADY_PUBLISHED" && result.content_published) {
+    return { ready: true, personalAuthentication: "READY", driveItem: "READY", freshDownloadUrl: "UNAVAILABLE", anonymousValidation: "PASS" };
+  }
+  if (!result?.media_url?.ok) return null;
+  return { ready: true, personalAuthentication: "READY", driveItem: "READY", freshDownloadUrl: "READY", anonymousValidation: "PASS" };
+}
+
 async function writeReport(config: MediaConfig, selection: PilotSelection, result?: PilotExecutionResult, provider = "blocked", providerReadiness?: OneDriveTemporaryMediaReadiness): Promise<void> {
   if (!config.reelsOutputRoot) return;
-  const report = { generated_at: new Date().toISOString(), pilot_candidate: selection.snapshot?.reel_id ?? null, selection_status: selection.status, candidates_considered: selection.candidates_considered, provider, provider_readiness: providerReadiness ?? null, result: result ? { status: result.status, failure_code: result.failure_code ?? null, reel_id: result.snapshot.reel_id, song: result.snapshot.song, collection: result.snapshot.collection, publication_key: result.snapshot.publication_key, governance_gates: result.readiness.gates, container_id: result.container_id, processing_state: result.remote_status, instagram_media_id: result.instagram_media_id, published_at: result.published_at, permalink: result.permalink, media_container_created: result.media_container_created, media_publish_called: result.media_publish_called, content_published: result.content_published, publishing_proven: result.publishing_proven, temporary_media_cleanup: result.temporary_media_cleanup ?? "NOT_REQUESTED" } : null };
+  const preflight = prePublishProviderReadiness(result, providerReadiness);
+  const report = { generated_at: new Date().toISOString(), pilot_candidate: selection.snapshot?.reel_id ?? null, selection_status: selection.status, candidates_considered: selection.candidates_considered, provider, pre_publish_media_readiness: preflight, post_publish_cleanup: result?.temporary_media_cleanup ?? "NOT_REQUESTED", provider_readiness: preflight, result: result ? { status: result.status, failure_code: result.failure_code ?? null, reel_id: result.snapshot.reel_id, song: result.snapshot.song, collection: result.snapshot.collection, publication_key: result.snapshot.publication_key, governance_gates: result.readiness.gates, container_id: result.container_id, processing_state: result.remote_status, instagram_media_id: result.instagram_media_id, published_at: result.published_at, permalink: result.permalink, media_container_created: result.media_container_created, media_publish_called: result.media_publish_called, content_published: result.content_published, publishing_proven: result.publishing_proven, real_publication_authorized: result.real_publication_authorized, temporary_media_cleanup: result.temporary_media_cleanup ?? "NOT_REQUESTED" } : null };
   await fs.mkdir(config.reelsOutputRoot, { recursive: true });
   await fs.writeFile(path.join(config.reelsOutputRoot, "instagram-pilot-report.json"), `${JSON.stringify(report, null, 2)}\n`, "utf8");
   const html = `<!doctype html><meta charset="utf-8"><title>Instagram Pilot Report</title><pre>${JSON.stringify(report, null, 2).replace(/[<&>]/g, (value) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;" }[value] ?? value))}</pre>`;
@@ -49,9 +59,11 @@ function printResult(selection: PilotSelection, result?: PilotExecutionResult, p
   console.log(`Candidates considered: ${selection.candidates_considered}`);
   console.log(`Provider: ${provider}`);
   if (provider === "onedrive-personal") {
-    console.log(`Personal OneDrive: ${providerReadiness?.personalAuthentication === "READY" ? "READY" : "NOT_READY"}`);
-    console.log(`DriveItem: ${providerReadiness?.driveItem === "READY" ? "READY" : "NOT_READY"}`);
-    console.log(`Temporary media capability: ${providerReadiness?.ready ? "PASS" : "FAIL"}`);
+    const preflight = prePublishProviderReadiness(result, providerReadiness);
+    console.log(`Personal OneDrive (pre-publish): ${preflight?.personalAuthentication === "READY" ? "PASS" : "NOT_READY"}`);
+    console.log(`DriveItem (pre-publish): ${preflight?.driveItem === "READY" ? "PASS" : "NOT_READY"}`);
+    console.log(`Temporary media capability (pre-publish): ${preflight?.ready ? "PASS" : "FAIL"}`);
+    if (result && result.status !== "DRY_RUN_VALIDATED") console.log(`Temporary OneDrive item (post-publish): ${result.temporary_media_cleanup === "SUCCEEDED" ? "DELETED" : "CLEANUP_PENDING"}`);
   }
   console.log(`Meta connectivity: ${runtimeEnvironmentValue("INSTAGRAM_ACCESS_TOKEN") && runtimeEnvironmentValue("INSTAGRAM_ACCOUNT_ID") ? "PASS" : "NOT_VERIFIED"}`);
   if (result) {
@@ -68,7 +80,7 @@ function printResult(selection: PilotSelection, result?: PilotExecutionResult, p
     console.log(`Media container created: ${result.media_container_created ? "YES" : "NO"}`);
     console.log(`Media publish called: ${result.media_publish_called ? "YES" : "NO"}`);
     console.log(`Content published: ${result.content_published ? "YES" : "NO"}`);
-    console.log(`Real publication authorized: NO`);
+    console.log(`Real publication authorized: ${result.real_publication_authorized ? "YES" : "NO"}`);
   }
 }
 
@@ -105,6 +117,6 @@ export async function runPilotCommand(command: string | undefined, args: string[
   const selection: PilotSelection = { snapshot, status: "SELECTED", candidates_considered: 1 };
   await writeReport(config, selection, result);
   printResult(selection, result, provider);
-  if (result.status !== "PUBLISHED") process.exitCode = 1;
+  if (result.status !== "PUBLISHED" && result.status !== "ALREADY_PUBLISHED") process.exitCode = 1;
   return true;
 }

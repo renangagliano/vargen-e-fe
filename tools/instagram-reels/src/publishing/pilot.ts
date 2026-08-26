@@ -4,7 +4,7 @@ import { randomUUID } from "node:crypto";
 import type { DatabaseSync } from "node:sqlite";
 import { loadConfig, type MediaConfig } from "../config/index.js";
 import { isRealPilotEnvironmentReady, loadAutomationConfig, runtimeEnvironmentValue } from "../config/automation.js";
-import { derivedReelById, inspectAsset, latestEditorialPackage, openDatabase } from "../database/db.js";
+import { derivedReelById, inspectAsset, latestEditorialPackage, openDatabase, setPublicationStatus } from "../database/db.js";
 import { sha256File } from "../media/checksum.js";
 import { listReviewItems, type ReviewItem } from "../review/service.js";
 import { evaluateContentReadiness, type ContentReadiness } from "../review/readiness.js";
@@ -18,7 +18,7 @@ import { validateTemporaryMediaUrl, type MediaUrlValidation } from "./temporary-
 export const PILOT_CONFIRMATION = "I_CONFIRM_ONE_REEL_PUBLICATION" as const;
 export const PILOT_SNAPSHOT_VERSION = "section10.2-snapshot-v1" as const;
 
-export type PilotStatus = "FROZEN" | "INVALIDATED" | "PUBLISHED" | "FAILED" | "DRY_RUN_VALIDATED" | "AWAITING_HUMAN_CONTENT_READY";
+export type PilotStatus = "FROZEN" | "INVALIDATED" | "PUBLISHED" | "ALREADY_PUBLISHED" | "FAILED" | "DRY_RUN_VALIDATED" | "AWAITING_HUMAN_CONTENT_READY";
 export type PilotFailureCode = "CONTENT_READY_REQUIRED" | "TEMPORARY_MEDIA_PROVIDER_REQUIRED" | "MEDIA_PROVIDER_ERROR" | "MEDIA_URL_INVALID" | "CONTAINER_CREATION_ERROR" | "CONTAINER_PROCESSING_ERROR" | "CONTAINER_TIMEOUT" | "PUBLISH_PERMISSION_ERROR" | "MEDIA_PUBLISH_ERROR" | "META_READBACK_FAILED" | "RATE_LIMITED" | "TOKEN_EXPIRED" | "AUTHENTICATION_ERROR" | "CONTENT_READY_REVOKED" | "SNAPSHOT_INVALIDATED" | "DUPLICATE_PUBLICATION_PREVENTED" | "META_API_ERROR" | "NETWORK_ERROR" | "CONFIRMATION_REQUIRED" | "REAL_PILOT_ENVIRONMENT_REQUIRED";
 
 export type PilotSnapshot = {
@@ -68,6 +68,7 @@ export type PilotExecutionResult = {
   media_publish_called: boolean;
   content_published: boolean;
   publishing_proven: boolean;
+  real_publication_authorized: boolean;
   temporary_media_cleanup?: "NOT_REQUESTED" | "SUCCEEDED" | "PENDING";
 };
 
@@ -208,9 +209,10 @@ async function waitForContainer(api: PilotApi, containerId: string, intervalMs: 
 
 export async function executeFrozenPilot(options: PilotExecutionOptions): Promise<PilotExecutionResult> {
   const { snapshot, readiness, config } = options;
-  if (readiness.status !== "CONTENT_READY") return { status: "BLOCKED", failure_code: "CONTENT_READY_REVOKED", snapshot, readiness, media_url: null, container_id: null, remote_status: null, instagram_media_id: null, permalink: null, published_at: null, media_container_created: false, media_publish_called: false, content_published: false, publishing_proven: false };
+  let realPublicationAuthorized = false;
+  if (readiness.status !== "CONTENT_READY") return { status: "BLOCKED", failure_code: "CONTENT_READY_REVOKED", snapshot, readiness, media_url: null, container_id: null, remote_status: null, instagram_media_id: null, permalink: null, published_at: null, media_container_created: false, media_publish_called: false, content_published: false, publishing_proven: false, real_publication_authorized: false };
   const validation = await validatePilotSnapshot(snapshot, config);
-  if (!validation.valid) return { status: "BLOCKED", failure_code: validation.reason ?? "SNAPSHOT_INVALIDATED", snapshot: { ...snapshot, status: "INVALIDATED" }, readiness, media_url: null, container_id: null, remote_status: null, instagram_media_id: null, permalink: null, published_at: null, media_container_created: false, media_publish_called: false, content_published: false, publishing_proven: false };
+  if (!validation.valid) return { status: "BLOCKED", failure_code: validation.reason ?? "SNAPSHOT_INVALIDATED", snapshot: { ...snapshot, status: "INVALIDATED" }, readiness, media_url: null, container_id: null, remote_status: null, instagram_media_id: null, permalink: null, published_at: null, media_container_created: false, media_publish_called: false, content_published: false, publishing_proven: false, real_publication_authorized: false };
   const db = openDatabase(config);
   let mediaContainerCreated = false;
   let mediaPublishCalled = false;
@@ -220,29 +222,31 @@ export async function executeFrozenPilot(options: PilotExecutionOptions): Promis
     const existing = publicationRow(db, snapshot.publication_key);
     if (existing?.status === "PUBLISHED") {
       auditPilot(db, "DUPLICATE_PUBLICATION_PREVENTED", snapshot, options.actor);
-      return { status: "FAILED", failure_code: "DUPLICATE_PUBLICATION_PREVENTED", snapshot, readiness, media_url: null, container_id: rowValue(existing, "container_id") || null, remote_status: rowValue(existing, "remote_status") as MetaContainerStatus || null, instagram_media_id: rowValue(existing, "instagram_media_id") || null, permalink: rowValue(existing, "permalink") || null, published_at: rowValue(existing, "published_at") || null, media_container_created: Boolean(existing.container_id), media_publish_called: false, content_published: true, publishing_proven: true };
+      return { status: "ALREADY_PUBLISHED", snapshot, readiness, media_url: null, container_id: rowValue(existing, "container_id") || null, remote_status: rowValue(existing, "remote_status") as MetaContainerStatus || null, instagram_media_id: rowValue(existing, "instagram_media_id") || null, permalink: rowValue(existing, "permalink") || null, published_at: rowValue(existing, "published_at") || null, media_container_created: false, media_publish_called: false, content_published: true, publishing_proven: true, real_publication_authorized: false, temporary_media_cleanup: "SUCCEEDED" };
     }
-    if (existing && ["UNCERTAIN", "PROCESSING_REMOTE", "PUBLISHING"].includes(String(existing.status))) return { status: "BLOCKED", failure_code: "DUPLICATE_PUBLICATION_PREVENTED", snapshot, readiness, media_url: null, container_id: rowValue(existing, "container_id") || null, remote_status: rowValue(existing, "remote_status") as MetaContainerStatus || null, instagram_media_id: null, permalink: null, published_at: null, media_container_created: Boolean(existing.container_id), media_publish_called: String(existing.status) === "PUBLISHING", content_published: false, publishing_proven: false };
+    if (existing && ["UNCERTAIN", "PROCESSING_REMOTE", "PUBLISHING"].includes(String(existing.status))) return { status: "BLOCKED", failure_code: "DUPLICATE_PUBLICATION_PREVENTED", snapshot, readiness, media_url: null, container_id: rowValue(existing, "container_id") || null, remote_status: rowValue(existing, "remote_status") as MetaContainerStatus || null, instagram_media_id: null, permalink: null, published_at: null, media_container_created: false, media_publish_called: String(existing.status) === "PUBLISHING", content_published: false, publishing_proven: false, real_publication_authorized: false };
     const provider = options.mediaProvider ?? (options.dryRun ? new DryRunPublicationMediaProvider() : null);
-    if (!provider) return { status: "BLOCKED", failure_code: "TEMPORARY_MEDIA_PROVIDER_REQUIRED", snapshot, readiness, media_url: null, container_id: null, remote_status: null, instagram_media_id: null, permalink: null, published_at: null, media_container_created: false, media_publish_called: false, content_published: false, publishing_proven: false };
+    if (!provider) return { status: "BLOCKED", failure_code: "TEMPORARY_MEDIA_PROVIDER_REQUIRED", snapshot, readiness, media_url: null, container_id: null, remote_status: null, instagram_media_id: null, permalink: null, published_at: null, media_container_created: false, media_publish_called: false, content_published: false, publishing_proven: false, real_publication_authorized: false };
     let media: Awaited<ReturnType<PublicationMediaProvider["getTemporaryPublicUrl"]>>;
-    try { media = await provider.getTemporaryPublicUrl(snapshot.reel_id); } catch { return { status: "BLOCKED", failure_code: "MEDIA_PROVIDER_ERROR", snapshot, readiness, media_url: null, container_id: null, remote_status: null, instagram_media_id: null, permalink: null, published_at: null, media_container_created: false, media_publish_called: false, content_published: false, publishing_proven: false }; }
+    try { media = await provider.getTemporaryPublicUrl(snapshot.reel_id); } catch { return { status: "BLOCKED", failure_code: "MEDIA_PROVIDER_ERROR", snapshot, readiness, media_url: null, container_id: null, remote_status: null, instagram_media_id: null, permalink: null, published_at: null, media_container_created: false, media_publish_called: false, content_published: false, publishing_proven: false, real_publication_authorized: false }; }
     const mediaUrl = options.validateUrl ? await options.validateUrl(media.url, options.dryRun) : await validateTemporaryMediaUrl(media.url, undefined, options.dryRun);
-    if (!mediaUrl.ok || (!options.dryRun && (media.checksumSha256 !== snapshot.derived_reel_checksum || !media.expiresAt || Number.isNaN(Date.parse(media.expiresAt)) || Date.parse(media.expiresAt) <= Date.now()))) return { status: "BLOCKED", failure_code: "MEDIA_URL_INVALID", snapshot, readiness, media_url: mediaUrl, container_id: null, remote_status: null, instagram_media_id: null, permalink: null, published_at: null, media_container_created: false, media_publish_called: false, content_published: false, publishing_proven: false };
+    if (!mediaUrl.ok || (!options.dryRun && (media.checksumSha256 !== snapshot.derived_reel_checksum || !media.expiresAt || Number.isNaN(Date.parse(media.expiresAt)) || Date.parse(media.expiresAt) <= Date.now()))) return { status: "BLOCKED", failure_code: "MEDIA_URL_INVALID", snapshot, readiness, media_url: mediaUrl, container_id: null, remote_status: null, instagram_media_id: null, permalink: null, published_at: null, media_container_created: false, media_publish_called: false, content_published: false, publishing_proven: false, real_publication_authorized: false };
     auditPilot(db, "PUBLICATION_PILOT_STARTED", snapshot, options.actor, { provider: media.provider });
     auditPilot(db, "TEMP_MEDIA_REFRESHED", snapshot, options.actor, { provider: media.provider, media_url: mediaUrl.safeUrl });
-    if (options.dryRun) return { status: "DRY_RUN_VALIDATED", snapshot, readiness, media_url: mediaUrl, container_id: null, remote_status: null, instagram_media_id: null, permalink: null, published_at: null, media_container_created: false, media_publish_called: false, content_published: false, publishing_proven: false };
+    if (options.dryRun) return { status: "DRY_RUN_VALIDATED", snapshot, readiness, media_url: mediaUrl, container_id: null, remote_status: null, instagram_media_id: null, permalink: null, published_at: null, media_container_created: false, media_publish_called: false, content_published: false, publishing_proven: false, real_publication_authorized: false };
     const automation = loadAutomationConfig(process.env, config.repoRoot);
-    if (!isRealPilotEnvironmentReady(automation)) return { status: "BLOCKED", failure_code: "REAL_PILOT_ENVIRONMENT_REQUIRED", snapshot, readiness, media_url: mediaUrl, container_id: null, remote_status: null, instagram_media_id: null, permalink: null, published_at: null, media_container_created: false, media_publish_called: false, content_published: false, publishing_proven: false };
+    if (!isRealPilotEnvironmentReady(automation)) return { status: "BLOCKED", failure_code: "REAL_PILOT_ENVIRONMENT_REQUIRED", snapshot, readiness, media_url: mediaUrl, container_id: null, remote_status: null, instagram_media_id: null, permalink: null, published_at: null, media_container_created: false, media_publish_called: false, content_published: false, publishing_proven: false, real_publication_authorized: false };
+    realPublicationAuthorized = true;
+    auditPilot(db, "REAL_PUBLICATION_AUTHORIZED", snapshot, options.actor, { provider: media.provider, publish_mode: automation.publishMode, approval_required: automation.requireApproval });
     if (!options.api) throw new Error("META_PILOT_API_REQUIRED");
     const container = await options.api.createReelContainer({ videoUrl: media.url, caption: snapshot.caption });
     containerId = container.containerId;
     mediaContainerCreated = true;
     db.prepare("INSERT INTO pilot_publications (publication_key, snapshot_id, reel_id, status, attempt_count, container_id, container_created_at, created_at, updated_at) VALUES (?, ?, ?, 'PROCESSING_REMOTE', 1, ?, ?, ?, ?)").run(snapshot.publication_key, snapshot.snapshot_id, snapshot.reel_id, container.containerId, now(), now(), now());
-    auditPilot(db, "MEDIA_CONTAINER_CREATED", snapshot, options.actor, { container_id: container.containerId });
+    auditPilot(db, "META_CONTAINER_CREATED", snapshot, options.actor, { container_id: container.containerId });
     remoteStatus = await waitForContainer(options.api, container.containerId, options.pollIntervalMs ?? 5000, options.pollTimeoutMs ?? 120000);
     db.prepare("UPDATE pilot_publications SET remote_status = ?, last_checked_at = ?, updated_at = ? WHERE publication_key = ?").run(remoteStatus, now(), now(), snapshot.publication_key);
-    if (remoteStatus !== "FINISHED") { db.prepare("UPDATE pilot_publications SET status = 'FAILED', error_code = ?, updated_at = ? WHERE publication_key = ?").run(remoteStatus === "IN_PROGRESS" ? "CONTAINER_TIMEOUT" : "CONTAINER_PROCESSING_ERROR", now(), snapshot.publication_key); auditPilot(db, "PILOT_ABORTED", snapshot, options.actor, { reason: remoteStatus === "IN_PROGRESS" ? "CONTAINER_TIMEOUT" : "CONTAINER_PROCESSING_ERROR" }); return { status: "FAILED", failure_code: remoteStatus === "IN_PROGRESS" ? "CONTAINER_TIMEOUT" : "CONTAINER_PROCESSING_ERROR", snapshot, readiness, media_url: mediaUrl, container_id: container.containerId, remote_status: remoteStatus, instagram_media_id: null, permalink: null, published_at: null, media_container_created: true, media_publish_called: false, content_published: false, publishing_proven: false }; }
+    if (remoteStatus !== "FINISHED") { db.prepare("UPDATE pilot_publications SET status = 'FAILED', error_code = ?, updated_at = ? WHERE publication_key = ?").run(remoteStatus === "IN_PROGRESS" ? "CONTAINER_TIMEOUT" : "CONTAINER_PROCESSING_ERROR", now(), snapshot.publication_key); auditPilot(db, "PILOT_ABORTED", snapshot, options.actor, { reason: remoteStatus === "IN_PROGRESS" ? "CONTAINER_TIMEOUT" : "CONTAINER_PROCESSING_ERROR" }); return { status: "FAILED", failure_code: remoteStatus === "IN_PROGRESS" ? "CONTAINER_TIMEOUT" : "CONTAINER_PROCESSING_ERROR", snapshot, readiness, media_url: mediaUrl, container_id: container.containerId, remote_status: remoteStatus, instagram_media_id: null, permalink: null, published_at: null, media_container_created: true, media_publish_called: false, content_published: false, publishing_proven: false, real_publication_authorized: true }; }
     auditPilot(db, "MEDIA_CONTAINER_READY", snapshot, options.actor, { container_id: container.containerId });
     auditPilot(db, "META_CONTAINER_FINISHED", snapshot, options.actor, { container_id: container.containerId });
     const finalReadiness = await evaluateContentReadiness(snapshot.reel_id, config);
@@ -250,7 +254,7 @@ export async function executeFrozenPilot(options: PilotExecutionOptions): Promis
     if (finalReadiness.status !== "CONTENT_READY" || !finalSnapshot.valid) {
       db.prepare("UPDATE pilot_publications SET status = 'FAILED', error_code = ?, updated_at = ? WHERE publication_key = ?").run(finalReadiness.status !== "CONTENT_READY" ? "CONTENT_READY_REVOKED" : "SNAPSHOT_INVALIDATED", now(), snapshot.publication_key);
       auditPilot(db, "PILOT_ABORTED", snapshot, options.actor, { reason: finalReadiness.status !== "CONTENT_READY" ? "CONTENT_READY_REVOKED" : "SNAPSHOT_INVALIDATED" });
-      return { status: "BLOCKED", failure_code: finalReadiness.status !== "CONTENT_READY" ? "CONTENT_READY_REVOKED" : "SNAPSHOT_INVALIDATED", snapshot, readiness: finalReadiness, media_url: mediaUrl, container_id: container.containerId, remote_status: "FINISHED", instagram_media_id: null, permalink: null, published_at: null, media_container_created: true, media_publish_called: false, content_published: false, publishing_proven: false };
+      return { status: "BLOCKED", failure_code: finalReadiness.status !== "CONTENT_READY" ? "CONTENT_READY_REVOKED" : "SNAPSHOT_INVALIDATED", snapshot, readiness: finalReadiness, media_url: mediaUrl, container_id: container.containerId, remote_status: "FINISHED", instagram_media_id: null, permalink: null, published_at: null, media_container_created: true, media_publish_called: false, content_published: false, publishing_proven: false, real_publication_authorized: true };
     }
     db.prepare("UPDATE pilot_publications SET status = 'PUBLISHING', updated_at = ? WHERE publication_key = ?").run(now(), snapshot.publication_key);
     auditPilot(db, "MEDIA_PUBLISH_STARTED", snapshot, options.actor, { container_id: container.containerId });
@@ -260,6 +264,7 @@ export async function executeFrozenPilot(options: PilotExecutionOptions): Promis
     if (readback.id !== published.mediaId || !readback.permalink || (readback.media_product_type && readback.media_product_type.toUpperCase() !== "REELS") || (readback.username && readback.username !== "vargen.fe")) throw new MetaPilotApiError("META_READBACK_FAILED", "Instagram read-back did not confirm the expected Reel.");
     const publishedAt = readback.timestamp ?? now();
     db.prepare("UPDATE pilot_publications SET status = 'PUBLISHED', remote_status = 'FINISHED', instagram_media_id = ?, permalink = ?, published_at = ?, updated_at = ? WHERE publication_key = ?").run(published.mediaId, readback.permalink ?? null, publishedAt, now(), snapshot.publication_key);
+    setPublicationStatus(db, snapshot.reel_id, "PUBLISHED");
     auditPilot(db, "MEDIA_PUBLISH_SUCCEEDED", snapshot, options.actor, { container_id: container.containerId, instagram_media_id: published.mediaId });
     auditPilot(db, "PUBLICATION_CONFIRMED", snapshot, options.actor, { instagram_media_id: published.mediaId, permalink: readback.permalink ?? null });
     auditPilot(db, "META_READBACK_CONFIRMED", snapshot, options.actor, { instagram_media_id: published.mediaId, permalink: readback.permalink ?? null });
@@ -275,7 +280,7 @@ export async function executeFrozenPilot(options: PilotExecutionOptions): Promis
       }
     }
     db.prepare("UPDATE pilot_snapshots SET status = 'PUBLISHED', updated_at = ? WHERE snapshot_id = ?").run(now(), snapshot.snapshot_id);
-    return { status: "PUBLISHED", snapshot: { ...snapshot, status: "PUBLISHED" }, readiness, media_url: mediaUrl, container_id: container.containerId, remote_status: "FINISHED", instagram_media_id: published.mediaId, permalink: readback.permalink ?? null, published_at: publishedAt, media_container_created: true, media_publish_called: true, content_published: true, publishing_proven: true, temporary_media_cleanup: temporaryMediaCleanup };
+    return { status: "PUBLISHED", snapshot: { ...snapshot, status: "PUBLISHED" }, readiness, media_url: mediaUrl, container_id: container.containerId, remote_status: "FINISHED", instagram_media_id: published.mediaId, permalink: readback.permalink ?? null, published_at: publishedAt, media_container_created: true, media_publish_called: true, content_published: true, publishing_proven: true, real_publication_authorized: true, temporary_media_cleanup: temporaryMediaCleanup };
   } catch (error) {
     const message = error instanceof Error ? error.message : "Meta pilot operation failed.";
     const errorCode = error instanceof MetaPilotApiError ? error.code : "";
@@ -283,7 +288,7 @@ export async function executeFrozenPilot(options: PilotExecutionOptions): Promis
     auditPilot(db, "MEDIA_PUBLISH_FAILED", snapshot, options.actor, { error_code: code });
     if (mediaContainerCreated) db.prepare("UPDATE pilot_publications SET status = ?, error_code = ?, error_message_safe = ?, updated_at = ? WHERE publication_key = ?").run(mediaPublishCalled ? "UNCERTAIN" : "FAILED", code, "Pilot remote state requires reconciliation before retry.", now(), snapshot.publication_key);
     db.prepare("UPDATE pilot_snapshots SET status = 'FAILED', updated_at = ? WHERE snapshot_id = ?").run(now(), snapshot.snapshot_id);
-    return { status: "FAILED", failure_code: code, snapshot, readiness, media_url: null, container_id: containerId, remote_status: remoteStatus, instagram_media_id: null, permalink: null, published_at: null, media_container_created: mediaContainerCreated, media_publish_called: mediaPublishCalled, content_published: false, publishing_proven: false };
+    return { status: "FAILED", failure_code: code, snapshot, readiness, media_url: null, container_id: containerId, remote_status: remoteStatus, instagram_media_id: null, permalink: null, published_at: null, media_container_created: mediaContainerCreated, media_publish_called: mediaPublishCalled, content_published: false, publishing_proven: false, real_publication_authorized: realPublicationAuthorized };
   } finally { db.close(); }
 }
 

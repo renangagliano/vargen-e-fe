@@ -513,7 +513,7 @@ export function publicationJobByKey(db: DatabaseSync, key: string): SqlRow | und
 }
 
 export function successfulPublicationExists(db: DatabaseSync, key: string): boolean {
-  const row = db.prepare("SELECT 1 AS found FROM publication_jobs WHERE publication_key = ? AND status = 'PUBLISHED' LIMIT 1").get(key) as { found?: number } | undefined;
+  const row = db.prepare("SELECT 1 AS found FROM publication_jobs WHERE publication_key = ? AND status = 'PUBLISHED' UNION ALL SELECT 1 AS found FROM pilot_publications WHERE publication_key = ? AND status = 'PUBLISHED' LIMIT 1").get(key, key) as { found?: number } | undefined;
   return Boolean(row?.found);
 }
 
