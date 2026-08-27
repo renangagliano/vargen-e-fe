@@ -6,3 +6,15 @@ out/
 *.log
 .DS_Store
 *.tsbuildinfo
+
+# Instagram media pipeline: source masters, derived media and runtime state
+# stay outside the repository. These scoped directories avoid hiding unrelated
+# media files that may legitimately belong to the institutional website.
+/media-source/
+/generated/reels/
+/tools/instagram-reels/runtime-media/
+/tools/instagram-reels/runtime-state/
+/tools/instagram-reels/dist/
+*.sqlite
+*.sqlite3
+*.db
