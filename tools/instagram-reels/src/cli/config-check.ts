@@ -51,6 +51,7 @@ export async function runInstagramConfigCheckCommand(command: string | undefined
   console.log(`INSTAGRAM_PUBLISH_MODE: ${automation.publishMode}`);
   console.log(`  Source: ${projectEnvironmentSource("INSTAGRAM_PUBLISH_MODE", process.env, repoRoot)}`);
   console.log(`INSTAGRAM_REQUIRE_APPROVAL: ${automation.requireApproval ? "ENABLED" : "DISABLED"}`);
+  console.log(`INSTAGRAM_AUTO_PUBLISH_ON_APPROVAL: ${automation.autoPublishOnApproval ? "ENABLED" : "DISABLED"}`);
   console.log(`  Source: ${projectEnvironmentSource("INSTAGRAM_REQUIRE_APPROVAL", process.env, repoRoot)}`);
   console.log(`Real pilot environment: ${automation.realPilotEnabled ? "ENABLED" : "DISABLED"}`);
   console.log(`  Source: ${projectEnvironmentSource("INSTAGRAM_PILOT_REAL", process.env, repoRoot)}`);

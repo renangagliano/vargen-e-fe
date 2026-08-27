@@ -1,11 +1,13 @@
 import { ReviewWorkspace } from "@vargenfe/admin-shared/ui/review-workspace";
 import { requireAdminPage } from "../../lib/page-auth";
 import { getRemoteRepository } from "../../lib/repository";
+import { resolveRemoteAdminConfig } from "@vargenfe/admin-shared/admin/remote-config";
 
 export const dynamic = "force-dynamic";
 
 export default async function ReviewPage() {
-  await requireAdminPage();
+  const identity = await requireAdminPage();
   const data = await (await getRemoteRepository()).getReviewQueue();
-  return <ReviewWorkspace initialData={data} readOnly candidateDetailEndpoint="/api/admin/candidates" />;
+  const config = resolveRemoteAdminConfig(process.env);
+  return <ReviewWorkspace initialData={data} role={identity.role} readOnly={!config.remoteWriteEnabled} candidateDetailEndpoint="/api/admin/candidates" mutationEndpoint="/api/admin/mutations" />;
 }

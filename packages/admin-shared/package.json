@@ -10,10 +10,12 @@
     "./admin/review-ui": "./src/admin/review-ui.ts",
     "./admin/review-types": "./src/admin/review-types.ts",
     "./admin/server-auth": "./src/admin/server-auth.ts",
+    "./admin/mutation-contract": "./src/admin/mutation-contract.ts",
     "./supabase/config": "./src/supabase/config.ts",
     "./supabase/public-config": "./src/supabase/public-config.ts",
     "./supabase/browser": "./src/supabase/browser.ts",
     "./supabase/server": "./src/supabase/server.ts",
+    "./supabase/service": "./src/supabase/service.ts",
     "./supabase/proxy": "./src/supabase/proxy.ts",
     "./ui/review-workspace": "./src/ui/review-workspace.tsx",
     "./ui/sign-out-button": "./src/ui/sign-out-button.tsx"
