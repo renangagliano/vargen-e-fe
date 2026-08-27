@@ -35,6 +35,7 @@ export type GovernanceMutationRequest = {
   note?: string;
   confirmation_statement?: string;
   confirm_publication?: string;
+  confirm_rejection?: boolean;
 };
 
 export type PublicationAuthorizationEvidence = {
@@ -106,8 +107,35 @@ export function parseMutationRequest(value: unknown): GovernanceMutationRequest 
       result[key] = input[key].trim();
     }
   }
+  if (input.confirm_rejection !== undefined) {
+    if (typeof input.confirm_rejection !== "boolean") throw new Error("MUTATION_CONFIRM_REJECTION_INVALID");
+    result.confirm_rejection = input.confirm_rejection;
+  }
+  validateMutationActionPayload(result);
   return result;
 }
+
+const RIGHTS_CONFIRMATION_STATEMENT = "I confirm that I have the necessary rights or authorization to use and publish this media for the Vargen & Fé project.";
+
+export function validateMutationActionPayload(request: GovernanceMutationRequest): void {
+  const note = request.note?.trim() || request.fields?.operator_note?.trim() || "";
+  if (["verify_bible", "save_bible_review"].includes(request.action)) {
+    if (request.action === "verify_bible" && !request.reference?.trim()) throw new Error("BIBLE_REFERENCE_REQUIRED");
+    if (!note) throw new Error("BIBLE_NOTE_REQUIRED");
+  }
+  if (request.action === "confirm_rights") {
+    if (!note) throw new Error("RIGHTS_NOTE_REQUIRED");
+    if (request.confirmation_statement !== RIGHTS_CONFIRMATION_STATEMENT) throw new Error("RIGHTS_CONFIRMATION_REQUIRED");
+  }
+  if (["approve_editorial", "needs_changes", "reject"].includes(request.action) && !note) {
+    throw new Error("REVIEW_NOTE_REQUIRED");
+  }
+  if (request.action === "reject" && request.confirm_rejection !== true) {
+    throw new Error("REJECTION_CONFIRMATION_REQUIRED");
+  }
+}
+
+export { RIGHTS_CONFIRMATION_STATEMENT };
 
 function normalizeEditorialFields(input: Record<string, unknown>): EditorialMutationFields {
   const fields: EditorialMutationFields = {};

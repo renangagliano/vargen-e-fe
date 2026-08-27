@@ -50,6 +50,7 @@ export class SupabaseGovernanceMutationRepository {
         note: request.note,
         confirmation_statement: request.confirmation_statement,
         confirm_publication: request.confirm_publication,
+        confirm_rejection: request.confirm_rejection,
       },
     });
     if (error) {
@@ -92,10 +93,12 @@ export class SupabaseGovernanceRepository implements GovernanceRepository {
     if (reel.error) throw new Error("REMOTE_CANDIDATE_READ_FAILED");
     if (!reel.data) return null;
     const sourceAssetId = typeof reel.data.source_asset_id === "string" ? reel.data.source_asset_id : null;
-    const [editorial, evidence, verification, rights] = await Promise.all([
-      this.client.from("editorial_versions").select("*").eq("reel_id", reelId).order("editorial_version", { ascending: false }).limit(1).maybeSingle(),
-      this.client.from("bible_evidence").select("*").eq("reel_id", reelId).order("updated_at", { ascending: false }).limit(1).maybeSingle(),
-      this.client.from("bible_verifications").select("*").eq("reel_id", reelId).order("verified_at", { ascending: false }).limit(1).maybeSingle(),
+    const editorial = await this.client.from("editorial_versions").select("*").eq("reel_id", reelId).order("editorial_version", { ascending: false }).limit(1).maybeSingle();
+    if (editorial.error) throw new Error("REMOTE_CANDIDATE_READ_FAILED");
+    const currentVersion = editorial.data?.editorial_version;
+    const [evidence, verification, rights] = await Promise.all([
+      this.client.from("bible_evidence").select("*").eq("reel_id", reelId).eq("editorial_version", currentVersion).order("updated_at", { ascending: false }).limit(1).maybeSingle(),
+      this.client.from("bible_verifications").select("*").eq("reel_id", reelId).eq("editorial_version", currentVersion).order("verified_at", { ascending: false }).limit(1).maybeSingle(),
       sourceAssetId ? this.client.from("rights_sources").select("*,rights_confirmations(*)").eq("asset_id", sourceAssetId) : Promise.resolve({ data: [], error: null }),
     ]);
     if (editorial.error || evidence.error || verification.error || rights.error) throw new Error("REMOTE_CANDIDATE_READ_FAILED");

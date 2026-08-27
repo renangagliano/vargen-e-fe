@@ -16,8 +16,11 @@ test("candidate detail URLs encode the exact Reel identifier", () => {
 });
 
 test("candidate detail loader returns valid API payloads and exposes safe failures", async () => {
-  const request = async () => new Response(JSON.stringify({ reel_id: "reel-abc-123" }), { status: 200 });
+  let requestInit: RequestInit | undefined;
+  const request = async (_input: RequestInfo | URL, init?: RequestInit) => { requestInit = init; return new Response(JSON.stringify({ reel_id: "reel-abc-123" }), { status: 200 }); };
   assert.deepEqual(await fetchCandidateDetail("/api/admin/candidates", "reel-abc-123", request), { reel_id: "reel-abc-123" });
+  assert.equal(requestInit?.cache, "no-store");
+  assert.equal(requestInit?.credentials, "same-origin");
   await assert.rejects(() => fetchCandidateDetail("/api/admin/candidates", "reel-abc-123", async () => new Response(JSON.stringify({ error: "ADMIN_AUTH_REQUIRED" }), { status: 401 })), /ADMIN_AUTH_REQUIRED/);
   await assert.rejects(() => fetchCandidateDetail("/api/admin/candidates", "reel-abc-123", async () => new Response("not-json", { status: 200 })), /CANDIDATE_DETAIL_INVALID/);
 });
