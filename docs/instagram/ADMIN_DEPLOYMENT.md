@@ -27,6 +27,11 @@ workspaces. Vercel must install from the repository workspace so that
 `@vargenfe/admin-shared` resolves; do not create a second copy of the shared
 code inside `apps/admin`.
 
+The Admin has its own `postcss.config.mjs`. Its `admin.css` is plain CSS, so it
+does not load the public site's Tailwind or Autoprefixer plugins. The Admin
+package declares its direct PostCSS and TypeScript build dependencies; the
+root Tailwind/PostCSS configuration remains owned by the public application.
+
 Do not connect the project to a corporate Vercel team or add paid services.
 
 ## Environment variables
