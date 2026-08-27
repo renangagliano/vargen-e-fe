@@ -66,7 +66,7 @@ test("modern secret keys are sent as privileged server authorization", async () 
   let privilegedAuthorization: string | null = null;
   const fetchImpl = (async (input, init) => {
     const url = String(input);
-    if (url.includes("/rest/v1/") && !url.endsWith("/rest/v1/")) privilegedAuthorization = new Headers(init?.headers).get("Authorization");
+    if (url.includes("select=*&limit=0")) privilegedAuthorization = new Headers(init?.headers).get("Authorization");
     if (url.endsWith("/auth/v1/health")) return response(200);
     if (url.endsWith("/rest/v1/")) return response(401);
     if (url.includes("/profiles?select=id&role=eq.ADMIN")) return response(200, [{ id: "admin-id" }]);
@@ -75,4 +75,19 @@ test("modern secret keys are sent as privileged server authorization", async () 
   }) as typeof fetch;
   await collectRemoteSupabaseValidation(env, fetchImpl);
   assert.equal(privilegedAuthorization, "Bearer sb_secret_server");
+});
+
+test("legacy service-role keys retain privileged server authorization", async () => {
+  let privilegedAuthorization: string | null = null;
+  const fetchImpl = (async (input, init) => {
+    const url = String(input);
+    if (url.includes("select=*&limit=0")) privilegedAuthorization = new Headers(init?.headers).get("Authorization");
+    if (url.endsWith("/auth/v1/health")) return response(200);
+    if (url.endsWith("/rest/v1/")) return response(401);
+    if (url.includes("/profiles?select=id&role=eq.ADMIN")) return response(200, [{ id: "admin-id" }]);
+    if (url.includes("/profiles?select=id&limit=1")) return response(403);
+    return response(200, [], { "content-range": "*/0" });
+  }) as typeof fetch;
+  await collectRemoteSupabaseValidation({ ...env, SUPABASE_SECRET_KEY: undefined, SUPABASE_SERVICE_ROLE_KEY: "a.b.c" }, fetchImpl);
+  assert.equal(privilegedAuthorization, "Bearer a.b.c");
 });
