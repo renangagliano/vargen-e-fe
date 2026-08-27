@@ -8,13 +8,16 @@ Configure only the dynamic admin deployment with:
 
 ```text
 NEXT_PUBLIC_SUPABASE_URL=https://<personal-project-ref>.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=<publishable-or-anon-key>
-SUPABASE_SERVICE_ROLE_KEY=<server-only-key>
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=<publishable-key>
+SUPABASE_SECRET_KEY=<server-only-secret-key>
 ADMIN_DATA_SOURCE=supabase-readonly
 ADMIN_REMOTE_WRITE_ENABLED=false
 ```
 
-The service-role key is never a `NEXT_PUBLIC_` variable and must not be copied into browser code, Git, SQLite, reports, or local command arguments.
+Legacy compatibility is supported with `NEXT_PUBLIC_SUPABASE_ANON_KEY` and
+`SUPABASE_SERVICE_ROLE_KEY`; modern keys take precedence. The secret key is
+never a `NEXT_PUBLIC_` variable and must not be copied into browser code, Git,
+SQLite, reports, or local command arguments.
 
 ## Runtime model
 
@@ -33,3 +36,8 @@ The current public site remains a static export. Do not enable these server help
 3. Verify login, logout, inactive-user rejection, and read-only queue access.
 4. Run `npm run admin:import-supabase` and review the dry-run manifest.
 5. Keep `ADMIN_REMOTE_WRITE_ENABLED=false` until stable IDs, versions, publication history, analytics, and checksums match.
+
+Before applying the schema, run `npm run admin:config-check` and
+`npm run admin:remote-validate`. The expected pre-schema result is
+`CONNECTED_SCHEMA_NOT_APPLIED`; this confirms read-only project reachability
+without importing governance rows.

@@ -5,8 +5,8 @@ import { getSupabasePublicConfig } from "./public-config";
 /** Wire this helper from proxy.ts only in the dynamic admin deployment. */
 export async function updateSupabaseSession(request: NextRequest): Promise<NextResponse> {
   let response = NextResponse.next({ request });
-  const { url, anonKey } = getSupabasePublicConfig();
-  const supabase = createServerClient(url, anonKey, {
+  const { url, publicKey } = getSupabasePublicConfig();
+  const supabase = createServerClient(url, publicKey, {
     cookies: {
       getAll: () => request.cookies.getAll(),
       setAll(values) {
@@ -19,4 +19,3 @@ export async function updateSupabaseSession(request: NextRequest): Promise<NextR
   await supabase.auth.getClaims();
   return response;
 }
-

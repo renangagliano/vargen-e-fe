@@ -20,6 +20,7 @@ import { runInstagramAnalyticsCommand } from "./analytics.js";
 import { runRemoteMigrationValidation } from "./remote-migration.js";
 import { runSqliteExport } from "../admin/sqlite-export.js";
 import { runSupabaseImport } from "../admin/supabase-import.js";
+import { runAdminConfigCheckCommand } from "./admin-config-check.js";
 
 function filterArgument(args: string[]): string | undefined {
   const value = args.find((arg) => arg.startsWith("--"));
@@ -29,6 +30,7 @@ function filterArgument(args: string[]): string | undefined {
 async function main(): Promise<void> {
   const [, , command, ...args] = process.argv;
   const config = loadConfig();
+  if (runAdminConfigCheckCommand(command, config.repoRoot)) return;
   if (await runInstagramConfigCheckCommand(command, config.repoRoot)) return;
   if (await runInstagramAnalyticsCommand(command, args, config)) return;
   if (command === "admin:remote-validate") { await runRemoteMigrationValidation(config, args); return; }

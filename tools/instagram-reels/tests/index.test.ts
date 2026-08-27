@@ -24,3 +24,4 @@ import "./personal-microsoft-auth.test.js";
 import "./analytics.test.js";
 import "./remote-migration.test.js";
 import "./sqlite-export.test.js";
+import "./supabase-config.test.js";

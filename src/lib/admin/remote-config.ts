@@ -1,4 +1,4 @@
-export type AdminDataSource = "sqlite" | "supabase-readonly";
+export type AdminDataSource = "sqlite" | "supabase-readonly" | "supabase";
 
 export type RemoteAdminConfig = {
   dataSource: AdminDataSource;
@@ -15,13 +15,14 @@ function parseStrictBoolean(name: string, raw: string | undefined, fallback: boo
 
 export function resolveAdminDataSource(env: NodeJS.ProcessEnv | Record<string, string | undefined> = process.env): AdminDataSource {
   const value = env.ADMIN_DATA_SOURCE?.trim() || "sqlite";
-  if (value === "sqlite" || value === "supabase-readonly") return value;
+  if (value === "sqlite" || value === "supabase-readonly" || value === "supabase") return value;
   throw new Error("ADMIN_DATA_SOURCE_INVALID");
 }
 
 export function resolveRemoteAdminConfig(env: NodeJS.ProcessEnv | Record<string, string | undefined> = process.env): RemoteAdminConfig {
   const dataSource = resolveAdminDataSource(env);
   const remoteWriteEnabled = parseStrictBoolean("ADMIN_REMOTE_WRITE_ENABLED", env.ADMIN_REMOTE_WRITE_ENABLED, false);
-  if (remoteWriteEnabled && dataSource !== "supabase-readonly") throw new Error("ADMIN_REMOTE_WRITE_REQUIRES_SUPABASE");
+  if (dataSource === "supabase" && !remoteWriteEnabled) throw new Error("ADMIN_DATA_SOURCE_REQUIRES_REMOTE_WRITE");
+  if (remoteWriteEnabled && dataSource !== "supabase") throw new Error("ADMIN_REMOTE_WRITE_REQUIRES_SUPABASE");
   return { dataSource, remoteWriteEnabled };
 }
