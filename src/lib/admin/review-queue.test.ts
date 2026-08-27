@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { filterReviewRows, queueCounts, queueMatches, sortReviewRows } from "./review-queue.ts";
+import { filterReviewRows, nextReviewRow, queueCounts, queueMatches, sortReviewRows } from "./review-queue.ts";
 import type { ReviewRow } from "./review-types.ts";
 import { canMutateGovernance, canReadWorkspace, requireRole } from "./auth.ts";
 import { PROTECTED_ADMIN_ROUTES, requiredRolesForPath } from "./route-guards.ts";
@@ -33,6 +33,14 @@ test("queue counts and queue membership reflect persisted status", () => {
   assert.equal(counts.FAST_PATH, 1);
   assert.equal(queueMatches(rows[1], "CONTENT_READY"), true);
   assert.equal(queueMatches(rows[0], "STANDARD_REVIEW"), false);
+});
+
+test("save and next selects the next unpublished row in queue order", () => {
+  const rows = [row({ reelId: "current" }), row({ reelId: "next" }), row({ reelId: "published", publicationStatus: "PUBLISHED" }), row({ reelId: "later" })];
+  assert.equal(nextReviewRow(rows, "current")?.reelId, "next");
+  assert.equal(nextReviewRow(rows, "next")?.reelId, "later");
+  assert.equal(nextReviewRow(rows, "later")?.reelId, "current");
+  assert.equal(nextReviewRow([row({ reelId: "current" })], "current"), null);
 });
 
 test("admin authorization separates read and governance mutation roles", () => {

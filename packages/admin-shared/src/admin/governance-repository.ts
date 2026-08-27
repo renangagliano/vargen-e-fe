@@ -1,12 +1,64 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { filterReviewRows, queueCounts, type ReviewFilters } from "./review-queue.ts";
 import type { ReviewRow, ReviewWorkspaceData } from "./review-types.ts";
+import type { AdminIdentity } from "./auth.ts";
+import type { GovernanceMutationRequest } from "./mutation-contract.ts";
 
 export interface GovernanceRepository {
   getReviewQueue(filters?: ReviewFilters): Promise<ReviewWorkspaceData>;
   getCandidateDetail(reelId: string): Promise<Record<string, unknown> | null>;
   getAnalytics(reelId: string): Promise<ReadonlyArray<Record<string, unknown>>>;
   getPublicationHistory(reelId: string): Promise<ReadonlyArray<Record<string, unknown>>>;
+}
+
+export type GovernanceMutationResult = {
+  action: string;
+  reel_id: string;
+  editorial_version: number;
+  state: Record<string, unknown>;
+  readiness?: Record<string, unknown>;
+  idempotent?: boolean;
+  publication_authorization?: Record<string, unknown> | null;
+};
+
+type RpcClient = Pick<SupabaseClient, "rpc">;
+
+/**
+ * All remote writes go through one server-side PostgreSQL function. The
+ * function is deliberately not part of the browser client and is granted to
+ * the service role only. This keeps the multi-table governance operation
+ * transactional while the application remains fail-closed until the remote
+ * write flag is explicitly enabled.
+ */
+export class SupabaseGovernanceMutationRepository {
+  private readonly client: RpcClient;
+
+  constructor(client: RpcClient) {
+    this.client = client;
+  }
+
+  async execute(request: GovernanceMutationRequest, identity: AdminIdentity): Promise<GovernanceMutationResult> {
+    const { data, error } = await this.client.rpc("admin_governance_mutation", {
+      p_action: request.action,
+      p_reel_id: request.reel_id,
+      p_expected_current_version: request.expected_current_version,
+      p_actor_id: identity.userId,
+      p_request_id: request.request_id,
+      p_payload: {
+        ...(request.fields ?? {}),
+        reference: request.reference,
+        note: request.note,
+        confirmation_statement: request.confirmation_statement,
+        confirm_publication: request.confirm_publication,
+      },
+    });
+    if (error) {
+      const code = error.message.match(/[A-Z][A-Z0-9_]{3,}/)?.[0];
+      throw new Error(code ?? "REMOTE_GOVERNANCE_MUTATION_FAILED");
+    }
+    if (!data || typeof data !== "object" || Array.isArray(data)) throw new Error("REMOTE_GOVERNANCE_MUTATION_INVALID_RESPONSE");
+    return data as GovernanceMutationResult;
+  }
 }
 
 function toReviewRow(value: Record<string, unknown>): ReviewRow {
@@ -21,7 +73,11 @@ function toReviewRow(value: Record<string, unknown>): ReviewRow {
 }
 
 export class SupabaseGovernanceRepository implements GovernanceRepository {
-  constructor(private readonly client: SupabaseClient) {}
+  private readonly client: SupabaseClient;
+
+  constructor(client: SupabaseClient) {
+    this.client = client;
+  }
 
   async getReviewQueue(filters: ReviewFilters = {}): Promise<ReviewWorkspaceData> {
     const result = await this.client.from("derived_reels").select("reel_id,song_title,collection,tier,ai_score,editorial_quality,bible_status,rights_status,editorial_status,review_queue,content_pillar,seasonality,content_ready,publication_status,last_reviewed_at").limit(500);

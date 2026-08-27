@@ -45,6 +45,13 @@ export function sortReviewRows(rows: ReviewRow[], key: ReviewSortKey, direction:
   });
 }
 
+/** Returns the next visible, unpublished candidate in the current queue order. */
+export function nextReviewRow(rows: ReviewRow[], currentReelId: string): ReviewRow | null {
+  const currentIndex = rows.findIndex((row) => row.reelId === currentReelId);
+  const ordered = currentIndex < 0 ? rows : [...rows.slice(currentIndex + 1), ...rows.slice(0, currentIndex)];
+  return ordered.find((row) => row.publicationStatus !== "PUBLISHED") ?? null;
+}
+
 export function queueCounts(rows: ReviewRow[]): QueueCounts {
   const counts: QueueCounts = {};
   for (const row of rows) {
