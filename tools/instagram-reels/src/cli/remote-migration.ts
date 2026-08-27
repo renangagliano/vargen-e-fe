@@ -89,7 +89,11 @@ export async function collectRemoteSupabaseValidation(env: Environment, fetchImp
   if (!Array.isArray(adminRows) || adminRows.length === 0) return { status: "ADMIN_PROFILE_NOT_FOUND", auth: "PASS", rest: "PASS", schema: "PRESENT", admin_profile: "NOT_FOUND", remote_write_enabled: false, counts };
 
   const anonymousResponse = await request(fetchImpl, `${supabase.url}/rest/v1/profiles?select=id&limit=1`, { headers: publicHeaders });
-  const anonymousDenied = anonymousResponse?.status === 401 || anonymousResponse?.status === 403;
+  // RLS commonly returns HTTP 200 with an empty result for an anonymous
+  // SELECT. Treat that as denied; requiring only 401/403 incorrectly marks
+  // a correctly protected table as an RLS failure with publishable keys.
+  const anonymousBody = anonymousResponse?.ok ? await anonymousResponse.json().catch(() => null) as unknown : null;
+  const anonymousDenied = anonymousResponse?.status === 401 || anonymousResponse?.status === 403 || (anonymousResponse?.ok && Array.isArray(anonymousBody) && anonymousBody.length === 0);
   if (!anonymousDenied) return { status: "RLS_VALIDATION_FAILED", auth: "PASS", rest: "PASS", schema: "PRESENT", admin_profile: "PASS", rls: { anonymous: "NOT_DENIED" }, remote_write_enabled: false, counts };
 
   const operationalCount = OPERATIONAL_TABLES.reduce((total, table) => total + Number(counts[table] ?? 0), 0);

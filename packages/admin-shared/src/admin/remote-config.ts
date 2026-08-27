@@ -7,10 +7,12 @@ export type RemoteAdminConfig = {
 
 export type AdminRuntimeConfig = RemoteAdminConfig & {
   autoPublishEnabled: boolean;
+  publishingEnabled: boolean;
   sourceOfValue: {
     dataSource: "environment" | "default";
     remoteWriteEnabled: "environment" | "default";
     autoPublishEnabled: "environment" | "default";
+    publishingEnabled: "environment" | "default";
   };
 };
 
@@ -45,13 +47,17 @@ export function resolveAdminRuntimeConfig(env: NodeJS.ProcessEnv | Record<string
   const config = resolveRemoteAdminConfig(env);
   const autoPublishRaw = env.INSTAGRAM_AUTO_PUBLISH_ON_APPROVAL;
   const autoPublishEnabled = parseStrictBoolean("INSTAGRAM_AUTO_PUBLISH_ON_APPROVAL", autoPublishRaw, false);
+  const publishingRaw = env.INSTAGRAM_PUBLISHING_ENABLED;
+  const publishingEnabled = parseStrictBoolean("INSTAGRAM_PUBLISHING_ENABLED", publishingRaw, false);
   return {
     ...config,
     autoPublishEnabled,
+    publishingEnabled,
     sourceOfValue: {
       dataSource: env.ADMIN_DATA_SOURCE?.trim() ? "environment" : "default",
       remoteWriteEnabled: env.ADMIN_REMOTE_WRITE_ENABLED?.trim() ? "environment" : "default",
       autoPublishEnabled: autoPublishRaw?.trim() ? "environment" : "default",
+      publishingEnabled: publishingRaw?.trim() ? "environment" : "default",
     },
   };
 }

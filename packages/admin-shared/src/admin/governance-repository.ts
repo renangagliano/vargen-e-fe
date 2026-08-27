@@ -146,14 +146,15 @@ export class SupabaseGovernanceRepository implements GovernanceRepository {
     if (editorial.error) throw new Error("REMOTE_CANDIDATE_READ_FAILED");
     const currentVersion = editorial.data?.editorial_version;
     const versionForQueries = typeof currentVersion === "number" ? currentVersion : -1;
-    const [evidence, verification, rights, review, readiness] = await Promise.all([
+    const [evidence, verification, rights, review, readiness, publication] = await Promise.all([
       this.client.from("bible_evidence").select("*").eq("reel_id", reelId).eq("editorial_version", versionForQueries).order("updated_at", { ascending: false }).limit(1).maybeSingle(),
       this.client.from("bible_verifications").select("*").eq("reel_id", reelId).eq("editorial_version", versionForQueries).order("verified_at", { ascending: false }).limit(1).maybeSingle(),
       sourceAssetId ? this.client.from("rights_sources").select("*,rights_confirmations(*)").eq("asset_id", sourceAssetId) : Promise.resolve({ data: [], error: null }),
       this.client.from("human_reviews").select("*").eq("reel_id", reelId).eq("editorial_version", versionForQueries).order("created_at", { ascending: false }).limit(1).maybeSingle(),
       this.client.from("content_ready_evaluations").select("*").eq("reel_id", reelId).eq("editorial_version", versionForQueries).order("evaluated_at", { ascending: false }).limit(1).maybeSingle(),
+      this.client.from("publication_records").select("*").eq("reel_id", reelId).order("created_at", { ascending: false }).limit(1).maybeSingle(),
     ]);
-    if (editorial.error || evidence.error || verification.error || rights.error || review.error || readiness.error) throw new Error("REMOTE_CANDIDATE_READ_FAILED");
+    if (editorial.error || evidence.error || verification.error || rights.error || review.error || readiness.error || publication.error) throw new Error("REMOTE_CANDIDATE_READ_FAILED");
     const rightsRows = Array.isArray(rights.data) ? rights.data as Array<Record<string, unknown>> : [];
     const confirmationStatuses = rightsRows.flatMap((source) => Array.isArray(source.rights_confirmations) ? (source.rights_confirmations as Array<Record<string, unknown>>).map((confirmation) => confirmation.rights_status) : []);
     const effectiveBibleStatus = resolveEffectiveBibleStatus({ reference: editorial.data?.bible_reference, evidenceStatus: evidence.data?.evidence_status, evidenceVersion: evidence.data?.editorial_version, verificationVersion: verification.data?.editorial_version, editorialVersion: currentVersion });
@@ -164,7 +165,7 @@ export class SupabaseGovernanceRepository implements GovernanceRepository {
     } : null;
     const storedReadinessStatus = readiness.data?.status ?? null;
     const canonicalReady = storedReadinessStatus === "CONTENT_READY" && effectiveBibleStatus === "VERIFIED" && effectiveRightsStatus === "RIGHTS_CONFIRMED";
-    return { ...reel.data, content_ready: canonicalReady, editorial_version: editorial.data, bible_evidence: evidence.data, bible_verification: verification.data, rights: rights.data, review: review.data, readiness: canonicalReadiness, readiness_status: storedReadinessStatus === null ? null : canonicalReady ? "CONTENT_READY" : "BLOCKED",
+    return { ...reel.data, content_ready: canonicalReady, editorial_version: editorial.data, bible_evidence: evidence.data, bible_verification: verification.data, rights: rights.data, review: review.data, readiness: canonicalReadiness, readiness_status: storedReadinessStatus === null ? null : canonicalReady ? "CONTENT_READY" : "BLOCKED", publication: publication.data,
       effective_bible_status: effectiveBibleStatus,
       effective_rights_status: effectiveRightsStatus,
     } as Record<string, unknown>;

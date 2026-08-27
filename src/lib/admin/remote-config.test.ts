@@ -11,19 +11,22 @@ test("remote admin configuration is read-only and fail-closed by default", () =>
   assert.throws(() => resolveRemoteAdminConfig({ ADMIN_DATA_SOURCE: "supabase" }), /ADMIN_DATA_SOURCE_REQUIRES_REMOTE_WRITE/);
 });
 
-test("Admin runtime config resolves operational mode and auto-publish independently", () => {
+test("Admin runtime config resolves operational mode, publication and auto-publish independently", () => {
   assert.deepEqual(resolveAdminRuntimeConfig({
     ADMIN_DATA_SOURCE: "supabase",
     ADMIN_REMOTE_WRITE_ENABLED: "true",
     INSTAGRAM_AUTO_PUBLISH_ON_APPROVAL: "false",
+    INSTAGRAM_PUBLISHING_ENABLED: "true",
   }), {
     dataSource: "supabase",
     remoteWriteEnabled: true,
     autoPublishEnabled: false,
+    publishingEnabled: true,
     sourceOfValue: {
       dataSource: "environment",
       remoteWriteEnabled: "environment",
       autoPublishEnabled: "environment",
+      publishingEnabled: "environment",
     },
   });
 });
@@ -33,10 +36,12 @@ test("Admin runtime config is read-only by safe default", () => {
     dataSource: "supabase-readonly",
     remoteWriteEnabled: false,
     autoPublishEnabled: false,
+    publishingEnabled: false,
     sourceOfValue: {
       dataSource: "default",
       remoteWriteEnabled: "default",
       autoPublishEnabled: "default",
+      publishingEnabled: "default",
     },
   });
   assert.throws(() => resolveAdminRuntimeConfig({ ADMIN_REMOTE_WRITE_ENABLED: "enabled" }), /ADMIN_REMOTE_WRITE_ENABLED_INVALID/);

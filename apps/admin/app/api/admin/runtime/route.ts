@@ -15,6 +15,7 @@ export async function GET() {
       data_source: config.dataSource,
       remote_write_enabled: config.remoteWriteEnabled,
       auto_publish_enabled: config.autoPublishEnabled,
+      publishing_enabled: config.publishingEnabled,
       source_of_value: config.sourceOfValue,
       secrets_exposed: false,
     }, { headers: { "Cache-Control": "no-store" } });

@@ -14,13 +14,13 @@ function response(status: number, body: unknown = [], headers: Record<string, st
   return new Response(JSON.stringify(body), { status, headers });
 }
 
-function schemaPresentFetch(options: { admin: boolean } = { admin: true }): typeof fetch {
+function schemaPresentFetch(options: { admin: boolean; anonymousStatus?: number } = { admin: true }): typeof fetch {
   return (async (input) => {
     const url = String(input);
     if (url.endsWith("/auth/v1/health")) return response(200, { healthy: true });
     if (url.endsWith("/rest/v1/")) return response(401, { message: "authentication required" });
     if (url.includes("/profiles?select=id&role=eq.ADMIN")) return response(200, options.admin ? [{ id: "admin-id" }] : []);
-    if (url.includes("/profiles?select=id&limit=1")) return response(403, { message: "denied" });
+    if (url.includes("/profiles?select=id&limit=1")) return response(options.anonymousStatus ?? 403, options.anonymousStatus === 200 ? [] : { message: "denied" });
     return response(200, [], { "content-range": "*/0" });
   }) as typeof fetch;
 }
@@ -90,4 +90,9 @@ test("legacy service-role keys retain privileged server authorization", async ()
   }) as typeof fetch;
   await collectRemoteSupabaseValidation({ ...env, SUPABASE_SECRET_KEY: undefined, SUPABASE_SERVICE_ROLE_KEY: "a.b.c" }, fetchImpl);
   assert.equal(privilegedAuthorization, "Bearer a.b.c");
+});
+
+test("RLS denial represented as an empty anonymous result is accepted", async () => {
+  const result = await collectRemoteSupabaseValidation(env, schemaPresentFetch({ admin: true, anonymousStatus: 200 }));
+  assert.equal(result.status, "CONNECTED_SCHEMA_PRESENT");
 });
