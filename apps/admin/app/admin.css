@@ -26,6 +26,8 @@ button:disabled { cursor: not-allowed; }
 .admin-nav a:hover, .admin-nav a.is-active { color:var(--text); background:var(--panel-strong); }
 .admin-readonly-banner { display:flex; align-items:center; flex-wrap:wrap; gap:8px 16px; padding:10px 13px; border:1px solid #5d4d27; background:#211d13; color:var(--muted); margin-bottom:18px; font-size:.78rem; }
 .admin-readonly-banner strong { color:var(--gold); font-size:.66rem; letter-spacing:.1em; }
+.admin-operational-banner { display:flex; align-items:center; flex-wrap:wrap; gap:8px 16px; padding:10px 13px; border:1px solid #356040; background:rgba(65,112,74,.18); color:var(--muted); margin-bottom:18px; font-size:.78rem; }
+.admin-operational-banner strong { color:var(--green); font-size:.66rem; letter-spacing:.1em; }
 .admin-summary-grid { display:grid; grid-template-columns:repeat(7, minmax(100px, 1fr)); gap:9px; margin-bottom:18px; }
 .admin-summary-card { min-height:70px; display:flex; flex-direction:column; justify-content:space-between; padding:11px 13px; border:1px solid var(--line-soft); background:var(--panel); }
 .admin-summary-card span { color:var(--muted); font-size:.7rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
