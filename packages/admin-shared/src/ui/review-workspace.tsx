@@ -8,6 +8,7 @@ import { filterReviewRows, nextReviewRow, queueMatches, sortReviewRows, type Rev
 import { REVIEW_QUEUES, type AdminRole, type ReviewQueueKey, type ReviewRow, type ReviewWorkspaceData } from "../admin/review-types.ts";
 import { fetchCandidateDetail, formatReviewStatus, reviewStatusTone } from "../admin/review-ui.ts";
 import { isBibleReferenceStructurallyValid, RIGHTS_CONFIRMATION_STATEMENT, type GovernanceMutationAction, type EditorialMutationFields } from "../admin/mutation-contract.ts";
+import { canPublish } from "../admin/publication-contract.ts";
 
 const EMPTY_DATA: ReviewWorkspaceData = { rows: [], counts: {}, connected: false, sourceLabel: "Remote persistence not connected" };
 
@@ -38,6 +39,22 @@ const ACTION_MESSAGES: Record<string, string> = {
   REQUIRED_EDITORIAL_FIELDS_MISSING: "Preencha todos os campos editoriais obrigatórios antes de aprovar.",
   BIBLE_REFERENCE_NOT_FOUND: "A referência bíblica desta versão não foi encontrada.",
   READ_AFTER_WRITE_FAILED: "A alteração foi enviada, mas a confirmação do estado falhou. Recarregue o Reel.",
+  INSTAGRAM_PUBLISHING_DISABLED: "A publicação manual está desabilitada neste ambiente.",
+  PUBLICATION_NOT_READY: "Este Reel não está pronto para publicação. Verifique os bloqueios exibidos.",
+  TEMP_MEDIA_VALIDATION_FAILED: "A mídia temporária não passou na validação de segurança.",
+  TEMP_MEDIA_CHECKSUM_MISMATCH: "A mídia temporária não corresponde ao arquivo esperado.",
+  META_CONTAINER_CREATE_FAILED: "Não foi possível criar o container do Instagram.",
+  META_PROCESSING_ERROR: "O Instagram rejeitou o processamento da mídia.",
+  META_PROCESSING_EXPIRED: "O container do Instagram expirou antes da publicação.",
+  META_PROCESSING_TIMEOUT: "O processamento do Instagram excedeu o tempo limite.",
+  MEDIA_PUBLISH_FAILED: "Não foi possível concluir a publicação no Instagram.",
+  PUBLICATION_STATE_UNCERTAIN: "O estado da publicação é incerto. Investigue antes de tentar novamente.",
+  READBACK_FAILED: "A publicação foi enviada, mas não pôde ser confirmada no Instagram.",
+  ALREADY_PUBLISHED: "Este Reel já foi publicado e não será duplicado.",
+  ONEDRIVE_AUTH_REQUIRED: "A conexão segura com o OneDrive não está configurada.",
+  ONEDRIVE_TEMP_MEDIA_NOT_FOUND: "A mídia temporária não foi encontrada no OneDrive.",
+  ONEDRIVE_TEMP_MEDIA_AMBIGUOUS: "Há mais de um arquivo candidato no OneDrive; a publicação foi bloqueada para evitar o arquivo errado.",
+  PUBLICATION_METADATA_INCOMPLETE: "Os metadados necessários para publicar estão incompletos.",
 };
 
 function actionMessage(code: string): string {
@@ -52,7 +69,7 @@ function StatusChip({ value, label }: { value: string | null | undefined; label?
   return <span className={`admin-status admin-status--${reviewStatusTone(value)}`} title={value ?? undefined}>{label ?? formatReviewStatus(value)}</span>;
 }
 
-export function ReviewWorkspace({ initialData = EMPTY_DATA, readOnly = false, role = "VIEWER", candidateDetailEndpoint, mutationEndpoint }: { initialData?: ReviewWorkspaceData; readOnly?: boolean; role?: AdminRole; candidateDetailEndpoint?: string; mutationEndpoint?: string }) {
+export function ReviewWorkspace({ initialData = EMPTY_DATA, readOnly = false, role = "VIEWER", publishingEnabled = false, publicationTargetAccount = "conta configurada", candidateDetailEndpoint, mutationEndpoint, publicationEndpoint }: { initialData?: ReviewWorkspaceData; readOnly?: boolean; role?: AdminRole; publishingEnabled?: boolean; publicationTargetAccount?: string; candidateDetailEndpoint?: string; mutationEndpoint?: string; publicationEndpoint?: string }) {
   const data = initialData;
   const [queue, setQueue] = useState<ReviewQueueKey>("PENDING");
   const [filters, setFilters] = useState<ReviewFilters>({});
@@ -96,7 +113,7 @@ export function ReviewWorkspace({ initialData = EMPTY_DATA, readOnly = false, ro
     <section className="admin-filter-panel" aria-label="Filtros da fila"><div className="admin-filter-bar"><label className="admin-filter-search">Buscar<input aria-label="Buscar música ou Reel" placeholder="Buscar música ou Reel…" value={filters.search ?? ""} onChange={(event) => setFilter("search", event.target.value)} /></label><FilterSelect label="Coleção" value={filters.collection} values={data.rows.map((row) => row.collection)} onChange={(value) => setFilter("collection", value)} /><FilterSelect label="Tier" value={filters.tier} values={data.rows.map((row) => row.tier)} onChange={(value) => setFilter("tier", value)} /><FilterSelect label="Bíblia" value={filters.bibleStatus} values={["PASS", "REVIEW_REQUIRED", "MISSING", "CONFLICT"]} onChange={(value) => setFilter("bibleStatus", value)} /><FilterSelect label="Direitos" value={filters.rightsStatus} values={data.rows.map((row) => row.rightsStatus)} onChange={(value) => setFilter("rightsStatus", value)} /><FilterSelect label="Editorial" value={filters.editorialStatus} values={["READY_FOR_HUMAN_REVIEW", "NEEDS_CHANGES", "APPROVED"]} onChange={(value) => setFilter("editorialStatus", value)} /><FilterSelect label="Pilar" value={filters.contentPillar} values={data.rows.map((row) => row.contentPillar ?? "")} onChange={(value) => setFilter("contentPillar", value)} /><FilterSelect label="Sazonalidade" value={filters.seasonality} values={data.rows.map((row) => row.seasonality ?? "")} onChange={(value) => setFilter("seasonality", value)} /><FilterSelect label="Publicação" value={filters.publicationStatus} values={data.rows.map((row) => row.publicationStatus)} onChange={(value) => setFilter("publicationStatus", value)} /></div><button type="button" className="admin-button admin-button--quiet admin-filter-clear" onClick={clearFilters} disabled={!Object.values(filters).some(Boolean)}>Limpar filtros</button></section>
 
     <section className="admin-table-shell" aria-label="Candidatos"><div className="admin-table-meta"><span>{data.connected ? `${rows.length} candidato${rows.length === 1 ? "" : "s"} · página ${currentPage} de ${pageCount}` : "Aguardando conexão com a persistência remota"}</span><span className="admin-muted">Fonte: {data.sourceLabel}</span></div><div className="admin-table-scroll"><table className="admin-table"><caption className="sr-only">Fila de candidatos editoriais</caption><thead><tr><th scope="col">Candidato</th><th scope="col"><SortButton label="Coleção" onClick={() => changeSort("collection")} /></th><th scope="col"><SortButton label="Tier" onClick={() => changeSort("tier")} /></th><th scope="col"><SortButton label="IA" onClick={() => changeSort("aiScore")} /></th><th scope="col">Bíblia</th><th scope="col">Direitos</th><th scope="col">Editorial</th><th scope="col">Ready</th><th scope="col">Publicação</th><th scope="col">Revisado</th><th scope="col"><span className="sr-only">Ação</span></th></tr></thead><tbody>{pageRows.map((row) => <tr key={row.reelId}><th scope="row" data-label="Candidato"><strong>{row.songTitle}</strong><small title={row.reelId}>{row.reelId}</small></th><td data-label="Coleção">{row.collection}</td><td data-label="Tier"><span className="admin-chip">{row.tier}</span></td><td data-label="IA"><Score value={row.aiScore} /></td><td data-label="Bíblia"><StatusChip value={row.bibleStatus} /></td><td data-label="Direitos"><StatusChip value={row.rightsStatus} /></td><td data-label="Editorial"><StatusChip value={row.editorialStatus} /></td><td data-label="Ready"><StatusChip value={row.contentReady ? "PASS" : "BLOCKED"} label={row.contentReady ? "Pass" : "Blocked"} /></td><td data-label="Publicação"><StatusChip value={row.publicationStatus} /></td><td data-label="Revisado">{formatDate(row.lastReviewedAt)}</td><td data-label="Ação"><button ref={(element) => { reviewButtonRefs.current[row.reelId] = element; }} type="button" className="admin-button admin-button--small" onClick={() => setSelected(row)} aria-label={`Revisar ${row.songTitle}`}>Review</button></td></tr>)}</tbody></table></div><div className="admin-pagination"><button type="button" className="admin-button admin-button--quiet" disabled={currentPage <= 1} onClick={() => setPage((value) => Math.max(1, value - 1))}>Anterior</button><span aria-live="polite">Página {currentPage} / {pageCount}</span><button type="button" className="admin-button admin-button--quiet" disabled={currentPage >= pageCount} onClick={() => setPage((value) => Math.min(pageCount, value + 1))}>Próxima</button></div>{!rows.length && <div className="admin-empty"><span className="admin-empty__mark">V&F</span><h2>{data.connected ? "Nenhum candidato encontrado" : "Workspace pronto para a conexão remota"}</h2><p>{data.connected ? "Ajuste os filtros ou escolha outra fila." : "Os dados não são simulados. Conecte o backend autenticado antes de operar qualquer estado editorial."}</p></div>}</section>
-    {selected && <ReviewDrawer key={selected.reelId} row={selected} onClose={closeDrawer} onPersisted={handlePersisted} readOnly={readOnly} role={role} candidateDetailEndpoint={candidateDetailEndpoint} mutationEndpoint={mutationEndpoint} />}
+    {selected && <ReviewDrawer key={selected.reelId} row={selected} onClose={closeDrawer} onPersisted={handlePersisted} readOnly={readOnly} role={role} publishingEnabled={publishingEnabled} publicationTargetAccount={publicationTargetAccount} candidateDetailEndpoint={candidateDetailEndpoint} mutationEndpoint={mutationEndpoint} publicationEndpoint={publicationEndpoint} />}
   </main>;
 }
 
@@ -107,7 +124,7 @@ function FilterSelect({ label, value, values, onChange }: { label: string; value
 
 function SortButton({ label, onClick }: { label: string; onClick: () => void }) { return <button type="button" className="admin-table-sort" onClick={onClick}>{label}<span aria-hidden="true">↕</span></button>; }
 
-function ReviewDrawer({ row, onClose, onPersisted, readOnly, role, candidateDetailEndpoint, mutationEndpoint }: { row: ReviewRow; onClose: () => void; onPersisted: (reelId: string, moveNext: boolean) => void; readOnly: boolean; role: AdminRole; candidateDetailEndpoint?: string; mutationEndpoint?: string }) {
+function ReviewDrawer({ row, onClose, onPersisted, readOnly, role, publishingEnabled, publicationTargetAccount, candidateDetailEndpoint, mutationEndpoint, publicationEndpoint }: { row: ReviewRow; onClose: () => void; onPersisted: (reelId: string, moveNext: boolean) => void; readOnly: boolean; role: AdminRole; publishingEnabled: boolean; publicationTargetAccount: string; candidateDetailEndpoint?: string; mutationEndpoint?: string; publicationEndpoint?: string }) {
   const [detail, setDetail] = useState<Record<string, unknown> | null>(null);
   const [loading, setLoading] = useState(Boolean(candidateDetailEndpoint));
   const [error, setError] = useState<string | null>(null);
@@ -116,6 +133,9 @@ function ReviewDrawer({ row, onClose, onPersisted, readOnly, role, candidateDeta
   const [confirmationAction, setConfirmationAction] = useState<GovernanceMutationAction | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [form, setForm] = useState<EditorialMutationFields | null>(null);
+  const [publishing, setPublishing] = useState(false);
+  const [publicationConfirm, setPublicationConfirm] = useState(false);
+  const [publicationPhase, setPublicationPhase] = useState<string | null>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
@@ -132,7 +152,7 @@ function ReviewDrawer({ row, onClose, onPersisted, readOnly, role, candidateDeta
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") { event.preventDefault(); if (confirmationAction) setConfirmationAction(null); else onClose(); return; }
+      if (event.key === "Escape") { event.preventDefault(); if (publicationConfirm) setPublicationConfirm(false); else if (confirmationAction) setConfirmationAction(null); else onClose(); return; }
       if (event.key !== "Tab") return;
       const focusable = Array.from(document.querySelectorAll<HTMLElement>(".admin-drawer button:not([disabled]), .admin-drawer input:not([disabled]), .admin-drawer textarea:not([disabled]), .admin-drawer [href]"));
       if (!focusable.length) return;
@@ -143,7 +163,7 @@ function ReviewDrawer({ row, onClose, onPersisted, readOnly, role, candidateDeta
     document.addEventListener("keydown", handleKeyDown);
     window.requestAnimationFrame(() => closeButtonRef.current?.focus());
     return () => { document.removeEventListener("keydown", handleKeyDown); document.body.style.overflow = previousOverflow; };
-  }, [confirmationAction, onClose]);
+  }, [confirmationAction, onClose, publicationConfirm]);
 
   const editorial = objectOf(detail?.editorial_version);
   const evidence = objectOf(detail?.bible_evidence);
@@ -157,6 +177,10 @@ function ReviewDrawer({ row, onClose, onPersisted, readOnly, role, candidateDeta
   const effectiveBibleStatus = String(detail?.effective_bible_status ?? row.bibleStatus);
   const effectiveRightsStatus = String(detail?.effective_rights_status ?? row.rightsStatus);
   const effectiveContentReady = typeof detail?.content_ready === "boolean" ? detail.content_ready : row.contentReady;
+  const publication = objectOf(detail?.publication);
+  const publicationStatus = String(publication?.status ?? detail?.publication_status ?? row.publicationStatus);
+  const activePublicationAttempt = ["PREPARING", "CONTAINER_CREATED", "PROCESSING", "PUBLISHING", "UNCERTAIN"].includes(publicationStatus);
+  const publishable = canPublish(role, publishingEnabled, effectiveContentReady, publicationStatus, activePublicationAttempt);
   const currentVersion = Number(valueOf(editorial, "editorial_version", "0"));
   const persistedHashtags = Array.isArray(editorial?.hashtags) ? editorial.hashtags.filter((value): value is string => typeof value === "string") : [];
   const persistedForm: EditorialMutationFields = { title: valueOf(editorial, "title", row.songTitle), hook: valueOf(editorial, "hook", ""), caption: valueOf(editorial, "caption", ""), cta: valueOf(editorial, "cta", ""), hashtags: persistedHashtags, primary_pillar: valueOf(editorial, "primary_pillar", ""), secondary_pillar: editorial?.secondary_pillar == null ? null : valueOf(editorial, "secondary_pillar", ""), cover_text: valueOf(editorial, "cover_text", ""), bible_reference: valueOf(editorial, "bible_reference", "") };
@@ -207,6 +231,22 @@ function ReviewDrawer({ row, onClose, onPersisted, readOnly, role, candidateDeta
     void submitMutation(action, extra);
   };
 
+  const publish = async () => {
+    if (!publicationEndpoint || !publishable || !currentVersion || publishing) return;
+    setPublicationConfirm(false); setPublishing(true); setPublicationPhase("Preparando publicação…"); setError(null); setSuccess(null);
+    try {
+      setPublicationPhase("Validando estado e mídia…");
+      const response = await fetch(publicationEndpoint, { method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/json", Accept: "application/json" }, body: JSON.stringify({ reel_id: row.reelId, expected_current_version: currentVersion, request_id: crypto.randomUUID(), confirmed: true }) });
+      const body = await response.json().catch(() => null) as Record<string, unknown> | null;
+      if (!response.ok) throw new Error(typeof body?.error === "string" ? body.error : "PUBLICATION_FAILED");
+      setPublicationPhase("Publicação confirmada.");
+      if (candidateDetailEndpoint) setDetail(await fetchCandidateDetail(candidateDetailEndpoint, row.reelId));
+      setSuccess(body?.status === "ALREADY_PUBLISHED" ? "Este Reel já foi publicado." : "Publicado com sucesso");
+      onPersisted(row.reelId, false);
+    } catch (value) { setError(value instanceof Error ? value.message : "PUBLICATION_FAILED"); }
+    finally { setPublishing(false); setPublicationPhase(null); }
+  };
+
   const editor = (label: string, key: keyof EditorialMutationFields, multiline = false) => <label>{label}{multiline ? <textarea value={String(activeForm[key] ?? "")} readOnly={!canReview} onChange={(event) => updateField(key, event.target.value)} rows={3} /> : <input value={String(activeForm[key] ?? "")} readOnly={!canReview} onChange={(event) => updateField(key, event.target.value)} />}</label>;
   const actionLabel = confirmationAction === "confirm_rights" ? "Confirmar direitos" : confirmationAction === "needs_changes" ? "Marcar Needs Changes" : "Rejeitar candidato";
   return <div className="admin-drawer-backdrop" role="presentation" onMouseDown={(event) => { if (event.currentTarget === event.target) onClose(); }}>
@@ -214,6 +254,7 @@ function ReviewDrawer({ row, onClose, onPersisted, readOnly, role, candidateDeta
       <header className="admin-drawer__top"><div><p className="admin-kicker">Revisão individual</p><h2 id="review-drawer-title">{row.songTitle}</h2><p className="admin-muted">{row.reelId} · {row.collection}</p></div><button ref={closeButtonRef} type="button" className="admin-icon-button" onClick={onClose} aria-label="Fechar revisão">×</button></header>
       {readOnly && <div className="admin-drawer__readonly">READ-ONLY MODE <span>Remote writes are disabled during validation.</span></div>}
       <div className="admin-drawer__body">
+        {publishing && <div className="admin-drawer__loading" role="status">{publicationPhase ?? "Publicando…"}</div>}
         {loading && <div className="admin-drawer__loading" role="status">Carregando dados do candidato…</div>}
         {error && <div className="admin-drawer__error" role="alert"><strong>{actionMessage(error)}</strong> <span>Código: {error}</span></div>}
         {success && <div className="admin-drawer__success" role="status">{success}</div>}
@@ -225,8 +266,9 @@ function ReviewDrawer({ row, onClose, onPersisted, readOnly, role, candidateDeta
         <section className="admin-drawer__section"><div className="admin-section-heading"><p className="admin-kicker">06 · CONTENT_READY</p><StatusChip value={effectiveContentReady ? "PASS" : "BLOCKED"} label={effectiveContentReady ? "Pass" : "Blocked"} /></div><div className="admin-readiness-grid">{["technical_validation", "source_integrity", "editorial_review", "rights_status", "bible_reference", "output_file_exists", "cover_exists", "required_editorial_fields", "duplicate_publication_check"].map((key) => <div key={key}><span>{formatReviewStatus(key)}</span><StatusChip value={typeof readiness?.[key] === "string" ? String(readiness[key]) : key === "bible_reference" ? effectiveBibleStatus : key === "rights_status" ? effectiveRightsStatus : undefined} /></div>)}</div></section>
         <section className="admin-drawer__section"><div className="admin-section-heading"><p className="admin-kicker">07 · Metadados</p></div><dl className="admin-detail-grid"><Detail label="Arquivo relativo" value={valueOf(detail, "output_relative_path")} /><Detail label="Tamanho" value={detail?.file_size ? String(detail.file_size) + " bytes" : "—"} /><Detail label="Versão editorial" value={valueOf(editorial, "editorial_version")} /><Detail label="Asset de origem" value={valueOf(detail, "source_asset_id")} /><Detail label="Checksum" value={valueOf(detail, "checksum")} /></dl></section>
       </div>
-      {confirmationAction && <div className="admin-action-dialog" role="dialog" aria-modal="true" aria-labelledby="action-dialog-title"><div className="admin-action-dialog__card"><h3 id="action-dialog-title">{actionLabel}</h3>{confirmationAction === "confirm_rights" && <p>{RIGHTS_CONFIRMATION_STATEMENT}</p>}{confirmationAction === "reject" && <p>Esta ação altera o estado editorial do Reel e exige confirmação explícita.</p>}<div><button type="button" className="admin-button admin-button--quiet" onClick={() => setConfirmationAction(null)} disabled={saving}>Cancelar</button><button type="button" className="admin-button" onClick={confirmAction} disabled={saving}>{saving ? "Enviando…" : actionLabel}</button></div></div></div>}
-      <footer className="admin-drawer__actions"><button type="button" className="admin-button admin-button--quiet" onClick={onClose}>Fechar</button>{canReview && <><button id="saveEditorial" type="button" className="admin-button" disabled={saving} onClick={() => submitMutation("save_editorial")}>{activeAction === "save_editorial" ? "Salvando…" : "Salvar"}</button><button id="saveNext" type="button" className="admin-button" disabled={saving} onClick={() => submitMutation("save_editorial", {}, true)}>{activeAction === "save_editorial" ? "Salvando…" : "Salvar & Next"}</button><button id="needs" type="button" className="admin-button" disabled={saving} onClick={() => requestAction("needs_changes")}>{activeAction === "needs_changes" ? "Salvando…" : "Needs Changes"}</button><button id="reject" type="button" className="admin-button" disabled={saving} onClick={() => requestAction("reject")}>{activeAction === "reject" ? "Rejeitando…" : "Rejeitar"}</button>{role === "ADMIN" && <><button id="approve" type="button" className="admin-button" disabled={saving} onClick={() => requestAction("approve_editorial")}>{activeAction === "approve_editorial" ? "Aprovando…" : "Aprovar editorial"}</button><button id="rights" type="button" className="admin-button" disabled={saving} onClick={() => requestAction("confirm_rights")}>{activeAction === "confirm_rights" ? "Confirmando direitos…" : "Confirmar direitos"}</button></>}</>}</footer>
+      {confirmationAction && <div className="admin-action-dialog" role="dialog" aria-modal="true" aria-labelledby="action-dialog-title"><div className="admin-action-dialog__card"><h3 id="action-dialog-title">{actionLabel}</h3>{confirmationAction === "confirm_rights" && <p>{RIGHTS_CONFIRMATION_STATEMENT}</p>}{confirmationAction === "reject" && <p>Esta ação altera o estado editorial do Reel e exige confirmação explícita.</p>}{confirmationAction === "needs_changes" && <p>Marcar este Reel como Needs Changes?</p>}<div><button type="button" className="admin-button admin-button--quiet" onClick={() => setConfirmationAction(null)} disabled={saving || publishing}>Cancelar</button><button type="button" className="admin-button" onClick={confirmAction} disabled={saving || publishing}>{saving ? "Enviando…" : actionLabel}</button></div></div></div>}
+      {publicationConfirm && <div className="admin-action-dialog" role="dialog" aria-modal="true" aria-labelledby="publication-dialog-title"><div className="admin-action-dialog__card"><h3 id="publication-dialog-title">Publicar Reel no Instagram?</h3><dl className="admin-detail-grid"><Detail label="Reel" value={row.songTitle} /><Detail label="Bíblia" value={valueOf(editorial, "bible_reference")} /><Detail label="Versão editorial" value={String(currentVersion)} /><Detail label="Conta de destino" value={publicationTargetAccount} /><Detail label="Estado" value={formatReviewStatus(publicationStatus)} /></dl><p>Esta ação publicará o Reel publicamente no Instagram. A autorização será registrada para o operador autenticado.</p><div><button type="button" className="admin-button admin-button--quiet" onClick={() => setPublicationConfirm(false)} disabled={publishing}>Cancelar</button><button type="button" className="admin-button" onClick={() => void publish()} disabled={publishing}>Publicar</button></div></div></div>}
+      <footer className="admin-drawer__actions"><button type="button" className="admin-button admin-button--quiet" onClick={onClose} disabled={saving || publishing}>Fechar</button>{canReview && <><button id="saveEditorial" type="button" className="admin-button" disabled={saving || publishing} onClick={() => submitMutation("save_editorial")}>{activeAction === "save_editorial" ? "Salvando…" : "Salvar"}</button><button id="saveNext" type="button" className="admin-button" disabled={saving || publishing} onClick={() => submitMutation("save_editorial", {}, true)}>{activeAction === "save_editorial" ? "Salvando…" : "Salvar & Next"}</button><button id="needs" type="button" className="admin-button" disabled={saving || publishing} onClick={() => requestAction("needs_changes")}>{activeAction === "needs_changes" ? "Salvando…" : "Needs Changes"}</button><button id="reject" type="button" className="admin-button" disabled={saving || publishing} onClick={() => requestAction("reject")}>{activeAction === "reject" ? "Rejeitando…" : "Rejeitar"}</button>{role === "ADMIN" && <><button id="approve" type="button" className="admin-button" disabled={saving || publishing} onClick={() => requestAction("approve_editorial")}>{activeAction === "approve_editorial" ? "Aprovando…" : "Aprovar editorial"}</button><button id="rights" type="button" className="admin-button" disabled={saving || publishing} onClick={() => requestAction("confirm_rights")}>{activeAction === "confirm_rights" ? "Confirmando direitos…" : "Confirmar direitos"}</button>{publishable && <button id="publishInstagram" type="button" className="admin-button admin-button--gold" disabled={saving || publishing} onClick={() => setPublicationConfirm(true)}>Publicar no Instagram</button>}</>}</>}</footer>
     </aside>
   </div>;
 }

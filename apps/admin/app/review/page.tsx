@@ -9,5 +9,5 @@ export default async function ReviewPage() {
   const identity = await requireAdminPage();
   const data = await (await getRemoteRepository()).getReviewQueue();
   const config = getAdminRuntimeConfig();
-  return <ReviewWorkspace initialData={data} role={identity.role} readOnly={!isOperationalAdminMode(config)} candidateDetailEndpoint="/api/admin/candidates" mutationEndpoint="/api/admin/mutations" />;
+  return <ReviewWorkspace initialData={data} role={identity.role} readOnly={!isOperationalAdminMode(config)} publishingEnabled={config.publishingEnabled} publicationTargetAccount={process.env.INSTAGRAM_ACCOUNT_ID?.trim() || "conta não configurada"} candidateDetailEndpoint="/api/admin/candidates" mutationEndpoint="/api/admin/mutations" publicationEndpoint="/api/admin/publications" />;
 }
