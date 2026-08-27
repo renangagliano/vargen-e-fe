@@ -25,3 +25,4 @@ import "./analytics.test.js";
 import "./remote-migration.test.js";
 import "./sqlite-export.test.js";
 import "./supabase-config.test.js";
+import "./remote-validation.test.js";
