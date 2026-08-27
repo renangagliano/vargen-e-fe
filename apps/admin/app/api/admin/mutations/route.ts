@@ -4,10 +4,10 @@ import {
   assertRemoteMutationEnabled,
   isMutationRoleAllowed,
   parseMutationRequest,
-  resolveAutoPublishOnApproval,
 } from "@vargenfe/admin-shared/admin/mutation-contract";
 import { SupabaseGovernanceMutationRepository } from "@vargenfe/admin-shared/admin/governance-repository";
 import { createSupabaseServiceClient } from "@vargenfe/admin-shared/supabase/service";
+import { getAdminRuntimeConfig } from "../../../../lib/runtime-config";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -32,7 +32,8 @@ export async function POST(request: Request) {
 
   // Check the global write gate before parsing operator input so a disabled
   // endpoint cannot be used as a payload oracle and always fails closed.
-  try { assertRemoteMutationEnabled(process.env); } catch { return NextResponse.json({ error: "REMOTE_WRITE_DISABLED" }, { status: 403 }); }
+  let runtimeConfig;
+  try { runtimeConfig = getAdminRuntimeConfig(); assertRemoteMutationEnabled(runtimeConfig); } catch { return NextResponse.json({ error: "REMOTE_WRITE_DISABLED" }, { status: 403 }); }
 
   let input;
   try {
@@ -43,13 +44,13 @@ export async function POST(request: Request) {
   }
 
   try {
-    const config = assertRemoteMutationEnabled(process.env);
+    const config = assertRemoteMutationEnabled(runtimeConfig);
     if (!isMutationRoleAllowed(input.action, identity.role)) throw new Error("ADMIN_FORBIDDEN");
 
     // A Vercel request must not guess or reuse local OneDrive/MSAL state. A
     // personal publication worker must be provisioned before this path can
     // authorize an Instagram attempt.
-    if (input.action === "approve_editorial" && resolveAutoPublishOnApproval(process.env.INSTAGRAM_AUTO_PUBLISH_ON_APPROVAL)) {
+    if (input.action === "approve_editorial" && runtimeConfig.autoPublishEnabled) {
       if (input.confirm_publication !== "I_CONFIRM_APPROVE_AND_PUBLISH") return NextResponse.json({ error: "PUBLICATION_CONFIRMATION_REQUIRED" }, { status: 409 });
       if (process.env.INSTAGRAM_PUBLISH_MODE?.trim() !== "approval" || process.env.INSTAGRAM_REQUIRE_APPROVAL?.trim().toLowerCase() !== "true" || process.env.INSTAGRAM_PILOT_REAL?.trim().toLowerCase() !== "true") return NextResponse.json({ error: "PUBLICATION_CONFIGURATION_BLOCKED" }, { status: 409 });
       return NextResponse.json({ error: "PUBLICATION_WORKER_REQUIRED", remote_write_enabled: config.remoteWriteEnabled }, { status: 409 });

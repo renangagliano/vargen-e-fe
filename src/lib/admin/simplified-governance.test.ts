@@ -32,6 +32,27 @@ test("remote candidate detail reads current-version readiness and review evidenc
   assert.match(repository, /human_reviews/);
 });
 
+test("approval changes review state on the current version without creating an editorial version", () => {
+  const approvalBranch = sql.slice(sql.indexOf("if p_action = 'approve_editorial'"));
+  assert.doesNotMatch(approvalBranch, /insert into editorial_versions/);
+  assert.match(approvalBranch, /update editorial_versions set review_status/);
+  assert.match(approvalBranch, /where reel_id = p_reel_id and editorial_version = v_current/);
+});
+
+test("the Admin runtime banner and mutation gate use one server resolver", () => {
+  const page = readFileSync("apps/admin/app/review/page.tsx", "utf8");
+  const route = readFileSync("apps/admin/app/api/admin/mutations/route.ts", "utf8");
+  assert.match(page, /getAdminRuntimeConfig/);
+  assert.match(page, /isOperationalAdminMode/);
+  assert.match(route, /getAdminRuntimeConfig/);
+  assert.match(route, /assertRemoteMutationEnabled\(runtimeConfig\)/);
+});
+
+test("login does not claim that every production workspace is read-only", () => {
+  const login = readFileSync("apps/admin/app/login/page.tsx", "utf8");
+  assert.doesNotMatch(login, /opera em modo somente leitura/);
+});
+
 test("effective Bible state requires matching current-version evidence and verification", () => {
   assert.equal(resolveEffectiveBibleStatus({ reference: "Colossenses 3:12-14", evidenceStatus: "VERIFIED", evidenceVersion: 2, verificationVersion: 2, editorialVersion: 2 }), "VERIFIED");
   assert.equal(resolveEffectiveBibleStatus({ reference: "Colossenses 3:12-14", evidenceStatus: "VERIFIED", evidenceVersion: 1, verificationVersion: 1, editorialVersion: 2 }), "REVIEW_REQUIRED");

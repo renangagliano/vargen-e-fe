@@ -27,6 +27,8 @@ function formatDate(value: string | null | undefined): string {
 }
 
 const ACTION_MESSAGES: Record<string, string> = {
+  REMOTE_WRITE_DISABLED: "As alterações remotas estão desabilitadas neste ambiente.",
+  ADMIN_RUNTIME_CONFIGURATION_FAILED: "A configuração operacional do Admin não está disponível.",
   EDITORIAL_VERSION_CONFLICT: "Este Reel foi atualizado. Recarregue antes de continuar.",
   BIBLE_REFERENCE_INVALID: "Informe uma referência bíblica válida, como Lucas 19.",
   RIGHTS_CONFIRMATION_REQUIRED: "A declaração de direitos precisa ser aceita explicitamente.",
