@@ -7,6 +7,7 @@
     "./admin/remote-config": "./src/admin/remote-config.ts",
     "./admin/remote-readonly": "./src/admin/remote-readonly.ts",
     "./admin/review-queue": "./src/admin/review-queue.ts",
+    "./admin/review-ui": "./src/admin/review-ui.ts",
     "./admin/review-types": "./src/admin/review-types.ts",
     "./admin/server-auth": "./src/admin/server-auth.ts",
     "./supabase/config": "./src/supabase/config.ts",
