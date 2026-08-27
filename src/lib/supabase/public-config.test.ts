@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { classifySupabasePublicKey } from "./config.ts";
-import { getSupabasePublicConfig } from "./public-config.ts";
+import { getSupabaseBrowserPublicConfig, getSupabasePublicConfig } from "./public-config.ts";
 
 test("Supabase public configuration requires a project URL and public key", () => {
   assert.throws(() => getSupabasePublicConfig({}), /SUPABASE_URL_MISSING/);
@@ -22,4 +22,20 @@ test("modern public key takes precedence over legacy anon key", () => {
 
 test("server secret cannot be configured as a browser public key", () => {
   assert.throws(() => classifySupabasePublicKey("sb_secret_wrong"), /SUPABASE_PUBLIC_KEY_IS_SECRET/);
+});
+
+test("browser config acquires only statically referenced public environment values", () => {
+  const previousUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const previousPublishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+  const previousAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  process.env.NEXT_PUBLIC_SUPABASE_URL = "https://personal.supabase.co";
+  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY = "sb_publishable_browser-public";
+  delete process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  try {
+    assert.deepEqual(getSupabaseBrowserPublicConfig(), { url: "https://personal.supabase.co", publicKey: "sb_publishable_browser-public", publicKeyType: "PUBLISHABLE" });
+  } finally {
+    if (previousUrl === undefined) delete process.env.NEXT_PUBLIC_SUPABASE_URL; else process.env.NEXT_PUBLIC_SUPABASE_URL = previousUrl;
+    if (previousPublishableKey === undefined) delete process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY; else process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY = previousPublishableKey;
+    if (previousAnonKey === undefined) delete process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY; else process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = previousAnonKey;
+  }
 });
