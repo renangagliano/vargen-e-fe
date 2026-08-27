@@ -36,7 +36,7 @@ export function candidateDetailUrl(endpoint: string, reelId: string): string {
 }
 
 export async function fetchCandidateDetail(endpoint: string, reelId: string, request = fetch): Promise<Record<string, unknown>> {
-  const response = await request(candidateDetailUrl(endpoint, reelId), { credentials: "same-origin", headers: { Accept: "application/json" } });
+  const response = await request(candidateDetailUrl(endpoint, reelId), { credentials: "same-origin", cache: "no-store", headers: { Accept: "application/json" } });
   const body = await response.json().catch(() => null) as unknown;
   if (!response.ok) throw new Error(objectErrorCode(body) ?? "CANDIDATE_DETAIL_FAILED");
   if (!body || typeof body !== "object" || Array.isArray(body)) throw new Error("CANDIDATE_DETAIL_INVALID");

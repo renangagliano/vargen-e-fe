@@ -7,7 +7,7 @@ import { SignOutButton } from "./sign-out-button.tsx";
 import { filterReviewRows, nextReviewRow, queueMatches, sortReviewRows, type ReviewFilters, type ReviewSortKey } from "../admin/review-queue.ts";
 import { REVIEW_QUEUES, type AdminRole, type ReviewQueueKey, type ReviewRow, type ReviewWorkspaceData } from "../admin/review-types.ts";
 import { fetchCandidateDetail, formatReviewStatus, reviewStatusTone } from "../admin/review-ui.ts";
-import type { GovernanceMutationAction, EditorialMutationFields } from "../admin/mutation-contract.ts";
+import { RIGHTS_CONFIRMATION_STATEMENT, type GovernanceMutationAction, type EditorialMutationFields } from "../admin/mutation-contract.ts";
 
 const EMPTY_DATA: ReviewWorkspaceData = { rows: [], counts: {}, connected: false, sourceLabel: "Remote persistence not connected" };
 
@@ -23,7 +23,25 @@ function objectOf(value: unknown): Record<string, unknown> | null {
 function formatDate(value: string | null | undefined): string {
   if (!value) return "—";
   const date = new Date(value);
-  return Number.isNaN(date.valueOf()) ? value : new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short" }).format(date);
+  return Number.isNaN(date.valueOf()) ? value : date.toISOString().replace(/\.\d{3}Z$/, "Z").replace("T", " ");
+}
+
+const ACTION_MESSAGES: Record<string, string> = {
+  EDITORIAL_VERSION_CONFLICT: "Este Reel foi atualizado. Recarregue antes de continuar.",
+  BIBLE_REFERENCE_REQUIRED: "Uma referência bíblica é necessária para verificar.",
+  BIBLE_NOTE_REQUIRED: "Uma nota de verificação bíblica é necessária.",
+  RIGHTS_NOTE_REQUIRED: "Uma nota de confirmação de direitos é necessária.",
+  RIGHTS_CONFIRMATION_REQUIRED: "A declaração de direitos precisa ser aceita explicitamente.",
+  RIGHTS_SOURCE_NOT_FOUND: "Não há uma fonte de direitos cadastrada para este Reel.",
+  REVIEW_NOTE_REQUIRED: "Uma nota da revisão é necessária.",
+  REJECTION_CONFIRMATION_REQUIRED: "Confirme explicitamente a rejeição.",
+  REQUIRED_EDITORIAL_FIELDS_MISSING: "Preencha todos os campos editoriais obrigatórios antes de aprovar.",
+  BIBLE_REFERENCE_NOT_FOUND: "A referência bíblica desta versão não foi encontrada.",
+  READ_AFTER_WRITE_FAILED: "A alteração foi enviada, mas a confirmação do estado falhou. Recarregue o Reel.",
+};
+
+function actionMessage(code: string): string {
+  return ACTION_MESSAGES[code] ?? "Não foi possível concluir esta ação.";
 }
 
 function Score({ value }: { value: number | null }) {
@@ -35,7 +53,7 @@ function StatusChip({ value, label }: { value: string | null | undefined; label?
 }
 
 export function ReviewWorkspace({ initialData = EMPTY_DATA, readOnly = false, role = "VIEWER", candidateDetailEndpoint, mutationEndpoint }: { initialData?: ReviewWorkspaceData; readOnly?: boolean; role?: AdminRole; candidateDetailEndpoint?: string; mutationEndpoint?: string }) {
-  const [data] = useState(initialData);
+  const data = initialData;
   const [queue, setQueue] = useState<ReviewQueueKey>("PENDING");
   const [filters, setFilters] = useState<ReviewFilters>({});
   const [sort, setSort] = useState<{ key: ReviewSortKey; direction: "asc" | "desc" }>({ key: "lastReviewedAt", direction: "desc" });
@@ -94,6 +112,10 @@ function ReviewDrawer({ row, onClose, onPersisted, readOnly, role, candidateDeta
   const [loading, setLoading] = useState(Boolean(candidateDetailEndpoint));
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [activeAction, setActiveAction] = useState<GovernanceMutationAction | null>(null);
+  const [confirmationAction, setConfirmationAction] = useState<GovernanceMutationAction | null>(null);
+  const [actionNote, setActionNote] = useState("");
+  const [success, setSuccess] = useState<string | null>(null);
   const [form, setForm] = useState<EditorialMutationFields | null>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
 
@@ -138,20 +160,73 @@ function ReviewDrawer({ row, onClose, onPersisted, readOnly, role, candidateDeta
   const updateField = <K extends keyof EditorialMutationFields>(key: K, value: EditorialMutationFields[K]) => setForm((current) => ({ ...persistedForm, ...(current ?? {}), [key]: value }));
   const submitMutation = async (action: GovernanceMutationAction, extra: Record<string, unknown> = {}, moveNext = false) => {
     if (!mutationEndpoint || !currentVersion) return;
-    setSaving(true); setError(null);
+    setSaving(true); setActiveAction(action); setError(null); setSuccess(null);
     try {
       const response = await fetch(mutationEndpoint, { method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/json", Accept: "application/json" }, body: JSON.stringify({ action, reel_id: row.reelId, expected_current_version: currentVersion, request_id: crypto.randomUUID(), fields: action === "save_editorial" || action === "save_bible_review" ? activeForm : undefined, ...extra }) });
       const body = await response.json().catch(() => null) as Record<string, unknown> | null;
       if (!response.ok) throw new Error(typeof body?.error === "string" ? body.error : "REMOTE_GOVERNANCE_MUTATION_FAILED");
-      if (candidateDetailEndpoint) { setDetail(await fetchCandidateDetail(candidateDetailEndpoint, row.reelId)); setForm(null); }
+      if (candidateDetailEndpoint) {
+        try { setDetail(await fetchCandidateDetail(candidateDetailEndpoint, row.reelId)); setForm(null); }
+        catch { throw new Error("READ_AFTER_WRITE_FAILED"); }
+      }
+      setSuccess(action === "save_editorial" || action === "save_bible_review" ? "Editorial salvo" : action === "verify_bible" ? "Bíblia verificada" : action === "confirm_rights" ? "Direitos confirmados" : action === "approve_editorial" ? "Editorial aprovado" : action === "needs_changes" ? "Marcado como Needs Changes" : "Candidato rejeitado");
       onPersisted(row.reelId, moveNext);
     } catch (value) { setError(value instanceof Error ? value.message : "REMOTE_GOVERNANCE_MUTATION_FAILED"); }
-    finally { setSaving(false); }
+    finally { setSaving(false); setActiveAction(null); }
+  };
+
+  const requestAction = (action: GovernanceMutationAction) => {
+    if (!canReview || saving) return;
+    if (action === "approve_editorial") {
+      void submitMutation(action, { note: "Aprovação editorial explícita pelo Admin Workspace." });
+      return;
+    }
+    if (action === "verify_bible" && !activeForm.bible_reference?.trim()) {
+      setError("BIBLE_REFERENCE_REQUIRED");
+      return;
+    }
+    setError(null);
+    setActionNote("");
+    setConfirmationAction(action);
+  };
+
+  const confirmAction = () => {
+    if (!confirmationAction) return;
+    const note = actionNote.trim();
+    if (!note) {
+      setError(confirmationAction === "confirm_rights" ? "RIGHTS_NOTE_REQUIRED" : confirmationAction === "verify_bible" ? "BIBLE_NOTE_REQUIRED" : "REVIEW_NOTE_REQUIRED");
+      return;
+    }
+    const extra: Record<string, unknown> = { note };
+    if (confirmationAction === "verify_bible") extra.reference = activeForm.bible_reference?.trim();
+    if (confirmationAction === "confirm_rights") extra.confirmation_statement = RIGHTS_CONFIRMATION_STATEMENT;
+    if (confirmationAction === "reject") extra.confirm_rejection = true;
+    const action = confirmationAction;
+    setConfirmationAction(null);
+    void submitMutation(action, extra);
   };
 
   const editor = (label: string, key: keyof EditorialMutationFields, multiline = false) => <label>{label}{multiline ? <textarea value={String(activeForm[key] ?? "")} readOnly={!canReview} onChange={(event) => updateField(key, event.target.value)} rows={3} /> : <input value={String(activeForm[key] ?? "")} readOnly={!canReview} onChange={(event) => updateField(key, event.target.value)} />}</label>;
-  return <div className="admin-drawer-backdrop" role="presentation" onMouseDown={(event) => { if (event.currentTarget === event.target) onClose(); }}><aside className="admin-drawer" role="dialog" aria-modal="true" aria-labelledby="review-drawer-title"><header className="admin-drawer__top"><div><p className="admin-kicker">Revisão individual</p><h2 id="review-drawer-title">{row.songTitle}</h2><p className="admin-muted">{row.reelId} · {row.collection}</p></div><button ref={closeButtonRef} type="button" className="admin-icon-button" onClick={onClose} aria-label="Fechar revisão">×</button></header>{readOnly && <div className="admin-drawer__readonly">READ-ONLY MODE <span>Remote writes are disabled during validation.</span></div>}<div className="admin-drawer__body">{loading && <div className="admin-drawer__loading" role="status">Carregando dados do candidato…</div>}{error && <div className="admin-drawer__error" role="alert">Não foi possível concluir a operação. <span>Código: {formatReviewStatus(error)}</span></div>}<section className="admin-drawer__section"><div className="admin-section-heading"><p className="admin-kicker">01 · Visão geral</p><StatusChip value={row.publicationStatus} /></div><dl className="admin-detail-grid"><Detail label="Música" value={row.songTitle} /><Detail label="Coleção" value={row.collection} /><Detail label="Reel ID" value={row.reelId} /><Detail label="Tier" value={row.tier} /><Detail label="IA" value={row.aiScore === null ? "—" : row.aiScore.toFixed(0)} /><Detail label="Publicação" value={formatReviewStatus(row.publicationStatus)} /></dl></section><section className="admin-drawer__section"><div className="admin-section-heading"><p className="admin-kicker">02 · Editorial</p><StatusChip value={row.editorialStatus} /></div><div className="admin-readonly-fields">{editor("Título", "title")}{editor("Hook", "hook")}{editor("Caption", "caption", true)}{editor("CTA", "cta")}<div className="admin-form__columns">{editor("Pilar principal", "primary_pillar")}{editor("Pilar secundário", "secondary_pillar")}</div><label>Hashtags<textarea readOnly={!canReview} value={(activeForm.hashtags ?? []).join(" ")} onChange={(event) => updateField("hashtags", event.target.value.split(/\s+/).map((tag) => tag.trim()).filter(Boolean))} rows={3} /></label>{editor("Texto da capa", "cover_text")}</div></section><section className="admin-drawer__section"><div className="admin-section-heading"><p className="admin-kicker">03 · Bíblia</p><StatusChip value={row.bibleStatus} /></div><div className="admin-readonly-fields">{editor("Referência", "bible_reference")}<p className="admin-muted">Evidência: {formatReviewStatus(valueOf(evidence, "status"))} · Verificação: {formatReviewStatus(valueOf(verification, "status"))}</p></div></section><section className="admin-drawer__section"><div className="admin-section-heading"><p className="admin-kicker">04 · Direitos</p><StatusChip value={row.rightsStatus} /></div><dl className="admin-detail-grid"><Detail label="Estado" value={formatReviewStatus(row.rightsStatus)} /><Detail label="Confirmação" value={valueOf(rightsObject, "status")} /></dl></section><section className="admin-drawer__section"><div className="admin-section-heading"><p className="admin-kicker">05 · CONTENT_READY</p><StatusChip value={row.contentReady ? "PASS" : "BLOCKED"} label={row.contentReady ? "Pass" : "Blocked"} /></div><div className="admin-readiness-grid">{["technical_validation", "source_integrity", "editorial_review", "rights_status", "bible_reference", "output_file_exists", "cover_exists", "required_editorial_fields", "duplicate_publication_check"].map((key) => <div key={key}><span>{formatReviewStatus(key)}</span><StatusChip value={typeof readiness?.[key] === "string" ? String(readiness[key]) : key === "bible_reference" ? row.bibleStatus : key === "rights_status" ? row.rightsStatus : undefined} /></div>)}</div></section><section className="admin-drawer__section"><div className="admin-section-heading"><p className="admin-kicker">06 · Metadados</p></div><dl className="admin-detail-grid"><Detail label="Arquivo relativo" value={valueOf(detail, "output_relative_path")} /><Detail label="Tamanho" value={detail?.file_size ? `${String(detail.file_size)} bytes` : "—"} /><Detail label="Versão editorial" value={valueOf(editorial, "editorial_version")} /><Detail label="Asset de origem" value={valueOf(detail, "source_asset_id")} /><Detail label="Checksum" value={valueOf(detail, "checksum")} /></dl></section></div><footer className="admin-drawer__actions"><button type="button" className="admin-button admin-button--quiet" onClick={onClose}>Fechar</button><button id="saveEditorial" type="button" className="admin-button" disabled={!canReview || saving} onClick={() => submitMutation("save_editorial")}>{saving ? "Salvando…" : "Salvar"}</button><button id="saveNext" type="button" className="admin-button" disabled={!canReview || saving} onClick={() => submitMutation("save_editorial", {}, true)}>Salvar & Next</button><button id="approve" type="button" className="admin-button" disabled={!canReview || role !== "ADMIN" || saving} onClick={() => submitMutation("approve_editorial", { note: "Aprovação editorial explícita pelo Admin Workspace." })}>Aprovar editorial</button><button id="verifyBible" type="button" className="admin-button" disabled={!canReview || saving} onClick={() => submitMutation("verify_bible", { reference: activeForm.bible_reference, note: "Verificação bíblica explícita pelo Admin Workspace." })}>Verificar Bíblia</button><button id="rights" type="button" className="admin-button" disabled={!canReview || role !== "ADMIN" || saving} onClick={() => submitMutation("confirm_rights", { note: "Confirmação explícita de direitos pelo Admin Workspace.", confirmation_statement: "I confirm that I have the necessary rights or authorization to use and publish this media for the Vargen & Fé project." })}>Confirmar direitos</button><button id="needs" type="button" className="admin-button" disabled={!canReview || saving} onClick={() => submitMutation("needs_changes", { note: "Alterações solicitadas pelo Admin Workspace." })}>Needs Changes</button><button id="reject" type="button" className="admin-button" disabled={!canReview || saving} onClick={() => submitMutation("reject", { note: "Rejeição explícita pelo Admin Workspace." })}>Rejeitar</button></footer></aside></div>;
+  const actionLabel = confirmationAction === "verify_bible" ? "Verificar Bíblia" : confirmationAction === "confirm_rights" ? "Confirmar direitos" : confirmationAction === "needs_changes" ? "Marcar Needs Changes" : "Rejeitar candidato";
+  return <div className="admin-drawer-backdrop" role="presentation" onMouseDown={(event) => { if (event.currentTarget === event.target) onClose(); }}>
+    <aside className="admin-drawer" role="dialog" aria-modal="true" aria-labelledby="review-drawer-title">
+      <header className="admin-drawer__top"><div><p className="admin-kicker">Revisão individual</p><h2 id="review-drawer-title">{row.songTitle}</h2><p className="admin-muted">{row.reelId} · {row.collection}</p></div><button ref={closeButtonRef} type="button" className="admin-icon-button" onClick={onClose} aria-label="Fechar revisão">×</button></header>
+      {readOnly && <div className="admin-drawer__readonly">READ-ONLY MODE <span>Remote writes are disabled during validation.</span></div>}
+      <div className="admin-drawer__body">
+        {loading && <div className="admin-drawer__loading" role="status">Carregando dados do candidato…</div>}
+        {error && <div className="admin-drawer__error" role="alert"><strong>{actionMessage(error)}</strong> <span>Código: {error}</span></div>}
+        {success && <div className="admin-drawer__success" role="status">{success}</div>}
+        <section className="admin-drawer__section"><div className="admin-section-heading"><p className="admin-kicker">01 · Visão geral</p><StatusChip value={row.publicationStatus} /></div><dl className="admin-detail-grid"><Detail label="Música" value={row.songTitle} /><Detail label="Coleção" value={row.collection} /><Detail label="Reel ID" value={row.reelId} /><Detail label="Tier" value={row.tier} /><Detail label="IA" value={row.aiScore === null ? "—" : row.aiScore.toFixed(0)} /><Detail label="Publicação" value={formatReviewStatus(row.publicationStatus)} /></dl></section>
+        <section className="admin-drawer__section"><div className="admin-section-heading"><p className="admin-kicker">02 · Editorial</p><StatusChip value={row.editorialStatus} /></div><div className="admin-readonly-fields">{editor("Título", "title")}{editor("Hook", "hook")}{editor("Caption", "caption", true)}{editor("CTA", "cta")}<div className="admin-form__columns">{editor("Pilar principal", "primary_pillar")}{editor("Pilar secundário", "secondary_pillar")}</div><label>Hashtags<textarea readOnly={!canReview} value={(activeForm.hashtags ?? []).join(" ")} onChange={(event) => updateField("hashtags", event.target.value.split(/\s+/).map((tag) => tag.trim()).filter(Boolean))} rows={3} /></label>{editor("Texto da capa", "cover_text")}</div></section>
+        <section className="admin-drawer__section"><div className="admin-section-heading"><p className="admin-kicker">03 · Bíblia</p><StatusChip value={row.bibleStatus} /></div><div className="admin-readonly-fields">{editor("Referência", "bible_reference")}<p className="admin-muted">Evidência: {formatReviewStatus(valueOf(evidence, "status"))} · Verificação: {formatReviewStatus(valueOf(verification, "status"))}</p></div></section>
+        <section className="admin-drawer__section"><div className="admin-section-heading"><p className="admin-kicker">04 · Direitos</p><StatusChip value={row.rightsStatus} /></div><dl className="admin-detail-grid"><Detail label="Estado" value={formatReviewStatus(row.rightsStatus)} /><Detail label="Confirmação" value={valueOf(rightsObject, "status")} /></dl></section>
+        <section className="admin-drawer__section"><div className="admin-section-heading"><p className="admin-kicker">05 · CONTENT_READY</p><StatusChip value={row.contentReady ? "PASS" : "BLOCKED"} label={row.contentReady ? "Pass" : "Blocked"} /></div><div className="admin-readiness-grid">{["technical_validation", "source_integrity", "editorial_review", "rights_status", "bible_reference", "output_file_exists", "cover_exists", "required_editorial_fields", "duplicate_publication_check"].map((key) => <div key={key}><span>{formatReviewStatus(key)}</span><StatusChip value={typeof readiness?.[key] === "string" ? String(readiness[key]) : key === "bible_reference" ? row.bibleStatus : key === "rights_status" ? row.rightsStatus : undefined} /></div>)}</div></section>
+        <section className="admin-drawer__section"><div className="admin-section-heading"><p className="admin-kicker">06 · Metadados</p></div><dl className="admin-detail-grid"><Detail label="Arquivo relativo" value={valueOf(detail, "output_relative_path")} /><Detail label="Tamanho" value={detail?.file_size ? String(detail.file_size) + " bytes" : "—"} /><Detail label="Versão editorial" value={valueOf(editorial, "editorial_version")} /><Detail label="Asset de origem" value={valueOf(detail, "source_asset_id")} /><Detail label="Checksum" value={valueOf(detail, "checksum")} /></dl></section>
+      </div>
+      {confirmationAction && <div className="admin-action-dialog" role="dialog" aria-modal="true" aria-labelledby="action-dialog-title"><h3 id="action-dialog-title">{actionLabel}</h3>{confirmationAction === "verify_bible" && <p>Referência a verificar: <strong>{activeForm.bible_reference}</strong></p>}{confirmationAction === "confirm_rights" && <p>{RIGHTS_CONFIRMATION_STATEMENT}</p>}{confirmationAction === "reject" && <p>Esta ação marca o candidato como rejeitado e exige confirmação explícita.</p>}<label>Nota / motivo<textarea aria-label="Nota da ação" value={actionNote} onChange={(event) => setActionNote(event.target.value)} rows={3} /></label><div><button type="button" className="admin-button admin-button--quiet" onClick={() => setConfirmationAction(null)} disabled={saving}>Cancelar</button><button type="button" className="admin-button" onClick={confirmAction} disabled={saving}>{saving ? "Enviando…" : actionLabel}</button></div></div>}
+      <footer className="admin-drawer__actions"><button type="button" className="admin-button admin-button--quiet" onClick={onClose}>Fechar</button><button id="saveEditorial" type="button" className="admin-button" disabled={!canReview || saving} onClick={() => submitMutation("save_editorial")}>{activeAction === "save_editorial" ? "Salvando…" : "Salvar"}</button><button id="saveNext" type="button" className="admin-button" disabled={!canReview || saving} onClick={() => submitMutation("save_editorial", {}, true)}>{activeAction === "save_editorial" ? "Salvando…" : "Salvar & Next"}</button><button id="approve" type="button" className="admin-button" disabled={!canReview || role !== "ADMIN" || saving} onClick={() => requestAction("approve_editorial")}>{activeAction === "approve_editorial" ? "Aprovando…" : "Aprovar editorial"}</button><button id="verifyBible" type="button" className="admin-button" disabled={!canReview || saving} onClick={() => requestAction("verify_bible")}>{activeAction === "verify_bible" ? "Verificando Bíblia…" : "Verificar Bíblia"}</button><button id="rights" type="button" className="admin-button" disabled={!canReview || role !== "ADMIN" || saving} onClick={() => requestAction("confirm_rights")}>{activeAction === "confirm_rights" ? "Confirmando direitos…" : "Confirmar direitos"}</button><button id="needs" type="button" className="admin-button" disabled={!canReview || saving} onClick={() => requestAction("needs_changes")}>{activeAction === "needs_changes" ? "Salvando…" : "Needs Changes"}</button><button id="reject" type="button" className="admin-button" disabled={!canReview || saving} onClick={() => requestAction("reject")}>{activeAction === "reject" ? "Rejeitando…" : "Rejeitar"}</button></footer>
+    </aside>
+  </div>;
 }
-
 function Detail({ label, value }: { label: string; value: string }) { return <div><dt>{label}</dt><dd title={value}>{value}</dd></div>; }
 function ReadonlyField({ label, value, multiline = false }: { label: string; value: string; multiline?: boolean }) { return <label>{label}{multiline ? <textarea readOnly value={value} rows={3} /> : <input readOnly value={value} />}</label>; }

@@ -18,6 +18,13 @@ function safeError(value: unknown): string {
     : "REMOTE_GOVERNANCE_MUTATION_FAILED";
 }
 
+function statusForCode(code: string): number {
+  if (["BIBLE_REFERENCE_REQUIRED", "BIBLE_NOTE_REQUIRED", "RIGHTS_NOTE_REQUIRED", "RIGHTS_CONFIRMATION_REQUIRED", "REVIEW_NOTE_REQUIRED", "REJECTION_CONFIRMATION_REQUIRED"].includes(code)) return 422;
+  if (code === "REMOTE_WRITE_DISABLED" || code === "ADMIN_FORBIDDEN") return 403;
+  if (code === "EDITORIAL_VERSION_CONFLICT") return 409;
+  return 400;
+}
+
 /** Controlled remote governance entry point; browser clients never write. */
 export async function POST(request: Request) {
   const identity = await getAuthenticatedAdminIdentity();
@@ -31,7 +38,8 @@ export async function POST(request: Request) {
   try {
     input = parseMutationRequest(await request.json());
   } catch (error) {
-    return NextResponse.json({ error: safeError(error) }, { status: 400 });
+    const code = safeError(error);
+    return NextResponse.json({ error: code }, { status: statusForCode(code) });
   }
 
   try {
@@ -52,7 +60,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ ...result, remote_write_enabled: true }, { status: 200 });
   } catch (error) {
     const code = safeError(error);
-    const status = code === "REMOTE_WRITE_DISABLED" || code === "ADMIN_FORBIDDEN" ? 403 : code === "EDITORIAL_VERSION_CONFLICT" ? 409 : 400;
-    return NextResponse.json({ error: code }, { status });
+    return NextResponse.json({ error: code }, { status: statusForCode(code) });
   }
 }
