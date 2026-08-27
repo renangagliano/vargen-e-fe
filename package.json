@@ -28,7 +28,7 @@
     "admin:dev": "next dev apps/admin",
     "admin:build": "next build apps/admin",
     "admin:start": "next start apps/admin",
-    "admin:test": "node --experimental-strip-types --test src/lib/admin/review-queue.test.ts src/lib/admin/review-ui.test.ts src/lib/admin/remote-config.test.ts src/lib/admin/remote-readonly.test.ts src/lib/admin/mutation-contract.test.ts src/lib/admin/supabase-mutation.test.ts src/lib/supabase/public-config.test.ts src/lib/supabase/server-config.test.ts apps/admin/app/login/login-form.test.ts",
+    "admin:test": "node --experimental-strip-types --test src/lib/admin/review-queue.test.ts src/lib/admin/review-ui.test.ts src/lib/admin/remote-config.test.ts src/lib/admin/remote-readonly.test.ts src/lib/admin/mutation-contract.test.ts src/lib/admin/supabase-mutation.test.ts src/lib/admin/simplified-governance.test.ts src/lib/supabase/public-config.test.ts src/lib/supabase/server-config.test.ts apps/admin/app/login/login-form.test.ts",
     "instagram:config-check": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js instagram:config-check",
     "instagram:pilot": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js instagram:pilot",
     "instagram:media-prepare": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js instagram:media-prepare",
