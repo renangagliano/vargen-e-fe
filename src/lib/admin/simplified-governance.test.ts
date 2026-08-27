@@ -6,6 +6,7 @@ import { resolveEffectiveBibleStatus, resolveEffectiveRightsStatus } from "../..
 
 const sql = readFileSync("docs/instagram/014_fix_governance_effective_state.sql", "utf8");
 const bibleSaveMigration = readFileSync("docs/instagram/015_fix_bible_reference_save_pipeline.sql", "utf8");
+const stateMachineMigration = readFileSync("docs/instagram/016_finalize_governance_state_machine.sql", "utf8");
 const ui = readFileSync("packages/admin-shared/src/ui/review-workspace.tsx", "utf8");
 const repository = readFileSync("packages/admin-shared/src/admin/governance-repository.ts", "utf8");
 
@@ -89,4 +90,20 @@ test("the canonical Bible examples remain accepted by the application validator"
     "1 Coríntios 13:4-7",
     "2 Timóteo 3:16-17",
   ]) assert.equal(isBibleReferenceStructurallyValid(reference), true, reference);
+});
+
+test("the state-machine migration makes Save change-aware and approval atomic", () => {
+  assert.match(stateMachineMigration, /editorial_payload_differs/);
+  assert.match(stateMachineMigration, /no_changes/);
+  assert.match(stateMachineMigration, /evaluate_governance_readiness/);
+  assert.match(stateMachineMigration, /recompute_governance_readiness/);
+  assert.match(stateMachineMigration, /CONTENT_READY_RECOMPUTED/);
+  assert.match(stateMachineMigration, /review_queue = case/);
+  assert.match(stateMachineMigration, /p_action = 'approve_editorial'/);
+  assert.doesNotMatch(stateMachineMigration, /DROP TABLE|TRUNCATE|DELETE FROM/);
+});
+
+test("approval submits the current editorial form for server-side dirty approval", () => {
+  assert.match(ui, /submitMutation\(action, \{ fields: activeForm \}\)/);
+  assert.match(ui, /body\?\.no_changes === true/);
 });

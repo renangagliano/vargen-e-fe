@@ -178,7 +178,7 @@ function ReviewDrawer({ row, onClose, onPersisted, readOnly, role, candidateDeta
         try { setDetail(await fetchCandidateDetail(candidateDetailEndpoint, row.reelId)); setForm(null); }
         catch { throw new Error("READ_AFTER_WRITE_FAILED"); }
       }
-      setSuccess(action === "save_editorial" ? "Editorial salvo" : action === "confirm_rights" ? "Direitos confirmados" : action === "approve_editorial" ? "Editorial aprovado" : action === "needs_changes" ? "Marcado como Needs Changes" : "Candidato rejeitado");
+      setSuccess(action === "save_editorial" && body?.no_changes === true ? "Sem alterações" : action === "save_editorial" ? "Editorial salvo" : action === "confirm_rights" ? "Direitos confirmados" : action === "approve_editorial" ? "Editorial aprovado" : action === "needs_changes" ? "Marcado como Needs Changes" : "Candidato rejeitado");
       onPersisted(row.reelId, moveNext);
     } catch (value) { setError(value instanceof Error ? value.message : "REMOTE_GOVERNANCE_MUTATION_FAILED"); }
     finally { setSaving(false); setActiveAction(null); }
@@ -187,7 +187,10 @@ function ReviewDrawer({ row, onClose, onPersisted, readOnly, role, candidateDeta
   const requestAction = (action: GovernanceMutationAction) => {
     if (!canReview || saving) return;
     if (action === "approve_editorial") {
-      void submitMutation(action);
+      // The server compares this canonical form with the current persisted
+      // version. Equal fields are a no-op; changed fields are saved and
+      // approved atomically against the resulting version.
+      void submitMutation(action, { fields: activeForm });
       return;
     }
     setError(null);
