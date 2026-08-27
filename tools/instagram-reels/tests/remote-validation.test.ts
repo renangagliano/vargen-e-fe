@@ -61,3 +61,18 @@ test("server validation fails as configuration when the privileged key is public
   assert.equal(result.status, "CONFIGURATION_FAILED");
   assert.equal(result.remote_write_enabled, false);
 });
+
+test("modern secret keys are sent as privileged server authorization", async () => {
+  let privilegedAuthorization: string | null = null;
+  const fetchImpl = (async (input, init) => {
+    const url = String(input);
+    if (url.includes("/rest/v1/") && !url.endsWith("/rest/v1/")) privilegedAuthorization = new Headers(init?.headers).get("Authorization");
+    if (url.endsWith("/auth/v1/health")) return response(200);
+    if (url.endsWith("/rest/v1/")) return response(401);
+    if (url.includes("/profiles?select=id&role=eq.ADMIN")) return response(200, [{ id: "admin-id" }]);
+    if (url.includes("/profiles?select=id&limit=1")) return response(403);
+    return response(200, [], { "content-range": "*/0" });
+  }) as typeof fetch;
+  await collectRemoteSupabaseValidation(env, fetchImpl);
+  assert.equal(privilegedAuthorization, "Bearer sb_secret_server");
+});

@@ -3,6 +3,7 @@ import { filterReviewRows, queueCounts, type ReviewFilters } from "./review-queu
 import type { ReviewRow, ReviewWorkspaceData } from "./review-types.ts";
 import type { AdminIdentity } from "./auth.ts";
 import type { GovernanceMutationRequest } from "./mutation-contract.ts";
+import { resolveEffectiveBibleStatus, resolveEffectiveRightsStatus } from "./governance-state.ts";
 
 export interface GovernanceRepository {
   getReviewQueue(filters?: ReviewFilters): Promise<ReviewWorkspaceData>;
@@ -64,7 +65,7 @@ function toReviewRow(value: Record<string, unknown>): ReviewRow {
   return {
     reelId: String(value.reel_id), songTitle: String(value.song_title ?? value.reel_id), collection: String(value.collection ?? "—"), tier: String(value.tier ?? "—"),
     aiScore: typeof value.ai_score === "number" ? value.ai_score : null, editorialQuality: typeof value.editorial_quality === "number" ? value.editorial_quality : null,
-    bibleStatus: String(value.bible_status ?? "MISSING") as ReviewRow["bibleStatus"], rightsStatus: String(value.rights_status ?? "UNKNOWN"), editorialStatus: (value.editorial_status as ReviewRow["editorialStatus"]) ?? null,
+    bibleStatus: String(value.effective_bible_status ?? value.bible_status ?? "MISSING") as ReviewRow["bibleStatus"], rightsStatus: String(value.effective_rights_status ?? value.rights_status ?? "UNKNOWN"), editorialStatus: (value.editorial_status as ReviewRow["editorialStatus"]) ?? null,
     reviewQueue: value.review_queue === "FAST_PATH" || value.review_queue === "STANDARD_REVIEW" ? value.review_queue : undefined,
     contentPillar: value.content_pillar ? String(value.content_pillar) : null, seasonality: value.seasonality ? String(value.seasonality) : null,
     contentReady: value.content_ready === true, publicationStatus: String(value.publication_status ?? "NOT_PUBLISHED"), lastReviewedAt: value.last_reviewed_at ? String(value.last_reviewed_at) : null, coverUrl: null,
@@ -79,9 +80,59 @@ export class SupabaseGovernanceRepository implements GovernanceRepository {
   }
 
   async getReviewQueue(filters: ReviewFilters = {}): Promise<ReviewWorkspaceData> {
-    const result = await this.client.from("derived_reels").select("reel_id,song_title,collection,tier,ai_score,editorial_quality,bible_status,rights_status,editorial_status,review_queue,content_pillar,seasonality,content_ready,publication_status,last_reviewed_at").limit(500);
+    const result = await this.client.from("derived_reels").select("reel_id,source_asset_id,song_title,collection,tier,ai_score,editorial_quality,bible_status,rights_status,editorial_status,review_queue,content_pillar,seasonality,content_ready,publication_status,last_reviewed_at").limit(500);
     if (result.error) throw new Error("REMOTE_QUEUE_READ_FAILED");
-    const rows = (result.data ?? []).map((value) => toReviewRow(value as Record<string, unknown>));
+    const [editorials, evidence, verifications, rightsSources, readiness] = await Promise.all([
+      this.client.from("editorial_versions").select("reel_id,editorial_version,bible_reference").limit(1000),
+      this.client.from("bible_evidence").select("reel_id,editorial_version,evidence_status").limit(1000),
+      this.client.from("bible_verifications").select("reel_id,editorial_version").limit(1000),
+      this.client.from("rights_sources").select("asset_id,rights_confirmations(rights_status)").limit(1000),
+      this.client.from("content_ready_evaluations").select("reel_id,editorial_version,status,evaluated_at").order("evaluated_at", { ascending: false }).limit(1000),
+    ]);
+    if (editorials.error || evidence.error || verifications.error || rightsSources.error || readiness.error) throw new Error("REMOTE_QUEUE_READ_FAILED");
+    const latestEditorial = new Map<string, Record<string, unknown>>();
+    for (const value of editorials.data ?? []) {
+      const row = value as Record<string, unknown>;
+      const current = latestEditorial.get(String(row.reel_id));
+      if (!current || Number(row.editorial_version) > Number(current.editorial_version)) latestEditorial.set(String(row.reel_id), row);
+    }
+    const evidenceByVersion = new Map<string, Record<string, unknown>>((evidence.data ?? []).map((value) => { const row = value as Record<string, unknown>; return [`${row.reel_id}:${row.editorial_version}`, row]; }));
+    const verificationByVersion = new Map<string, Record<string, unknown>>((verifications.data ?? []).map((value) => { const row = value as Record<string, unknown>; return [`${row.reel_id}:${row.editorial_version}`, row]; }));
+    const rightsByAsset = new Map<string, { sourceExists: boolean; confirmationStatuses: unknown[] }>();
+    for (const value of rightsSources.data ?? []) {
+      const row = value as Record<string, unknown>;
+      const confirmations = Array.isArray(row.rights_confirmations) ? row.rights_confirmations as Array<Record<string, unknown>> : [];
+      const assetId = String(row.asset_id);
+      const current = rightsByAsset.get(assetId) ?? { sourceExists: false, confirmationStatuses: [] };
+      current.sourceExists = true;
+      current.confirmationStatuses.push(...confirmations.map((confirmation) => confirmation.rights_status));
+      rightsByAsset.set(assetId, current);
+    }
+    const readinessByReel = new Map<string, Record<string, unknown>>();
+    for (const value of readiness.data ?? []) {
+      const row = value as Record<string, unknown>;
+      const key = String(row.reel_id);
+      const currentVersion = latestEditorial.get(key)?.editorial_version;
+      if (currentVersion === undefined || Number(row.editorial_version) !== Number(currentVersion)) continue;
+      if (!readinessByReel.has(key)) readinessByReel.set(key, row);
+    }
+    const rows = (result.data ?? []).map((value) => {
+      const raw = value as Record<string, unknown>;
+      const reelId = String(raw.reel_id);
+      const editorial = latestEditorial.get(reelId);
+      const version = editorial?.editorial_version;
+      const evidenceRow = evidenceByVersion.get(`${reelId}:${version}`);
+      const verificationRow = verificationByVersion.get(`${reelId}:${version}`);
+      const rights = rightsByAsset.get(String(raw.source_asset_id ?? "")) ?? { sourceExists: false, confirmationStatuses: [] };
+      const effectiveBibleStatus = resolveEffectiveBibleStatus({ reference: editorial?.bible_reference, evidenceStatus: evidenceRow?.evidence_status, evidenceVersion: evidenceRow?.editorial_version, verificationVersion: verificationRow?.editorial_version, editorialVersion: version });
+      const effectiveRightsStatus = resolveEffectiveRightsStatus(rights);
+      const currentReadiness = readinessByReel.get(reelId);
+      return toReviewRow({ ...raw,
+        effective_bible_status: effectiveBibleStatus,
+        effective_rights_status: effectiveRightsStatus,
+        content_ready: currentReadiness?.status === "CONTENT_READY" && effectiveBibleStatus === "VERIFIED" && effectiveRightsStatus === "RIGHTS_CONFIRMED",
+      });
+    });
     const visible = filterReviewRows(rows, filters);
     return { rows: visible, counts: queueCounts(rows), connected: true, sourceLabel: "Supabase read-only" };
   }
@@ -103,7 +154,20 @@ export class SupabaseGovernanceRepository implements GovernanceRepository {
       this.client.from("content_ready_evaluations").select("*").eq("reel_id", reelId).eq("editorial_version", versionForQueries).order("evaluated_at", { ascending: false }).limit(1).maybeSingle(),
     ]);
     if (editorial.error || evidence.error || verification.error || rights.error || review.error || readiness.error) throw new Error("REMOTE_CANDIDATE_READ_FAILED");
-    return { ...reel.data, editorial_version: editorial.data, bible_evidence: evidence.data, bible_verification: verification.data, rights: rights.data, review: review.data, readiness: readiness.data?.gates ?? null, readiness_status: readiness.data?.status ?? null } as Record<string, unknown>;
+    const rightsRows = Array.isArray(rights.data) ? rights.data as Array<Record<string, unknown>> : [];
+    const confirmationStatuses = rightsRows.flatMap((source) => Array.isArray(source.rights_confirmations) ? (source.rights_confirmations as Array<Record<string, unknown>>).map((confirmation) => confirmation.rights_status) : []);
+    const effectiveBibleStatus = resolveEffectiveBibleStatus({ reference: editorial.data?.bible_reference, evidenceStatus: evidence.data?.evidence_status, evidenceVersion: evidence.data?.editorial_version, verificationVersion: verification.data?.editorial_version, editorialVersion: currentVersion });
+    const effectiveRightsStatus = resolveEffectiveRightsStatus({ sourceExists: rightsRows.length > 0, confirmationStatuses });
+    const canonicalReadiness = readiness.data?.gates ? { ...readiness.data.gates,
+      bible_reference: effectiveBibleStatus === "VERIFIED" ? "PASS" : "BLOCKED",
+      rights_status: effectiveRightsStatus === "RIGHTS_CONFIRMED" ? "PASS" : "BLOCKED",
+    } : null;
+    const storedReadinessStatus = readiness.data?.status ?? null;
+    const canonicalReady = storedReadinessStatus === "CONTENT_READY" && effectiveBibleStatus === "VERIFIED" && effectiveRightsStatus === "RIGHTS_CONFIRMED";
+    return { ...reel.data, content_ready: canonicalReady, editorial_version: editorial.data, bible_evidence: evidence.data, bible_verification: verification.data, rights: rights.data, review: review.data, readiness: canonicalReadiness, readiness_status: storedReadinessStatus === null ? null : canonicalReady ? "CONTENT_READY" : "BLOCKED",
+      effective_bible_status: effectiveBibleStatus,
+      effective_rights_status: effectiveRightsStatus,
+    } as Record<string, unknown>;
   }
 
   async getAnalytics(reelId: string) { const result = await this.client.from("analytics_snapshots").select("*").eq("reel_id", reelId).order("captured_at", { ascending: false }); if (result.error) throw new Error("REMOTE_ANALYTICS_READ_FAILED"); return (result.data ?? []) as Record<string, unknown>[]; }

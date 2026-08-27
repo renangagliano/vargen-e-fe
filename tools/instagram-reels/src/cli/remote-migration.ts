@@ -41,10 +41,10 @@ const OPERATIONAL_TABLES = REMOTE_TABLES.filter((table) => table !== "profiles")
 type RemoteFetch = typeof fetch;
 type Environment = NodeJS.ProcessEnv | Record<string, string | undefined>;
 
-function safeHeaders(key: string, legacyServiceRole: boolean, includeCount = false): Record<string, string> {
+function safeHeaders(key: string, includeAuthorization = false, includeCount = false): Record<string, string> {
   const headers: Record<string, string> = { apikey: key };
   if (includeCount) headers.Prefer = "count=exact";
-  if (legacyServiceRole) headers.Authorization = `Bearer ${key}`;
+  if (includeAuthorization) headers.Authorization = `Bearer ${key}`;
   return headers;
 }
 
@@ -69,7 +69,9 @@ export async function collectRemoteSupabaseValidation(env: Environment, fetchImp
   const restResponse = await request(fetchImpl, `${supabase.url}/rest/v1/`, { headers: publicHeaders });
   if (!restResponse || restResponse.status >= 500) return { status: "REST_SERVICE_FAILED", rest: restResponse?.status ?? "NETWORK_ERROR", auth: "PASS", remote_write_enabled: false };
 
-  const readHeaders = safeHeaders(supabase.serverSecret, supabase.serverSecretType === "LEGACY_SERVICE_ROLE", true);
+  // Supabase's modern secret keys, like legacy service-role keys, are
+  // privileged server credentials and must be sent in both API auth headers.
+  const readHeaders = safeHeaders(supabase.serverSecret, true, true);
   const tableResults = await Promise.all(REMOTE_TABLES.map(async (table) => {
     const response = await request(fetchImpl, `${supabase.url}/rest/v1/${table}?select=*&limit=0`, { headers: readHeaders });
     return { table, status: response?.status ?? 0, count: parseContentRange(response?.headers.get("content-range")) };

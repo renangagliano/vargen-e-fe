@@ -1,7 +1,7 @@
 export type ReviewQueueKey = "PENDING" | "FAST_PATH" | "STANDARD_REVIEW" | "NEEDS_CHANGES" | "APPROVED" | "CONTENT_READY" | "PUBLISHED";
 export type AdminRole = "ADMIN" | "REVIEWER" | "VIEWER";
 export type ReviewStatus = "READY_FOR_HUMAN_REVIEW" | "APPROVED" | "REJECTED" | "NEEDS_CHANGES";
-export type EvidenceStatus = "PASS" | "REVIEW_REQUIRED" | "MISSING" | "CONFLICT" | "UNSUPPORTED" | "NOT_AVAILABLE";
+export type EvidenceStatus = "PASS" | "VERIFIED" | "REVIEW_REQUIRED" | "MISSING" | "CONFLICT" | "UNSUPPORTED" | "NOT_AVAILABLE";
 
 export type ReviewRow = {
   reelId: string;

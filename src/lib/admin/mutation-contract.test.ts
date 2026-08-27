@@ -49,6 +49,7 @@ test("editorial saves may retain an optional operator note without requiring it"
 
 test("Bible reference validation is syntax-only and fails closed for malformed input", () => {
   assert.equal(isBibleReferenceStructurallyValid("Lucas 19"), true);
+  assert.equal(isBibleReferenceStructurallyValid("Colossenses 3:12-14"), true);
   assert.equal(isBibleReferenceStructurallyValid("João 3,16-17"), true);
   assert.equal(isBibleReferenceStructurallyValid(""), false);
   assert.equal(isBibleReferenceStructurallyValid("not a reference"), false);
