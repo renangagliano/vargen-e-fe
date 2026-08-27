@@ -1,9 +1,1 @@
-"use client";
-
-import { createBrowserClient } from "@supabase/ssr";
-import { getSupabasePublicConfig } from "./public-config";
-
-export function createSupabaseBrowserClient() {
-  const { url, publicKey } = getSupabasePublicConfig();
-  return createBrowserClient(url, publicKey);
-}
+export * from "../../../packages/admin-shared/src/supabase/browser.ts";

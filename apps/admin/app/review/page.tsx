@@ -1,4 +1,4 @@
-import { ReviewWorkspace } from "../../../../src/components/admin/review-workspace";
+import { ReviewWorkspace } from "@vargenfe/admin-shared/ui/review-workspace";
 import { requireAdminPage } from "../../lib/page-auth";
 import { getRemoteRepository } from "../../lib/repository";
 

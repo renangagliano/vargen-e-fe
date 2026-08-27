@@ -2,7 +2,7 @@
 
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
-import { createSupabaseBrowserClient } from "../../../../src/lib/supabase/client";
+import { createSupabaseBrowserClient } from "@vargenfe/admin-shared/supabase/browser";
 
 export function LoginForm() {
   const router = useRouter();

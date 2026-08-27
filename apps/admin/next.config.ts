@@ -4,6 +4,7 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
   trailingSlash: false,
+  transpilePackages: ["@vargenfe/admin-shared"],
   images: { unoptimized: true },
   async headers() {
     return [{

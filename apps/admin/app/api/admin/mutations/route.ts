@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { getAuthenticatedAdminIdentity } from "../../../../../../src/lib/admin/server-auth";
-import { assertRemoteReadOnly } from "../../../../../../src/lib/admin/remote-readonly";
+import { getAuthenticatedAdminIdentity } from "@vargenfe/admin-shared/admin/server-auth";
+import { assertRemoteReadOnly } from "@vargenfe/admin-shared/admin/remote-readonly";
 
 export const runtime = "nodejs";
 

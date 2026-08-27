@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getAuthenticatedAdminIdentity } from "../../../../../../../src/lib/admin/server-auth";
+import { getAuthenticatedAdminIdentity } from "@vargenfe/admin-shared/admin/server-auth";
 import { getRemoteRepository } from "../../../../../lib/repository";
 
 export const runtime = "nodejs";

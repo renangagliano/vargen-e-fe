@@ -6,6 +6,8 @@ The public site and the authenticated workspace are separate deployments.
 
 - Public site: the repository root, Next.js `output: "export"`, GitHub Pages.
 - Admin: `apps/admin`, dynamic Next.js runtime, intended for the personal Vercel Hobby team.
+- Shared Admin code: `packages/admin-shared`, installed through the npm workspace
+  and transpiled by the Admin app.
 
 The admin app reads only the migrated Supabase read model in this phase. SQLite
 remains authoritative and `ADMIN_REMOTE_WRITE_ENABLED=false` must remain set.
@@ -19,6 +21,11 @@ Create a separate personal Vercel project with:
 - Plan: Hobby
 - Production branch: `main`
 - Preview branches: feature branches as needed
+
+The repository root `package.json` declares `apps/*` and `packages/*` as npm
+workspaces. Vercel must install from the repository workspace so that
+`@vargenfe/admin-shared` resolves; do not create a second copy of the shared
+code inside `apps/admin`.
 
 Do not connect the project to a corporate Vercel team or add paid services.
 
@@ -53,6 +60,10 @@ to `/login`. After signing in with the existing personal ADMIN user, validate
 the queue, candidate drawer, analytics snapshots, publication history, and
 logout. Mutation requests must return `REMOTE_WRITE_DISABLED` and must not
 change remote rows.
+
+For a local equivalent of the Vercel build, run `npm ci` from the repository
+root, then run `npm run build` from `apps/admin`. The expected result is a
+dynamic build with the Admin proxy and Route Handlers present.
 
 ## Public link
 

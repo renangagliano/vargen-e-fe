@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { getAuthenticatedAdminIdentity } from "../../../src/lib/admin/server-auth";
+import { getAuthenticatedAdminIdentity } from "@vargenfe/admin-shared/admin/server-auth";
 
 export async function requireAdminPage() {
   const identity = await getAuthenticatedAdminIdentity();
