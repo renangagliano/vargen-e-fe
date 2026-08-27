@@ -1,9 +1,11 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
+import { isBibleReferenceStructurallyValid } from "../../../packages/admin-shared/src/admin/mutation-contract.ts";
 import { resolveEffectiveBibleStatus, resolveEffectiveRightsStatus } from "../../../packages/admin-shared/src/admin/governance-state.ts";
 
 const sql = readFileSync("docs/instagram/014_fix_governance_effective_state.sql", "utf8");
+const bibleSaveMigration = readFileSync("docs/instagram/015_fix_bible_reference_save_pipeline.sql", "utf8");
 const ui = readFileSync("packages/admin-shared/src/ui/review-workspace.tsx", "utf8");
 const repository = readFileSync("packages/admin-shared/src/admin/governance-repository.ts", "utf8");
 
@@ -63,4 +65,28 @@ test("effective rights state is derived from confirmation, not source metadata",
   assert.equal(resolveEffectiveRightsStatus({ sourceExists: true, confirmationStatuses: ["RIGHTS_CONFIRMED"] }), "RIGHTS_CONFIRMED");
   assert.equal(resolveEffectiveRightsStatus({ sourceExists: true, confirmationStatuses: [] }), "RIGHTS_PENDING_CONFIRMATION");
   assert.equal(resolveEffectiveRightsStatus({ sourceExists: false, confirmationStatuses: [] }), "MISSING");
+});
+
+test("the Bible save migration uses a valid canonical SQL grammar and preserves the new-version workflow", () => {
+  assert.match(bibleSaveMigration, /create or replace function public\.is_valid_bible_reference/);
+  assert.match(bibleSaveMigration, /not public\.is_valid_bible_reference\(v_reference\)/);
+  assert.match(bibleSaveMigration, /editorial_version = v_next/);
+  assert.match(bibleSaveMigration, /BIBLE_VERIFIED/);
+  assert.match(bibleSaveMigration, /bible-evidence:/);
+  assert.match(bibleSaveMigration, /bible-verification:/);
+  assert.match(bibleSaveMigration, /EDITORIAL_SAVED/);
+  assert.doesNotMatch(bibleSaveMigration, /DROP TABLE|RIGHTS_NOTE_REQUIRED|BIBLE_NOTE_REQUIRED/);
+});
+
+test("the canonical Bible examples remain accepted by the application validator", () => {
+  for (const reference of [
+    "Isaías 35:1-2",
+    "Colossenses 3:12-14",
+    "João 20:8",
+    "Lucas 4:19",
+    "Êxodo 14",
+    "Salmos 23:1-4",
+    "1 Coríntios 13:4-7",
+    "2 Timóteo 3:16-17",
+  ]) assert.equal(isBibleReferenceStructurallyValid(reference), true, reference);
 });
