@@ -23,3 +23,4 @@ import "./onedrive-media.test.js";
 import "./personal-microsoft-auth.test.js";
 import "./analytics.test.js";
 import "./remote-migration.test.js";
+import "./sqlite-export.test.js";

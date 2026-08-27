@@ -18,6 +18,8 @@ import { runPersonalMicrosoftCommand } from "./personal-microsoft.js";
 import { runInstagramConfigCheckCommand } from "./config-check.js";
 import { runInstagramAnalyticsCommand } from "./analytics.js";
 import { runRemoteMigrationValidation } from "./remote-migration.js";
+import { runSqliteExport } from "../admin/sqlite-export.js";
+import { runSupabaseImport } from "../admin/supabase-import.js";
 
 function filterArgument(args: string[]): string | undefined {
   const value = args.find((arg) => arg.startsWith("--"));
@@ -29,7 +31,9 @@ async function main(): Promise<void> {
   const config = loadConfig();
   if (await runInstagramConfigCheckCommand(command, config.repoRoot)) return;
   if (await runInstagramAnalyticsCommand(command, args, config)) return;
-  if (command === "admin:remote-validate") { await runRemoteMigrationValidation(config); return; }
+  if (command === "admin:remote-validate") { await runRemoteMigrationValidation(config, args); return; }
+  if (command === "admin:export-sqlite") { runSqliteExport(config); return; }
+  if (command === "admin:import-supabase") { runSupabaseImport(config, args); return; }
   if (await runInstagramConnectivityCommand(command)) return;
   if (await runPersonalMicrosoftCommand(command, config)) return;
   if (await runTemporaryMediaCommand(command, args, config)) return;

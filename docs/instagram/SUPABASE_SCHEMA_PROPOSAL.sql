@@ -1,144 +1,178 @@
--- Section 11.2 proposal only. Do not apply to production until the SQLite
--- export has passed the remote validation and cutover gates.
--- Media bytes remain local/OneDrive; only governance and safe metadata move.
+-- Section 11.3 proposal only. Apply only in a personal Supabase staging project
+-- after the SQLite export and migration manifest have been reviewed.
+-- No media bytes, credentials, access tokens, or complete temporary URLs belong here.
 
-create schema if not exists private;
-
-create table if not exists public.admin_memberships (
-  user_id uuid primary key references auth.users(id) on delete cascade,
-  role text not null check (role in ('ADMIN', 'REVIEWER', 'VIEWER')),
+create table if not exists public.profiles (
+  id uuid primary key references auth.users(id) on delete cascade,
+  email text,
+  display_name text,
+  role text not null default 'VIEWER' check (role in ('ADMIN', 'REVIEWER', 'VIEWER')),
+  is_active boolean not null default true,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
 
-create table if not exists public.review_reels (
+create table if not exists public.media_assets (
+  asset_id text primary key,
+  checksum_sha256 text unique,
+  extension text not null,
+  file_size bigint not null,
+  duration_ms bigint,
+  width integer,
+  height integer,
+  availability_status text not null,
+  rights_status text not null,
+  source_relative_path text,
+  created_at timestamptz not null,
+  updated_at timestamptz not null
+);
+
+create table if not exists public.derived_reels (
   reel_id text primary key,
-  candidate_id text not null,
-  source_asset_id text not null,
+  candidate_id text not null unique,
+  source_asset_id text not null references public.media_assets(asset_id) on delete restrict,
   output_relative_path text not null,
+  thumbnail_relative_path text,
+  file_size bigint,
+  duration_ms bigint,
+  width integer,
+  height integer,
+  validation_status text not null,
   source_checksum_before text,
   source_checksum_after text,
-  file_size bigint,
-  validation_status text not null,
+  song_title text,
+  collection text,
+  tier text,
+  ai_score numeric,
+  editorial_quality numeric,
+  bible_status text not null default 'MISSING',
   rights_status text not null,
+  editorial_status text,
+  review_queue text,
+  content_pillar text,
+  seasonality text,
+  content_ready boolean not null default false,
   publication_status text not null default 'NOT_PUBLISHED',
+  last_reviewed_at timestamptz,
   created_at timestamptz not null,
+  updated_at timestamptz not null
+);
+
+create table if not exists public.editorial_packages (
+  reel_id text primary key references public.derived_reels(reel_id) on delete cascade,
+  latest_editorial_version integer not null,
   updated_at timestamptz not null
 );
 
 create table if not exists public.editorial_versions (
-  reel_id text not null references public.review_reels(reel_id) on delete cascade,
+  reel_id text not null references public.derived_reels(reel_id) on delete cascade,
   editorial_version integer not null,
-  editorial_title text not null,
-  selected_hook text not null,
+  title text not null,
+  hook text not null,
   caption text not null,
-  bible_reference text not null,
-  bible_reference_review_required boolean not null default true,
   cta text not null,
   hashtags jsonb not null,
-  content_pillar text not null,
+  primary_pillar text not null,
   secondary_pillar text,
-  editorial_intent text not null,
-  cover_path text not null,
   cover_text text not null,
+  bible_reference text not null,
   review_status text not null,
-  publication_status text not null,
-  publication_priority text not null,
-  suggested_context text not null,
-  suggested_spacing text not null,
-  rights_status text not null,
-  reviewed_by text,
-  reviewed_at timestamptz,
-  review_note text,
-  generated_at timestamptz,
+  operator_review_note text,
+  created_by uuid references public.profiles(id),
   created_at timestamptz not null,
-  updated_at timestamptz not null,
   primary key (reel_id, editorial_version)
 );
 
-create table if not exists public.bible_reference_sources (
-  bible_reference_id text primary key,
-  reel_id text not null references public.review_reels(reel_id) on delete cascade,
-  editorial_version integer,
+create table if not exists public.human_reviews (
+  review_id text primary key,
+  reel_id text not null references public.derived_reels(reel_id) on delete cascade,
+  editorial_version integer not null,
+  actor_id uuid not null references public.profiles(id),
+  status text not null,
+  note text not null,
+  created_at timestamptz not null
+);
+
+create table if not exists public.bible_evidence (
+  evidence_id text primary key,
+  reel_id text not null references public.derived_reels(reel_id) on delete cascade,
+  editorial_version integer not null,
   reference text not null,
   source_type text not null,
   source_location text not null,
-  verification_status text not null,
-  verified_by text,
-  verified_at timestamptz,
-  note text,
+  evidence_status text not null,
   created_at timestamptz not null,
   updated_at timestamptz not null
 );
 
-create table if not exists public.rights_evidence (
-  confirmation_id text primary key,
-  source_asset_id text not null,
-  rights_status text not null,
-  confirmed_by text not null,
-  confirmed_at timestamptz not null,
-  confirmation_scope text not null,
-  confirmation_statement_version text not null,
+create table if not exists public.bible_verifications (
+  verification_id text primary key,
+  evidence_id text not null references public.bible_evidence(evidence_id) on delete restrict,
+  reel_id text not null references public.derived_reels(reel_id) on delete cascade,
+  editorial_version integer not null,
+  verified_by uuid not null references public.profiles(id),
+  verified_at timestamptz not null,
   note text not null
 );
 
-create table if not exists public.review_sessions (
-  session_id text primary key,
-  reviewer_user_id uuid not null references auth.users(id),
-  reviewer_label text,
-  queue text not null,
-  current_reel_id text,
-  started_at timestamptz not null,
-  ended_at timestamptz,
-  reviewed_count integer not null default 0,
-  approved_count integer not null default 0,
-  rejected_count integer not null default 0,
-  needs_changes_count integer not null default 0,
-  content_ready_count integer not null default 0,
-  last_action_at timestamptz not null,
-  filters jsonb not null default '{}'::jsonb
+create table if not exists public.rights_sources (
+  source_id text primary key,
+  asset_id text not null references public.media_assets(asset_id) on delete cascade,
+  source_type text not null,
+  source_location text not null,
+  source_checksum text,
+  created_at timestamptz not null
 );
 
-create table if not exists public.content_readiness_snapshots (
-  reel_id text not null references public.review_reels(reel_id) on delete cascade,
-  evaluated_at timestamptz not null,
-  status text not null,
+create table if not exists public.rights_confirmations (
+  confirmation_id text primary key,
+  source_id text not null references public.rights_sources(source_id) on delete restrict,
+  actor_id uuid not null references public.profiles(id),
+  rights_status text not null,
+  confirmation_scope text not null,
+  statement_version text not null,
+  note text not null,
+  confirmed_at timestamptz not null
+);
+
+create table if not exists public.content_ready_evaluations (
+  evaluation_id text primary key,
+  reel_id text not null references public.derived_reels(reel_id) on delete cascade,
   editorial_version integer,
+  status text not null,
   gates jsonb not null,
   reasons jsonb not null,
-  primary key (reel_id, evaluated_at)
+  evaluated_at timestamptz not null
 );
 
 create table if not exists public.publication_records (
   publication_key text primary key,
-  reel_id text not null references public.review_reels(reel_id) on delete restrict,
+  reel_id text not null references public.derived_reels(reel_id) on delete restrict,
   editorial_version integer not null,
   snapshot_id text,
   status text not null,
-  attempt_count integer not null default 0,
   container_id text,
   remote_media_id text,
   permalink text,
   published_at timestamptz,
-  error_code text,
+  attempt_count integer not null default 0,
   created_at timestamptz not null,
   updated_at timestamptz not null
 );
 
-create table if not exists public.publication_audit_events (
+create table if not exists public.publication_audit (
   event_id text primary key,
   entity_type text not null,
   entity_id text not null,
   event_type text not null,
-  actor_user_id uuid references auth.users(id),
-  actor_label text,
+  actor_id uuid references public.profiles(id),
   occurred_at timestamptz not null,
   metadata jsonb not null default '{}'::jsonb
 );
 
 create table if not exists public.analytics_snapshots (
   analytics_snapshot_id text primary key,
-  reel_id text not null references public.review_reels(reel_id) on delete cascade,
+  reel_id text not null references public.derived_reels(reel_id) on delete cascade,
   publication_key text not null,
   instagram_media_id text not null,
   observation_window text not null,
@@ -150,9 +184,21 @@ create table if not exists public.analytics_snapshots (
   created_at timestamptz not null
 );
 
-create table if not exists public.temporary_media_metadata (
+create table if not exists public.review_sessions (
+  session_id text primary key,
+  reviewer_id uuid not null references public.profiles(id),
+  queue text not null,
+  current_reel_id text,
+  started_at timestamptz not null,
+  ended_at timestamptz,
+  reviewed_count integer not null default 0,
+  last_action_at timestamptz not null,
+  filters jsonb not null default '{}'::jsonb
+);
+
+create table if not exists public.temporary_media_records (
   publication_key text primary key,
-  reel_id text not null references public.review_reels(reel_id) on delete cascade,
+  reel_id text not null references public.derived_reels(reel_id) on delete cascade,
   provider text not null,
   drive_id text,
   item_id text,
@@ -167,32 +213,31 @@ create table if not exists public.temporary_media_metadata (
   updated_at timestamptz not null
 );
 
+create index if not exists idx_derived_reels_queue on public.derived_reels(review_queue, editorial_status, publication_status);
 create index if not exists idx_editorial_versions_latest on public.editorial_versions(reel_id, editorial_version desc);
-create index if not exists idx_bible_sources_reel on public.bible_reference_sources(reel_id, updated_at desc);
-create index if not exists idx_audit_entity on public.publication_audit_events(entity_type, entity_id, occurred_at desc);
+create index if not exists idx_bible_evidence_reel_version on public.bible_evidence(reel_id, editorial_version, updated_at desc);
+create index if not exists idx_publication_audit_entity on public.publication_audit(entity_type, entity_id, occurred_at desc);
 create index if not exists idx_analytics_reel_window on public.analytics_snapshots(reel_id, observation_window, captured_at desc);
 
--- Every exposed table is protected. Role claims must be maintained in a
--- trusted server-side membership process/app_metadata, never user_metadata.
+-- Fail closed by default. Browser clients receive read access only; controlled
+-- server operations use a server-only role and domain services.
 do $$ declare table_name text; begin
-  foreach table_name in array array['admin_memberships','review_reels','editorial_versions','bible_reference_sources','rights_evidence','review_sessions','content_readiness_snapshots','publication_records','publication_audit_events','analytics_snapshots','temporary_media_metadata'] loop
+  foreach table_name in array array['profiles','media_assets','derived_reels','editorial_packages','editorial_versions','human_reviews','bible_evidence','bible_verifications','rights_sources','rights_confirmations','content_ready_evaluations','publication_records','publication_audit','analytics_snapshots','review_sessions','temporary_media_records'] loop
     execute format('alter table public.%I enable row level security', table_name);
+    execute format('revoke all on table public.%I from anon', table_name);
+    execute format('grant select on table public.%I to authenticated', table_name);
   end loop;
 end $$;
 
-create policy admin_membership_self on public.admin_memberships for select to authenticated using (user_id = (select auth.uid()));
+drop policy if exists profiles_self_read on public.profiles;
+create policy profiles_self_read on public.profiles for select to authenticated using ((select auth.uid()) = id and is_active);
 
-create policy review_read on public.review_reels for select to authenticated using (exists (select 1 from public.admin_memberships m where m.user_id = (select auth.uid()) and m.role in ('ADMIN','REVIEWER','VIEWER')));
-create policy review_write on public.review_reels for update to authenticated using (exists (select 1 from public.admin_memberships m where m.user_id = (select auth.uid()) and m.role in ('ADMIN','REVIEWER'))) with check (exists (select 1 from public.admin_memberships m where m.user_id = (select auth.uid()) and m.role in ('ADMIN','REVIEWER')));
+do $$ declare table_name text; begin
+  foreach table_name in array array['media_assets','derived_reels','editorial_packages','editorial_versions','human_reviews','bible_evidence','bible_verifications','rights_sources','rights_confirmations','content_ready_evaluations','publication_records','publication_audit','analytics_snapshots','review_sessions','temporary_media_records'] loop
+    execute format('drop policy if exists %I on public.%I', table_name || '_active_read', table_name);
+    execute format('create policy %I on public.%I for select to authenticated using (exists (select 1 from public.profiles p where p.id = (select auth.uid()) and p.is_active and p.role in (''ADMIN'',''REVIEWER'',''VIEWER'')))', table_name || '_active_read', table_name);
+  end loop;
+end $$;
 
-create policy editorial_read on public.editorial_versions for select to authenticated using (exists (select 1 from public.admin_memberships m where m.user_id = (select auth.uid()) and m.role in ('ADMIN','REVIEWER','VIEWER')));
-create policy editorial_write on public.editorial_versions for insert to authenticated with check (exists (select 1 from public.admin_memberships m where m.user_id = (select auth.uid()) and m.role in ('ADMIN','REVIEWER')));
-create policy bible_read on public.bible_reference_sources for select to authenticated using (exists (select 1 from public.admin_memberships m where m.user_id = (select auth.uid()) and m.role in ('ADMIN','REVIEWER','VIEWER')));
-create policy bible_write on public.bible_reference_sources for insert to authenticated with check (exists (select 1 from public.admin_memberships m where m.user_id = (select auth.uid()) and m.role in ('ADMIN','REVIEWER')));
-create policy rights_read on public.rights_evidence for select to authenticated using (exists (select 1 from public.admin_memberships m where m.user_id = (select auth.uid()) and m.role in ('ADMIN','REVIEWER','VIEWER')));
-create policy session_owner on public.review_sessions for all to authenticated using (reviewer_user_id = (select auth.uid())) with check (reviewer_user_id = (select auth.uid()));
-create policy readiness_read on public.content_readiness_snapshots for select to authenticated using (exists (select 1 from public.admin_memberships m where m.user_id = (select auth.uid()) and m.role in ('ADMIN','REVIEWER','VIEWER')));
-create policy publications_read on public.publication_records for select to authenticated using (exists (select 1 from public.admin_memberships m where m.user_id = (select auth.uid()) and m.role in ('ADMIN','REVIEWER','VIEWER')));
-create policy audit_read on public.publication_audit_events for select to authenticated using (exists (select 1 from public.admin_memberships m where m.user_id = (select auth.uid()) and m.role in ('ADMIN','REVIEWER','VIEWER')));
-create policy analytics_read on public.analytics_snapshots for select to authenticated using (exists (select 1 from public.admin_memberships m where m.user_id = (select auth.uid()) and m.role in ('ADMIN','REVIEWER','VIEWER')));
-create policy temporary_media_read on public.temporary_media_metadata for select to authenticated using (exists (select 1 from public.admin_memberships m where m.user_id = (select auth.uid()) and m.role in ('ADMIN','REVIEWER','VIEWER')));
+-- publication_audit and publication_records are append-only to normal roles.
+-- Service-role/server domain code is the only planned writer during migration.
