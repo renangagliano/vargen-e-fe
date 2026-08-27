@@ -9,6 +9,7 @@ export const siteConfig = {
   youtube: "https://www.youtube.com/@vargenefe",
   instagram: "https://www.instagram.com/vargen.fe/",
   tiktok: "https://www.tiktok.com/@vargen.fe",
+  adminUrl: process.env.NEXT_PUBLIC_ADMIN_URL?.trim() || "/admin/login",
   spotify: null,
   appleMusic: null,
   creator: "Renan Gagliano",
