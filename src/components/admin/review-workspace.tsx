@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Image from "next/image";
+import { SignOutButton } from "./sign-out-button";
 import { filterReviewRows, queueMatches, sortReviewRows, type ReviewFilters, type ReviewSortKey } from "@/lib/admin/review-queue";
 import { REVIEW_QUEUES, type ReviewQueueKey, type ReviewRow, type ReviewWorkspaceData } from "@/lib/admin/review-types";
 
@@ -24,7 +25,7 @@ export function ReviewWorkspace({ initialData = EMPTY_DATA }: { initialData?: Re
   return <section className="admin-workspace" aria-label="Review Workspace">
     <div className="admin-workspace__header">
       <div><p className="eyebrow">Vargen & Fé · operação editorial</p><h1>Review Workspace</h1><p className="admin-lead">Revise candidatos, preserve evidências e avance pela fila sem sair da mesma tela.</p></div>
-      <div className="admin-connection"><span className={data.connected ? "admin-dot admin-dot--good" : "admin-dot"} />{data.connected ? data.sourceLabel : "Modo de preparação"}</div>
+      <div className="admin-workspace__tools"><div className="admin-connection"><span className={data.connected ? "admin-dot admin-dot--good" : "admin-dot"} />{data.connected ? data.sourceLabel : "Modo de preparação"}</div><SignOutButton /></div>
     </div>
     <nav className="admin-queue-tabs" aria-label="Filas de revisão">{REVIEW_QUEUES.map((item) => <button key={item.key} type="button" className={queue === item.key ? "is-active" : ""} onClick={() => setQueue(item.key)}>{item.label}<span>{data.counts[item.key] ?? "—"}</span></button>)}</nav>
     <div className="admin-filter-bar">

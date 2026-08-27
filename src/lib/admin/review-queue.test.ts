@@ -3,6 +3,7 @@ import test from "node:test";
 import { filterReviewRows, queueCounts, queueMatches, sortReviewRows } from "./review-queue.ts";
 import type { ReviewRow } from "./review-types.ts";
 import { canMutateGovernance, canReadWorkspace, requireRole } from "./auth.ts";
+import { PROTECTED_ADMIN_ROUTES, requiredRolesForPath } from "./route-guards.ts";
 
 const row = (overrides: Partial<ReviewRow> = {}): ReviewRow => ({
   reelId: "reel-1", songTitle: "Águas", collection: "12 Meses", tier: "TIER_A", aiScore: 90, editorialQuality: 88,
@@ -40,4 +41,10 @@ test("admin authorization separates read and governance mutation roles", () => {
   assert.equal(canMutateGovernance("REVIEWER"), true);
   assert.throws(() => requireRole(null, ["ADMIN", "REVIEWER"]), /ADMIN_AUTH_REQUIRED/);
   assert.throws(() => requireRole({ userId: "u", email: null, role: "VIEWER" }, ["ADMIN"]), /ADMIN_FORBIDDEN/);
+});
+
+test("admin route contract covers every protected workspace surface", () => {
+  assert.deepEqual(PROTECTED_ADMIN_ROUTES, ["/admin", "/admin/review", "/admin/analytics", "/admin/publications"]);
+  assert.deepEqual(requiredRolesForPath("/admin/review"), ["ADMIN", "REVIEWER", "VIEWER"]);
+  assert.deepEqual(requiredRolesForPath("/public"), []);
 });
