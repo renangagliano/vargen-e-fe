@@ -17,6 +17,7 @@ import { runTemporaryMediaCommand } from "./temporary-media.js";
 import { runPersonalMicrosoftCommand } from "./personal-microsoft.js";
 import { runInstagramConfigCheckCommand } from "./config-check.js";
 import { runInstagramAnalyticsCommand } from "./analytics.js";
+import { runRemoteMigrationValidation } from "./remote-migration.js";
 
 function filterArgument(args: string[]): string | undefined {
   const value = args.find((arg) => arg.startsWith("--"));
@@ -28,6 +29,7 @@ async function main(): Promise<void> {
   const config = loadConfig();
   if (await runInstagramConfigCheckCommand(command, config.repoRoot)) return;
   if (await runInstagramAnalyticsCommand(command, args, config)) return;
+  if (command === "admin:remote-validate") { await runRemoteMigrationValidation(config); return; }
   if (await runInstagramConnectivityCommand(command)) return;
   if (await runPersonalMicrosoftCommand(command, config)) return;
   if (await runTemporaryMediaCommand(command, args, config)) return;

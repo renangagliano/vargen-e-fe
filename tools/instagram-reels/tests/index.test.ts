@@ -22,3 +22,4 @@ import "./azure-media.test.js";
 import "./onedrive-media.test.js";
 import "./personal-microsoft-auth.test.js";
 import "./analytics.test.js";
+import "./remote-migration.test.js";

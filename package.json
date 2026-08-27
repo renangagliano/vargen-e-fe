@@ -17,6 +17,8 @@
     "media:verify": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js verify",
     "instagram:connectivity": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js instagram:connectivity",
     "instagram:analytics": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js instagram:analytics",
+    "admin:remote-validate": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js admin:remote-validate",
+    "admin:test": "node --experimental-strip-types --test src/lib/admin/review-queue.test.ts",
     "instagram:config-check": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js instagram:config-check",
     "instagram:pilot": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js instagram:pilot",
     "instagram:media-prepare": "npm run media:build && node tools/instagram-reels/dist/src/cli/index.js instagram:media-prepare",
