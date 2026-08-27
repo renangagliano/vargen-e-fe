@@ -7,7 +7,7 @@ import { SignOutButton } from "./sign-out-button.tsx";
 import { filterReviewRows, nextReviewRow, queueMatches, sortReviewRows, type ReviewFilters, type ReviewSortKey } from "../admin/review-queue.ts";
 import { REVIEW_QUEUES, type AdminRole, type ReviewQueueKey, type ReviewRow, type ReviewWorkspaceData } from "../admin/review-types.ts";
 import { fetchCandidateDetail, formatReviewStatus, reviewStatusTone } from "../admin/review-ui.ts";
-import { isBibleReferenceStructurallyValid, RIGHTS_CONFIRMATION_STATEMENT, type GovernanceMutationAction, type EditorialMutationFields } from "../admin/mutation-contract.ts";
+import { isBibleReferenceStructurallyValid, reconcileExpectedCurrentVersion, RIGHTS_CONFIRMATION_STATEMENT, type GovernanceMutationAction, type EditorialMutationFields } from "../admin/mutation-contract.ts";
 import { canPublish } from "../admin/publication-contract.ts";
 
 const EMPTY_DATA: ReviewWorkspaceData = { rows: [], counts: {}, connected: false, sourceLabel: "Remote persistence not connected" };
@@ -195,7 +195,19 @@ function ReviewDrawer({ row, onClose, onPersisted, readOnly, role, publishingEna
     }
     setSaving(true); setActiveAction(action); setError(null); setSuccess(null);
     try {
-      const response = await fetch(mutationEndpoint, { method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/json", Accept: "application/json" }, body: JSON.stringify({ action, reel_id: row.reelId, expected_current_version: currentVersion, request_id: crypto.randomUUID(), fields: action === "save_editorial" ? activeForm : undefined, ...extra }) });
+      // The drawer may remain mounted while another request (or another tab)
+      // changes the candidate. Reconcile immediately before mutating so the
+      // version sent to the server is the one the operator is actually seeing.
+      // A genuine mismatch remains a 409; it is never silently overwritten.
+      let expectedVersion = currentVersion;
+      if (candidateDetailEndpoint) {
+        const canonical = await fetchCandidateDetail(candidateDetailEndpoint, row.reelId);
+        const canonicalEditorial = objectOf(canonical.editorial_version);
+        const canonicalVersion = Number(valueOf(canonicalEditorial, "editorial_version", "0"));
+        expectedVersion = reconcileExpectedCurrentVersion({ renderedVersion: currentVersion, canonicalVersion, hasDirtyFields: form !== null });
+        if (canonicalVersion !== currentVersion) setDetail(canonical);
+      }
+      const response = await fetch(mutationEndpoint, { method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/json", Accept: "application/json" }, body: JSON.stringify({ action, reel_id: row.reelId, expected_current_version: expectedVersion, request_id: crypto.randomUUID(), fields: action === "save_editorial" && form !== null ? activeForm : undefined, ...extra }) });
       const body = await response.json().catch(() => null) as Record<string, unknown> | null;
       if (!response.ok) throw new Error(typeof body?.error === "string" ? body.error : "REMOTE_GOVERNANCE_MUTATION_FAILED");
       if (candidateDetailEndpoint) {
@@ -214,7 +226,7 @@ function ReviewDrawer({ row, onClose, onPersisted, readOnly, role, publishingEna
       // The server compares this canonical form with the current persisted
       // version. Equal fields are a no-op; changed fields are saved and
       // approved atomically against the resulting version.
-      void submitMutation(action, { fields: activeForm });
+      void submitMutation(action, form === null ? {} : { fields: activeForm });
       return;
     }
     setError(null);

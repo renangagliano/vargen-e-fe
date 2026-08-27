@@ -77,6 +77,22 @@ export function assertRemoteMutationEnabled(configOrEnv: RemoteAdminConfig | Nod
   return config;
 }
 
+/**
+ * Chooses the version for a mutation after a just-in-time canonical read.
+ * A clean drawer can safely adopt a newer server version; a dirty drawer must
+ * stop so an operator edit cannot overwrite someone else's newer version.
+ */
+export function reconcileExpectedCurrentVersion(input: {
+  renderedVersion: number;
+  canonicalVersion: number;
+  hasDirtyFields: boolean;
+}): number {
+  if (!Number.isInteger(input.renderedVersion) || input.renderedVersion < 1) throw new Error("EDITORIAL_VERSION_REQUIRED");
+  if (!Number.isInteger(input.canonicalVersion) || input.canonicalVersion < 1) throw new Error("EDITORIAL_VERSION_REQUIRED");
+  if (input.hasDirtyFields && input.renderedVersion !== input.canonicalVersion) throw new Error("EDITORIAL_VERSION_CONFLICT");
+  return input.canonicalVersion;
+}
+
 export function parseMutationRequest(value: unknown): GovernanceMutationRequest {
   if (!value || typeof value !== "object" || Array.isArray(value)) throw new Error("MUTATION_PAYLOAD_INVALID");
   const input = value as Record<string, unknown>;

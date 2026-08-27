@@ -4,6 +4,7 @@ import {
   assertRemoteMutationEnabled,
   isMutationRoleAllowed,
   parseMutationRequest,
+  type GovernanceMutationRequest,
 } from "@vargenfe/admin-shared/admin/mutation-contract";
 import { SupabaseGovernanceMutationRepository } from "@vargenfe/admin-shared/admin/governance-repository";
 import { createSupabaseServiceClient } from "@vargenfe/admin-shared/supabase/service";
@@ -25,6 +26,29 @@ function statusForCode(code: string): number {
   return 400;
 }
 
+async function conflictDiagnostics(input: GovernanceMutationRequest): Promise<Record<string, unknown>> {
+  try {
+    const { data } = await createSupabaseServiceClient()
+      .from("editorial_packages")
+      .select("latest_editorial_version")
+      .eq("reel_id", input.reel_id)
+      .maybeSingle();
+    return {
+      reel_id: input.reel_id,
+      request_id: input.request_id,
+      expected_current_version: input.expected_current_version,
+      current_editorial_version: data?.latest_editorial_version ?? null,
+    };
+  } catch {
+    return {
+      reel_id: input.reel_id,
+      request_id: input.request_id,
+      expected_current_version: input.expected_current_version,
+      current_editorial_version: null,
+    };
+  }
+}
+
 /** Controlled remote governance entry point; browser clients never write. */
 export async function POST(request: Request) {
   const identity = await getAuthenticatedAdminIdentity();
@@ -35,7 +59,7 @@ export async function POST(request: Request) {
   let runtimeConfig;
   try { runtimeConfig = getAdminRuntimeConfig(); assertRemoteMutationEnabled(runtimeConfig); } catch { return NextResponse.json({ error: "REMOTE_WRITE_DISABLED" }, { status: 403 }); }
 
-  let input;
+  let input: GovernanceMutationRequest | undefined;
   try {
     input = parseMutationRequest(await request.json());
   } catch (error) {
@@ -61,6 +85,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ ...result, remote_write_enabled: true }, { status: 200 });
   } catch (error) {
     const code = safeError(error);
+    if (code === "EDITORIAL_VERSION_CONFLICT" && input) {
+      return NextResponse.json({ error: code, ...(await conflictDiagnostics(input)) }, { status: 409 });
+    }
     return NextResponse.json({ error: code }, { status: statusForCode(code) });
   }
 }

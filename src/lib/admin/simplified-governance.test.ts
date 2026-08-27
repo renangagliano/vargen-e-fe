@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 import { isBibleReferenceStructurallyValid } from "../../../packages/admin-shared/src/admin/mutation-contract.ts";
 import { resolveEffectiveBibleStatus, resolveEffectiveRightsStatus } from "../../../packages/admin-shared/src/admin/governance-state.ts";
+import { reconcileExpectedCurrentVersion } from "../../../packages/admin-shared/src/admin/mutation-contract.ts";
 
 const sql = readFileSync("docs/instagram/014_fix_governance_effective_state.sql", "utf8");
 const bibleSaveMigration = readFileSync("docs/instagram/015_fix_bible_reference_save_pipeline.sql", "utf8");
@@ -104,6 +105,27 @@ test("the state-machine migration makes Save change-aware and approval atomic", 
 });
 
 test("approval submits the current editorial form for server-side dirty approval", () => {
-  assert.match(ui, /submitMutation\(action, \{ fields: activeForm \}\)/);
+  assert.match(ui, /form === null \? \{\} : \{ fields: activeForm \}/);
   assert.match(ui, /body\?\.no_changes === true/);
+});
+
+test("clean drawer adopts canonical version while dirty drawer preserves genuine conflicts", () => {
+  assert.equal(reconcileExpectedCurrentVersion({ renderedVersion: 1, canonicalVersion: 2, hasDirtyFields: false }), 2);
+  assert.throws(() => reconcileExpectedCurrentVersion({ renderedVersion: 1, canonicalVersion: 2, hasDirtyFields: true }), /EDITORIAL_VERSION_CONFLICT/);
+  assert.equal(reconcileExpectedCurrentVersion({ renderedVersion: 2, canonicalVersion: 2, hasDirtyFields: true }), 2);
+});
+
+test("approval conflict responses include safe version diagnostics", () => {
+  const route = readFileSync("apps/admin/app/api/admin/mutations/route.ts", "utf8");
+  assert.match(route, /expected_current_version/);
+  assert.match(route, /current_editorial_version/);
+  assert.match(route, /request_id/);
+});
+
+test("the forward migration keeps the concurrency guard and makes clean approval idempotent", () => {
+  const migration = readFileSync("docs/instagram/018_eliminate_approval_version_conflict.sql", "utf8");
+  assert.match(migration, /if v_current <> p_expected_current_version then\s+raise exception 'EDITORIAL_VERSION_CONFLICT'/);
+  assert.match(migration, /v_editorial\.review_status = 'APPROVED'/);
+  assert.match(migration, /and not v_changed/);
+  assert.doesNotMatch(migration, /DROP TABLE|TRUNCATE|DELETE FROM/);
 });
