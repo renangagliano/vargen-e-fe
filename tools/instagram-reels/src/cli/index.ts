@@ -35,7 +35,7 @@ async function main(): Promise<void> {
   if (await runInstagramAnalyticsCommand(command, args, config)) return;
   if (command === "admin:remote-validate") { await runRemoteMigrationValidation(config, args); return; }
   if (command === "admin:export-sqlite") { runSqliteExport(config); return; }
-  if (command === "admin:import-supabase") { runSupabaseImport(config, args); return; }
+  if (command === "admin:import-supabase") { await runSupabaseImport(config, args); return; }
   if (await runInstagramConnectivityCommand(command)) return;
   if (await runPersonalMicrosoftCommand(command, config)) return;
   if (await runTemporaryMediaCommand(command, args, config)) return;

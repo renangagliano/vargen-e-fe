@@ -6,6 +6,8 @@ out/
 *.log
 .DS_Store
 *.tsbuildinfo
+.vercel/
+apps/admin/.next/
 
 # Instagram media pipeline: source masters, derived media and runtime state
 # stay outside the repository. These scoped directories avoid hiding unrelated
