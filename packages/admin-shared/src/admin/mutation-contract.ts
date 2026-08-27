@@ -129,9 +129,9 @@ export { RIGHTS_CONFIRMATION_STATEMENT };
 
 /** Syntax-only validation. It confirms a reference shape, never Bible content. */
 export function isBibleReferenceStructurallyValid(value: string): boolean {
-  const reference = value.replace(/\s+/g, " ").replace(/\s*,\s*/g, ",").replace(/\s*[-–—]\s*/g, "-").trim();
+  const reference = value.replace(/\s+/g, " ").replace(/\s*,\s*/g, ",").replace(/\s*:\s*/g, ":").replace(/\s*[-–—]\s*/g, "-").trim();
   return reference.length > 0 && reference.length <= 120
-    && /^(?:(?:[1-3]\s+)?[A-Za-zÀ-ÿ]+(?:\s+[A-Za-zÀ-ÿ]+)*)\s+\d+(?:,\d+(?:-\d+)?(?:\.\d+(?:-\d+)?)*)?$/u.test(reference);
+    && /^(?:(?:[1-3]\s+)?[A-Za-zÀ-ÿ]+(?:\s+[A-Za-zÀ-ÿ]+)*)\s+\d+(?::\d+(?:-\d+)?|,\d+(?:-\d+)?(?:\.\d+(?:-\d+)?)*)?$/u.test(reference);
 }
 
 function normalizeEditorialFields(input: Record<string, unknown>): EditorialMutationFields {
