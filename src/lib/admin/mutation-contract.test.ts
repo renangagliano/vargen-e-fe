@@ -9,6 +9,7 @@ import {
   parseMutationRequest,
   resolveAutoPublishOnApproval,
   RIGHTS_CONFIRMATION_STATEMENT,
+  isBibleReferenceStructurallyValid,
   validateMutationActionPayload,
 } from "../../../packages/admin-shared/src/admin/mutation-contract.ts";
 
@@ -30,22 +31,28 @@ test("mutation payload requires optimistic concurrency and a safe request id", (
   assert.throws(() => parseMutationRequest({ action: "save_editorial", reel_id: "reel-1", expected_current_version: 0, request_id: "request:1" }), /EDITORIAL_VERSION_REQUIRED/);
 });
 
-test("governance actions validate their human evidence before reaching the RPC", () => {
+test("governance actions require only explicit rights/rejection confirmations", () => {
   const base = { reel_id: "reel-1", expected_current_version: 2, request_id: "request:action-1" };
-  assert.throws(() => parseMutationRequest({ ...base, action: "verify_bible", note: "Conferi" }), /BIBLE_REFERENCE_REQUIRED/);
-  assert.throws(() => parseMutationRequest({ ...base, action: "verify_bible", reference: "Lucas 19" }), /BIBLE_NOTE_REQUIRED/);
-  assert.doesNotThrow(() => parseMutationRequest({ ...base, action: "verify_bible", reference: "Lucas 19", note: "Conferi a referência." }));
-  assert.throws(() => parseMutationRequest({ ...base, action: "confirm_rights", note: "Conferi" }), /RIGHTS_CONFIRMATION_REQUIRED/);
-  assert.throws(() => parseMutationRequest({ ...base, action: "confirm_rights", confirmation_statement: RIGHTS_CONFIRMATION_STATEMENT }), /RIGHTS_NOTE_REQUIRED/);
-  assert.doesNotThrow(() => parseMutationRequest({ ...base, action: "confirm_rights", note: "Direitos conferidos.", confirmation_statement: RIGHTS_CONFIRMATION_STATEMENT }));
-  assert.throws(() => parseMutationRequest({ ...base, action: "needs_changes" }), /REVIEW_NOTE_REQUIRED/);
-  assert.throws(() => parseMutationRequest({ ...base, action: "reject", note: "Conteúdo incompatível.", confirm_rejection: false }), /REJECTION_CONFIRMATION_REQUIRED/);
-  assert.doesNotThrow(() => parseMutationRequest({ ...base, action: "reject", note: "Conteúdo incompatível.", confirm_rejection: true }));
+  assert.throws(() => parseMutationRequest({ ...base, action: "unknown_action" }), /MUTATION_ACTION_INVALID/);
+  assert.throws(() => parseMutationRequest({ ...base, action: "confirm_rights" }), /RIGHTS_CONFIRMATION_REQUIRED/);
+  assert.doesNotThrow(() => parseMutationRequest({ ...base, action: "confirm_rights", confirmation_statement: RIGHTS_CONFIRMATION_STATEMENT }));
+  assert.doesNotThrow(() => parseMutationRequest({ ...base, action: "approve_editorial" }));
+  assert.doesNotThrow(() => parseMutationRequest({ ...base, action: "needs_changes" }));
+  assert.throws(() => parseMutationRequest({ ...base, action: "reject" }), /REJECTION_CONFIRMATION_REQUIRED/);
+  assert.doesNotThrow(() => parseMutationRequest({ ...base, action: "reject", confirm_rejection: true }));
 });
 
-test("the action validator accepts an explicit approval note and fails closed for missing notes", () => {
-  assert.doesNotThrow(() => validateMutationActionPayload({ action: "approve_editorial", reel_id: "reel-1", expected_current_version: 1, request_id: "request:approve", note: "Aprovado após revisão." }));
-  assert.throws(() => validateMutationActionPayload({ action: "approve_editorial", reel_id: "reel-1", expected_current_version: 1, request_id: "request:approve-2" }), /REVIEW_NOTE_REQUIRED/);
+test("editorial saves may retain an optional operator note without requiring it", () => {
+  assert.doesNotThrow(() => validateMutationActionPayload({ action: "save_editorial", reel_id: "reel-1", expected_current_version: 1, request_id: "request:save" }));
+  assert.doesNotThrow(() => validateMutationActionPayload({ action: "approve_editorial", reel_id: "reel-1", expected_current_version: 1, request_id: "request:approve" }));
+});
+
+test("Bible reference validation is syntax-only and fails closed for malformed input", () => {
+  assert.equal(isBibleReferenceStructurallyValid("Lucas 19"), true);
+  assert.equal(isBibleReferenceStructurallyValid("João 3,16-17"), true);
+  assert.equal(isBibleReferenceStructurallyValid(""), false);
+  assert.equal(isBibleReferenceStructurallyValid("not a reference"), false);
+  assert.throws(() => parseMutationRequest({ action: "save_editorial", reel_id: "reel-1", expected_current_version: 1, request_id: "request:bible", fields: { bible_reference: "not a reference" } }), /BIBLE_REFERENCE_INVALID/);
 });
 
 test("auto publication is disabled by default and requires every explicit gate", () => {

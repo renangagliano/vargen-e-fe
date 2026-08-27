@@ -46,8 +46,6 @@ export class SupabaseGovernanceMutationRepository {
       p_request_id: request.request_id,
       p_payload: {
         ...(request.fields ?? {}),
-        reference: request.reference,
-        note: request.note,
         confirmation_statement: request.confirmation_statement,
         confirm_publication: request.confirm_publication,
         confirm_rejection: request.confirm_rejection,
@@ -96,13 +94,16 @@ export class SupabaseGovernanceRepository implements GovernanceRepository {
     const editorial = await this.client.from("editorial_versions").select("*").eq("reel_id", reelId).order("editorial_version", { ascending: false }).limit(1).maybeSingle();
     if (editorial.error) throw new Error("REMOTE_CANDIDATE_READ_FAILED");
     const currentVersion = editorial.data?.editorial_version;
-    const [evidence, verification, rights] = await Promise.all([
-      this.client.from("bible_evidence").select("*").eq("reel_id", reelId).eq("editorial_version", currentVersion).order("updated_at", { ascending: false }).limit(1).maybeSingle(),
-      this.client.from("bible_verifications").select("*").eq("reel_id", reelId).eq("editorial_version", currentVersion).order("verified_at", { ascending: false }).limit(1).maybeSingle(),
+    const versionForQueries = typeof currentVersion === "number" ? currentVersion : -1;
+    const [evidence, verification, rights, review, readiness] = await Promise.all([
+      this.client.from("bible_evidence").select("*").eq("reel_id", reelId).eq("editorial_version", versionForQueries).order("updated_at", { ascending: false }).limit(1).maybeSingle(),
+      this.client.from("bible_verifications").select("*").eq("reel_id", reelId).eq("editorial_version", versionForQueries).order("verified_at", { ascending: false }).limit(1).maybeSingle(),
       sourceAssetId ? this.client.from("rights_sources").select("*,rights_confirmations(*)").eq("asset_id", sourceAssetId) : Promise.resolve({ data: [], error: null }),
+      this.client.from("human_reviews").select("*").eq("reel_id", reelId).eq("editorial_version", versionForQueries).order("created_at", { ascending: false }).limit(1).maybeSingle(),
+      this.client.from("content_ready_evaluations").select("*").eq("reel_id", reelId).eq("editorial_version", versionForQueries).order("evaluated_at", { ascending: false }).limit(1).maybeSingle(),
     ]);
-    if (editorial.error || evidence.error || verification.error || rights.error) throw new Error("REMOTE_CANDIDATE_READ_FAILED");
-    return { ...reel.data, editorial_version: editorial.data, bible_evidence: evidence.data, bible_verification: verification.data, rights: rights.data } as Record<string, unknown>;
+    if (editorial.error || evidence.error || verification.error || rights.error || review.error || readiness.error) throw new Error("REMOTE_CANDIDATE_READ_FAILED");
+    return { ...reel.data, editorial_version: editorial.data, bible_evidence: evidence.data, bible_verification: verification.data, rights: rights.data, review: review.data, readiness: readiness.data?.gates ?? null, readiness_status: readiness.data?.status ?? null } as Record<string, unknown>;
   }
 
   async getAnalytics(reelId: string) { const result = await this.client.from("analytics_snapshots").select("*").eq("reel_id", reelId).order("captured_at", { ascending: false }); if (result.error) throw new Error("REMOTE_ANALYTICS_READ_FAILED"); return (result.data ?? []) as Record<string, unknown>[]; }

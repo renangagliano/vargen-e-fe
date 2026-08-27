@@ -19,14 +19,14 @@ test("remote mutation errors expose only safe domain codes", async () => {
   await assert.rejects(() => repository.execute({ action: "approve_editorial", reel_id: "reel-1", expected_current_version: 1, request_id: "request:123" }, { userId: "admin-id", email: null, role: "ADMIN" }), /EDITORIAL_VERSION_CONFLICT/);
 });
 
-test("action-specific evidence is forwarded to the RPC without credentials", async () => {
+test("action-specific confirmation is forwarded to the RPC without credentials", async () => {
   let payload: Record<string, unknown> | undefined;
   const repository = new SupabaseGovernanceMutationRepository({ rpc: async (_name: string, args: Record<string, unknown>) => {
     payload = args.p_payload as Record<string, unknown>;
     return { data: { action: "reject", reel_id: "reel-1", editorial_version: 1, state: {} }, error: null };
   } } as never);
-  await repository.execute({ action: "reject", reel_id: "reel-1", expected_current_version: 1, request_id: "request:reject", note: "Motivo", confirm_rejection: true }, { userId: "admin-id", email: null, role: "ADMIN" });
-  assert.equal(payload?.note, "Motivo");
+  await repository.execute({ action: "reject", reel_id: "reel-1", expected_current_version: 1, request_id: "request:reject", confirm_rejection: true }, { userId: "admin-id", email: null, role: "ADMIN" });
+  assert.equal("note" in (payload ?? {}), false);
   assert.equal(payload?.confirm_rejection, true);
   assert.equal("SUPABASE_SECRET_KEY" in (payload ?? {}), false);
 });

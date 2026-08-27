@@ -7,7 +7,7 @@ import { SignOutButton } from "./sign-out-button.tsx";
 import { filterReviewRows, nextReviewRow, queueMatches, sortReviewRows, type ReviewFilters, type ReviewSortKey } from "../admin/review-queue.ts";
 import { REVIEW_QUEUES, type AdminRole, type ReviewQueueKey, type ReviewRow, type ReviewWorkspaceData } from "../admin/review-types.ts";
 import { fetchCandidateDetail, formatReviewStatus, reviewStatusTone } from "../admin/review-ui.ts";
-import { RIGHTS_CONFIRMATION_STATEMENT, type GovernanceMutationAction, type EditorialMutationFields } from "../admin/mutation-contract.ts";
+import { isBibleReferenceStructurallyValid, RIGHTS_CONFIRMATION_STATEMENT, type GovernanceMutationAction, type EditorialMutationFields } from "../admin/mutation-contract.ts";
 
 const EMPTY_DATA: ReviewWorkspaceData = { rows: [], counts: {}, connected: false, sourceLabel: "Remote persistence not connected" };
 
@@ -28,12 +28,10 @@ function formatDate(value: string | null | undefined): string {
 
 const ACTION_MESSAGES: Record<string, string> = {
   EDITORIAL_VERSION_CONFLICT: "Este Reel foi atualizado. Recarregue antes de continuar.",
-  BIBLE_REFERENCE_REQUIRED: "Uma referência bíblica é necessária para verificar.",
-  BIBLE_NOTE_REQUIRED: "Uma nota de verificação bíblica é necessária.",
-  RIGHTS_NOTE_REQUIRED: "Uma nota de confirmação de direitos é necessária.",
+  BIBLE_REFERENCE_INVALID: "Informe uma referência bíblica válida, como Lucas 19.",
   RIGHTS_CONFIRMATION_REQUIRED: "A declaração de direitos precisa ser aceita explicitamente.",
   RIGHTS_SOURCE_NOT_FOUND: "Não há uma fonte de direitos cadastrada para este Reel.",
-  REVIEW_NOTE_REQUIRED: "Uma nota da revisão é necessária.",
+  ADMIN_FORBIDDEN: "Seu perfil não pode executar esta ação.",
   REJECTION_CONFIRMATION_REQUIRED: "Confirme explicitamente a rejeição.",
   REQUIRED_EDITORIAL_FIELDS_MISSING: "Preencha todos os campos editoriais obrigatórios antes de aprovar.",
   BIBLE_REFERENCE_NOT_FOUND: "A referência bíblica desta versão não foi encontrada.",
@@ -114,7 +112,6 @@ function ReviewDrawer({ row, onClose, onPersisted, readOnly, role, candidateDeta
   const [saving, setSaving] = useState(false);
   const [activeAction, setActiveAction] = useState<GovernanceMutationAction | null>(null);
   const [confirmationAction, setConfirmationAction] = useState<GovernanceMutationAction | null>(null);
-  const [actionNote, setActionNote] = useState("");
   const [success, setSuccess] = useState<string | null>(null);
   const [form, setForm] = useState<EditorialMutationFields | null>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
@@ -133,7 +130,7 @@ function ReviewDrawer({ row, onClose, onPersisted, readOnly, role, candidateDeta
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") { event.preventDefault(); onClose(); return; }
+      if (event.key === "Escape") { event.preventDefault(); if (confirmationAction) setConfirmationAction(null); else onClose(); return; }
       if (event.key !== "Tab") return;
       const focusable = Array.from(document.querySelectorAll<HTMLElement>(".admin-drawer button:not([disabled]), .admin-drawer input:not([disabled]), .admin-drawer textarea:not([disabled]), .admin-drawer [href]"));
       if (!focusable.length) return;
@@ -144,14 +141,17 @@ function ReviewDrawer({ row, onClose, onPersisted, readOnly, role, candidateDeta
     document.addEventListener("keydown", handleKeyDown);
     window.requestAnimationFrame(() => closeButtonRef.current?.focus());
     return () => { document.removeEventListener("keydown", handleKeyDown); document.body.style.overflow = previousOverflow; };
-  }, [onClose]);
+  }, [confirmationAction, onClose]);
 
   const editorial = objectOf(detail?.editorial_version);
   const evidence = objectOf(detail?.bible_evidence);
   const verification = objectOf(detail?.bible_verification);
+  const review = objectOf(detail?.review);
   const readiness = objectOf(detail?.readiness);
   const rights = Array.isArray(detail?.rights) ? detail?.rights[0] : detail?.rights;
   const rightsObject = objectOf(rights);
+  const rightsConfirmations = rightsObject && Array.isArray(rightsObject.rights_confirmations) ? rightsObject.rights_confirmations : [];
+  const latestRightsConfirmation = objectOf(rightsConfirmations[0]);
   const currentVersion = Number(valueOf(editorial, "editorial_version", "0"));
   const persistedHashtags = Array.isArray(editorial?.hashtags) ? editorial.hashtags.filter((value): value is string => typeof value === "string") : [];
   const persistedForm: EditorialMutationFields = { title: valueOf(editorial, "title", row.songTitle), hook: valueOf(editorial, "hook", ""), caption: valueOf(editorial, "caption", ""), cta: valueOf(editorial, "cta", ""), hashtags: persistedHashtags, primary_pillar: valueOf(editorial, "primary_pillar", ""), secondary_pillar: editorial?.secondary_pillar == null ? null : valueOf(editorial, "secondary_pillar", ""), cover_text: valueOf(editorial, "cover_text", ""), bible_reference: valueOf(editorial, "bible_reference", "") };
@@ -160,16 +160,20 @@ function ReviewDrawer({ row, onClose, onPersisted, readOnly, role, candidateDeta
   const updateField = <K extends keyof EditorialMutationFields>(key: K, value: EditorialMutationFields[K]) => setForm((current) => ({ ...persistedForm, ...(current ?? {}), [key]: value }));
   const submitMutation = async (action: GovernanceMutationAction, extra: Record<string, unknown> = {}, moveNext = false) => {
     if (!mutationEndpoint || !currentVersion) return;
+    if (action === "save_editorial" && activeForm.bible_reference && !isBibleReferenceStructurallyValid(activeForm.bible_reference)) {
+      setError("BIBLE_REFERENCE_INVALID");
+      return;
+    }
     setSaving(true); setActiveAction(action); setError(null); setSuccess(null);
     try {
-      const response = await fetch(mutationEndpoint, { method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/json", Accept: "application/json" }, body: JSON.stringify({ action, reel_id: row.reelId, expected_current_version: currentVersion, request_id: crypto.randomUUID(), fields: action === "save_editorial" || action === "save_bible_review" ? activeForm : undefined, ...extra }) });
+      const response = await fetch(mutationEndpoint, { method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/json", Accept: "application/json" }, body: JSON.stringify({ action, reel_id: row.reelId, expected_current_version: currentVersion, request_id: crypto.randomUUID(), fields: action === "save_editorial" ? activeForm : undefined, ...extra }) });
       const body = await response.json().catch(() => null) as Record<string, unknown> | null;
       if (!response.ok) throw new Error(typeof body?.error === "string" ? body.error : "REMOTE_GOVERNANCE_MUTATION_FAILED");
       if (candidateDetailEndpoint) {
         try { setDetail(await fetchCandidateDetail(candidateDetailEndpoint, row.reelId)); setForm(null); }
         catch { throw new Error("READ_AFTER_WRITE_FAILED"); }
       }
-      setSuccess(action === "save_editorial" || action === "save_bible_review" ? "Editorial salvo" : action === "verify_bible" ? "Bíblia verificada" : action === "confirm_rights" ? "Direitos confirmados" : action === "approve_editorial" ? "Editorial aprovado" : action === "needs_changes" ? "Marcado como Needs Changes" : "Candidato rejeitado");
+      setSuccess(action === "save_editorial" ? "Editorial salvo" : action === "confirm_rights" ? "Direitos confirmados" : action === "approve_editorial" ? "Editorial aprovado" : action === "needs_changes" ? "Marcado como Needs Changes" : "Candidato rejeitado");
       onPersisted(row.reelId, moveNext);
     } catch (value) { setError(value instanceof Error ? value.message : "REMOTE_GOVERNANCE_MUTATION_FAILED"); }
     finally { setSaving(false); setActiveAction(null); }
@@ -178,27 +182,16 @@ function ReviewDrawer({ row, onClose, onPersisted, readOnly, role, candidateDeta
   const requestAction = (action: GovernanceMutationAction) => {
     if (!canReview || saving) return;
     if (action === "approve_editorial") {
-      void submitMutation(action, { note: "Aprovação editorial explícita pelo Admin Workspace." });
-      return;
-    }
-    if (action === "verify_bible" && !activeForm.bible_reference?.trim()) {
-      setError("BIBLE_REFERENCE_REQUIRED");
+      void submitMutation(action);
       return;
     }
     setError(null);
-    setActionNote("");
     setConfirmationAction(action);
   };
 
   const confirmAction = () => {
     if (!confirmationAction) return;
-    const note = actionNote.trim();
-    if (!note) {
-      setError(confirmationAction === "confirm_rights" ? "RIGHTS_NOTE_REQUIRED" : confirmationAction === "verify_bible" ? "BIBLE_NOTE_REQUIRED" : "REVIEW_NOTE_REQUIRED");
-      return;
-    }
-    const extra: Record<string, unknown> = { note };
-    if (confirmationAction === "verify_bible") extra.reference = activeForm.bible_reference?.trim();
+    const extra: Record<string, unknown> = {};
     if (confirmationAction === "confirm_rights") extra.confirmation_statement = RIGHTS_CONFIRMATION_STATEMENT;
     if (confirmationAction === "reject") extra.confirm_rejection = true;
     const action = confirmationAction;
@@ -207,7 +200,7 @@ function ReviewDrawer({ row, onClose, onPersisted, readOnly, role, candidateDeta
   };
 
   const editor = (label: string, key: keyof EditorialMutationFields, multiline = false) => <label>{label}{multiline ? <textarea value={String(activeForm[key] ?? "")} readOnly={!canReview} onChange={(event) => updateField(key, event.target.value)} rows={3} /> : <input value={String(activeForm[key] ?? "")} readOnly={!canReview} onChange={(event) => updateField(key, event.target.value)} />}</label>;
-  const actionLabel = confirmationAction === "verify_bible" ? "Verificar Bíblia" : confirmationAction === "confirm_rights" ? "Confirmar direitos" : confirmationAction === "needs_changes" ? "Marcar Needs Changes" : "Rejeitar candidato";
+  const actionLabel = confirmationAction === "confirm_rights" ? "Confirmar direitos" : confirmationAction === "needs_changes" ? "Marcar Needs Changes" : "Rejeitar candidato";
   return <div className="admin-drawer-backdrop" role="presentation" onMouseDown={(event) => { if (event.currentTarget === event.target) onClose(); }}>
     <aside className="admin-drawer" role="dialog" aria-modal="true" aria-labelledby="review-drawer-title">
       <header className="admin-drawer__top"><div><p className="admin-kicker">Revisão individual</p><h2 id="review-drawer-title">{row.songTitle}</h2><p className="admin-muted">{row.reelId} · {row.collection}</p></div><button ref={closeButtonRef} type="button" className="admin-icon-button" onClick={onClose} aria-label="Fechar revisão">×</button></header>
@@ -218,13 +211,14 @@ function ReviewDrawer({ row, onClose, onPersisted, readOnly, role, candidateDeta
         {success && <div className="admin-drawer__success" role="status">{success}</div>}
         <section className="admin-drawer__section"><div className="admin-section-heading"><p className="admin-kicker">01 · Visão geral</p><StatusChip value={row.publicationStatus} /></div><dl className="admin-detail-grid"><Detail label="Música" value={row.songTitle} /><Detail label="Coleção" value={row.collection} /><Detail label="Reel ID" value={row.reelId} /><Detail label="Tier" value={row.tier} /><Detail label="IA" value={row.aiScore === null ? "—" : row.aiScore.toFixed(0)} /><Detail label="Publicação" value={formatReviewStatus(row.publicationStatus)} /></dl></section>
         <section className="admin-drawer__section"><div className="admin-section-heading"><p className="admin-kicker">02 · Editorial</p><StatusChip value={row.editorialStatus} /></div><div className="admin-readonly-fields">{editor("Título", "title")}{editor("Hook", "hook")}{editor("Caption", "caption", true)}{editor("CTA", "cta")}<div className="admin-form__columns">{editor("Pilar principal", "primary_pillar")}{editor("Pilar secundário", "secondary_pillar")}</div><label>Hashtags<textarea readOnly={!canReview} value={(activeForm.hashtags ?? []).join(" ")} onChange={(event) => updateField("hashtags", event.target.value.split(/\s+/).map((tag) => tag.trim()).filter(Boolean))} rows={3} /></label>{editor("Texto da capa", "cover_text")}</div></section>
-        <section className="admin-drawer__section"><div className="admin-section-heading"><p className="admin-kicker">03 · Bíblia</p><StatusChip value={row.bibleStatus} /></div><div className="admin-readonly-fields">{editor("Referência", "bible_reference")}<p className="admin-muted">Evidência: {formatReviewStatus(valueOf(evidence, "status"))} · Verificação: {formatReviewStatus(valueOf(verification, "status"))}</p></div></section>
-        <section className="admin-drawer__section"><div className="admin-section-heading"><p className="admin-kicker">04 · Direitos</p><StatusChip value={row.rightsStatus} /></div><dl className="admin-detail-grid"><Detail label="Estado" value={formatReviewStatus(row.rightsStatus)} /><Detail label="Confirmação" value={valueOf(rightsObject, "status")} /></dl></section>
-        <section className="admin-drawer__section"><div className="admin-section-heading"><p className="admin-kicker">05 · CONTENT_READY</p><StatusChip value={row.contentReady ? "PASS" : "BLOCKED"} label={row.contentReady ? "Pass" : "Blocked"} /></div><div className="admin-readiness-grid">{["technical_validation", "source_integrity", "editorial_review", "rights_status", "bible_reference", "output_file_exists", "cover_exists", "required_editorial_fields", "duplicate_publication_check"].map((key) => <div key={key}><span>{formatReviewStatus(key)}</span><StatusChip value={typeof readiness?.[key] === "string" ? String(readiness[key]) : key === "bible_reference" ? row.bibleStatus : key === "rights_status" ? row.rightsStatus : undefined} /></div>)}</div></section>
-        <section className="admin-drawer__section"><div className="admin-section-heading"><p className="admin-kicker">06 · Metadados</p></div><dl className="admin-detail-grid"><Detail label="Arquivo relativo" value={valueOf(detail, "output_relative_path")} /><Detail label="Tamanho" value={detail?.file_size ? String(detail.file_size) + " bytes" : "—"} /><Detail label="Versão editorial" value={valueOf(editorial, "editorial_version")} /><Detail label="Asset de origem" value={valueOf(detail, "source_asset_id")} /><Detail label="Checksum" value={valueOf(detail, "checksum")} /></dl></section>
+        <section className="admin-drawer__section"><div className="admin-section-heading"><p className="admin-kicker">03 · Bíblia</p><StatusChip value={row.bibleStatus} /></div><div className="admin-readonly-fields">{editor("Referência", "bible_reference")}<p className="admin-muted">Evidência: {formatReviewStatus(valueOf(evidence, "evidence_status"))} · Verificação: {verification ? "Verified" : "Não verificada"}</p>{verification && <p className="admin-muted">Validada por operador autenticado · {formatDate(valueOf(verification, "verified_at", ""))}</p>}</div></section>
+        <section className="admin-drawer__section"><div className="admin-section-heading"><p className="admin-kicker">04 · Direitos</p><StatusChip value={row.rightsStatus} /></div><dl className="admin-detail-grid"><Detail label="Estado" value={formatReviewStatus(row.rightsStatus)} /><Detail label="Confirmação" value={latestRightsConfirmation ? "Confirmed" : "Não confirmados"} />{latestRightsConfirmation && <Detail label="Confirmado em" value={formatDate(valueOf(latestRightsConfirmation, "confirmed_at", ""))} />}</dl></section>
+        <section className="admin-drawer__section"><div className="admin-section-heading"><p className="admin-kicker">05 · Aprovação</p><StatusChip value={valueOf(review, "status")} /></div><dl className="admin-detail-grid"><Detail label="Estado editorial" value={formatReviewStatus(valueOf(review, "status"))} />{review && <Detail label="Registrado em" value={formatDate(valueOf(review, "created_at", ""))} />}</dl></section>
+        <section className="admin-drawer__section"><div className="admin-section-heading"><p className="admin-kicker">06 · CONTENT_READY</p><StatusChip value={row.contentReady ? "PASS" : "BLOCKED"} label={row.contentReady ? "Pass" : "Blocked"} /></div><div className="admin-readiness-grid">{["technical_validation", "source_integrity", "editorial_review", "rights_status", "bible_reference", "output_file_exists", "cover_exists", "required_editorial_fields", "duplicate_publication_check"].map((key) => <div key={key}><span>{formatReviewStatus(key)}</span><StatusChip value={typeof readiness?.[key] === "string" ? String(readiness[key]) : key === "bible_reference" ? row.bibleStatus : key === "rights_status" ? row.rightsStatus : undefined} /></div>)}</div></section>
+        <section className="admin-drawer__section"><div className="admin-section-heading"><p className="admin-kicker">07 · Metadados</p></div><dl className="admin-detail-grid"><Detail label="Arquivo relativo" value={valueOf(detail, "output_relative_path")} /><Detail label="Tamanho" value={detail?.file_size ? String(detail.file_size) + " bytes" : "—"} /><Detail label="Versão editorial" value={valueOf(editorial, "editorial_version")} /><Detail label="Asset de origem" value={valueOf(detail, "source_asset_id")} /><Detail label="Checksum" value={valueOf(detail, "checksum")} /></dl></section>
       </div>
-      {confirmationAction && <div className="admin-action-dialog" role="dialog" aria-modal="true" aria-labelledby="action-dialog-title"><h3 id="action-dialog-title">{actionLabel}</h3>{confirmationAction === "verify_bible" && <p>Referência a verificar: <strong>{activeForm.bible_reference}</strong></p>}{confirmationAction === "confirm_rights" && <p>{RIGHTS_CONFIRMATION_STATEMENT}</p>}{confirmationAction === "reject" && <p>Esta ação marca o candidato como rejeitado e exige confirmação explícita.</p>}<label>Nota / motivo<textarea aria-label="Nota da ação" value={actionNote} onChange={(event) => setActionNote(event.target.value)} rows={3} /></label><div><button type="button" className="admin-button admin-button--quiet" onClick={() => setConfirmationAction(null)} disabled={saving}>Cancelar</button><button type="button" className="admin-button" onClick={confirmAction} disabled={saving}>{saving ? "Enviando…" : actionLabel}</button></div></div>}
-      <footer className="admin-drawer__actions"><button type="button" className="admin-button admin-button--quiet" onClick={onClose}>Fechar</button><button id="saveEditorial" type="button" className="admin-button" disabled={!canReview || saving} onClick={() => submitMutation("save_editorial")}>{activeAction === "save_editorial" ? "Salvando…" : "Salvar"}</button><button id="saveNext" type="button" className="admin-button" disabled={!canReview || saving} onClick={() => submitMutation("save_editorial", {}, true)}>{activeAction === "save_editorial" ? "Salvando…" : "Salvar & Next"}</button><button id="approve" type="button" className="admin-button" disabled={!canReview || role !== "ADMIN" || saving} onClick={() => requestAction("approve_editorial")}>{activeAction === "approve_editorial" ? "Aprovando…" : "Aprovar editorial"}</button><button id="verifyBible" type="button" className="admin-button" disabled={!canReview || saving} onClick={() => requestAction("verify_bible")}>{activeAction === "verify_bible" ? "Verificando Bíblia…" : "Verificar Bíblia"}</button><button id="rights" type="button" className="admin-button" disabled={!canReview || role !== "ADMIN" || saving} onClick={() => requestAction("confirm_rights")}>{activeAction === "confirm_rights" ? "Confirmando direitos…" : "Confirmar direitos"}</button><button id="needs" type="button" className="admin-button" disabled={!canReview || saving} onClick={() => requestAction("needs_changes")}>{activeAction === "needs_changes" ? "Salvando…" : "Needs Changes"}</button><button id="reject" type="button" className="admin-button" disabled={!canReview || saving} onClick={() => requestAction("reject")}>{activeAction === "reject" ? "Rejeitando…" : "Rejeitar"}</button></footer>
+      {confirmationAction && <div className="admin-action-dialog" role="dialog" aria-modal="true" aria-labelledby="action-dialog-title"><div className="admin-action-dialog__card"><h3 id="action-dialog-title">{actionLabel}</h3>{confirmationAction === "confirm_rights" && <p>{RIGHTS_CONFIRMATION_STATEMENT}</p>}{confirmationAction === "reject" && <p>Esta ação altera o estado editorial do Reel e exige confirmação explícita.</p>}<div><button type="button" className="admin-button admin-button--quiet" onClick={() => setConfirmationAction(null)} disabled={saving}>Cancelar</button><button type="button" className="admin-button" onClick={confirmAction} disabled={saving}>{saving ? "Enviando…" : actionLabel}</button></div></div></div>}
+      <footer className="admin-drawer__actions"><button type="button" className="admin-button admin-button--quiet" onClick={onClose}>Fechar</button>{canReview && <><button id="saveEditorial" type="button" className="admin-button" disabled={saving} onClick={() => submitMutation("save_editorial")}>{activeAction === "save_editorial" ? "Salvando…" : "Salvar"}</button><button id="saveNext" type="button" className="admin-button" disabled={saving} onClick={() => submitMutation("save_editorial", {}, true)}>{activeAction === "save_editorial" ? "Salvando…" : "Salvar & Next"}</button><button id="needs" type="button" className="admin-button" disabled={saving} onClick={() => requestAction("needs_changes")}>{activeAction === "needs_changes" ? "Salvando…" : "Needs Changes"}</button><button id="reject" type="button" className="admin-button" disabled={saving} onClick={() => requestAction("reject")}>{activeAction === "reject" ? "Rejeitando…" : "Rejeitar"}</button>{role === "ADMIN" && <><button id="approve" type="button" className="admin-button" disabled={saving} onClick={() => requestAction("approve_editorial")}>{activeAction === "approve_editorial" ? "Aprovando…" : "Aprovar editorial"}</button><button id="rights" type="button" className="admin-button" disabled={saving} onClick={() => requestAction("confirm_rights")}>{activeAction === "confirm_rights" ? "Confirmando direitos…" : "Confirmar direitos"}</button></>}</>}</footer>
     </aside>
   </div>;
 }

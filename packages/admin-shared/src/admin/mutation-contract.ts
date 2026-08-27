@@ -5,8 +5,6 @@ export const AUTO_PUBLISH_CONFIRMATION = "I_CONFIRM_APPROVE_AND_PUBLISH";
 
 export type GovernanceMutationAction =
   | "save_editorial"
-  | "save_bible_review"
-  | "verify_bible"
   | "confirm_rights"
   | "approve_editorial"
   | "needs_changes"
@@ -31,8 +29,6 @@ export type GovernanceMutationRequest = {
   expected_current_version: number;
   request_id: string;
   fields?: EditorialMutationFields;
-  reference?: string;
-  note?: string;
   confirmation_statement?: string;
   confirm_publication?: string;
   confirm_rejection?: boolean;
@@ -49,7 +45,7 @@ export type PublicationAuthorizationEvidence = {
 };
 
 const ACTIONS: readonly GovernanceMutationAction[] = [
-  "save_editorial", "save_bible_review", "verify_bible", "confirm_rights",
+  "save_editorial", "confirm_rights",
   "approve_editorial", "needs_changes", "reject",
 ];
 
@@ -101,7 +97,7 @@ export function parseMutationRequest(value: unknown): GovernanceMutationRequest 
     request_id: requestId,
   };
   if (fields) result.fields = normalizeEditorialFields(fields as Record<string, unknown>);
-  for (const key of ["reference", "note", "confirmation_statement", "confirm_publication"] as const) {
+  for (const key of ["confirmation_statement", "confirm_publication"] as const) {
     if (input[key] !== undefined) {
       if (typeof input[key] !== "string" || input[key].length > 4000) throw new Error(`MUTATION_${key.toUpperCase()}_INVALID`);
       result[key] = input[key].trim();
@@ -118,17 +114,11 @@ export function parseMutationRequest(value: unknown): GovernanceMutationRequest 
 const RIGHTS_CONFIRMATION_STATEMENT = "I confirm that I have the necessary rights or authorization to use and publish this media for the Vargen & Fé project.";
 
 export function validateMutationActionPayload(request: GovernanceMutationRequest): void {
-  const note = request.note?.trim() || request.fields?.operator_note?.trim() || "";
-  if (["verify_bible", "save_bible_review"].includes(request.action)) {
-    if (request.action === "verify_bible" && !request.reference?.trim()) throw new Error("BIBLE_REFERENCE_REQUIRED");
-    if (!note) throw new Error("BIBLE_NOTE_REQUIRED");
+  if (request.action === "save_editorial" && request.fields?.bible_reference) {
+    if (!isBibleReferenceStructurallyValid(request.fields.bible_reference)) throw new Error("BIBLE_REFERENCE_INVALID");
   }
   if (request.action === "confirm_rights") {
-    if (!note) throw new Error("RIGHTS_NOTE_REQUIRED");
     if (request.confirmation_statement !== RIGHTS_CONFIRMATION_STATEMENT) throw new Error("RIGHTS_CONFIRMATION_REQUIRED");
-  }
-  if (["approve_editorial", "needs_changes", "reject"].includes(request.action) && !note) {
-    throw new Error("REVIEW_NOTE_REQUIRED");
   }
   if (request.action === "reject" && request.confirm_rejection !== true) {
     throw new Error("REJECTION_CONFIRMATION_REQUIRED");
@@ -136,6 +126,13 @@ export function validateMutationActionPayload(request: GovernanceMutationRequest
 }
 
 export { RIGHTS_CONFIRMATION_STATEMENT };
+
+/** Syntax-only validation. It confirms a reference shape, never Bible content. */
+export function isBibleReferenceStructurallyValid(value: string): boolean {
+  const reference = value.replace(/\s+/g, " ").replace(/\s*,\s*/g, ",").replace(/\s*[-–—]\s*/g, "-").trim();
+  return reference.length > 0 && reference.length <= 120
+    && /^(?:(?:[1-3]\s+)?[A-Za-zÀ-ÿ]+(?:\s+[A-Za-zÀ-ÿ]+)*)\s+\d+(?:,\d+(?:-\d+)?(?:\.\d+(?:-\d+)?)*)?$/u.test(reference);
+}
 
 function normalizeEditorialFields(input: Record<string, unknown>): EditorialMutationFields {
   const fields: EditorialMutationFields = {};
