@@ -1,0 +1,27 @@
+{
+  "name": "@vargenfe/admin-shared",
+  "private": true,
+  "exports": {
+    "./admin/auth": "./src/admin/auth.ts",
+    "./admin/governance-repository": "./src/admin/governance-repository.ts",
+    "./admin/remote-config": "./src/admin/remote-config.ts",
+    "./admin/remote-readonly": "./src/admin/remote-readonly.ts",
+    "./admin/review-queue": "./src/admin/review-queue.ts",
+    "./admin/review-types": "./src/admin/review-types.ts",
+    "./admin/server-auth": "./src/admin/server-auth.ts",
+    "./supabase/config": "./src/supabase/config.ts",
+    "./supabase/public-config": "./src/supabase/public-config.ts",
+    "./supabase/browser": "./src/supabase/browser.ts",
+    "./supabase/server": "./src/supabase/server.ts",
+    "./supabase/proxy": "./src/supabase/proxy.ts",
+    "./ui/review-workspace": "./src/ui/review-workspace.tsx",
+    "./ui/sign-out-button": "./src/ui/sign-out-button.tsx"
+  },
+  "peerDependencies": {
+    "@supabase/ssr": "0.12.5",
+    "@supabase/supabase-js": "2.112.4",
+    "next": "16.3.2",
+    "react": "19.2.8",
+    "react-dom": "19.2.8"
+  }
+}

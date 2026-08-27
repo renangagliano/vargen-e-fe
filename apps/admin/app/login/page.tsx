@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { getAuthenticatedAdminIdentity } from "../../../../src/lib/admin/server-auth";
+import { getAuthenticatedAdminIdentity } from "@vargenfe/admin-shared/admin/server-auth";
 import { LoginForm } from "./login-form";
 
 export default async function LoginPage() {
